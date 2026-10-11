@@ -2704,8 +2704,8 @@ function refreshRepositoryRecipeControls() {
   document.getElementById("repository-docker-fields").hidden = format !== "docker";
   document.getElementById("repository-cargo-fields").hidden =
     format !== "cargo";
-  document.getElementById("repository-conan-fields").hidden = format !== "conan";
-  document.getElementById("repository-conan-operations").hidden =
+  document.getElementById("repository-conan-limits").hidden = format !== "conan" || type === "GROUP";
+  document.getElementById("repository-conan-fields").hidden =
     format !== "conan" || repositoryFormMode !== "edit";
   document.getElementById("repository-apt-fields").hidden = format !== "apt";
   document.getElementById("repository-alpine-fields").hidden = format !== "alpine";
@@ -3099,6 +3099,14 @@ function repositoryFormPayload() {
       memberNames: [...memberTransfer.selected]
     };
   }
+  if (recipe?.format === "conan" && type !== "GROUP") {
+    const entries = document.getElementById("repository-conan-manifest-max-entries").value;
+    const bytes = document.getElementById("repository-conan-manifest-max-bytes").value;
+    payload.conan = {
+      manifestMaxEntries: entries === "" ? null : Number(entries),
+      manifestMaxBytes: bytes === "" ? null : Number(bytes)
+    };
+  }
   if (recipe?.format === "yum" && type === "HOSTED") {
     payload.yum = { repodataDepth: Number(document.getElementById("repository-yum-depth").value) };
   }
@@ -3156,6 +3164,8 @@ function repositoryFormPayload() {
 }
 
 function setRepositoryFormDefaults() {
+  document.getElementById("repository-conan-manifest-max-entries").value = "";
+  document.getElementById("repository-conan-manifest-max-bytes").value = "";
   document.getElementById("repository-name").value = "";
   document.getElementById("repository-online").checked = true;
   document.getElementById("repository-strict").checked = true;
@@ -3315,6 +3325,8 @@ function showEditRepositoryForm(name) {
     document.getElementById("repository-auto-block").checked = repo.proxy.autoBlock !== false;
   }
   document.getElementById("repository-yum-depth").value = repo.yum?.repodataDepth ?? 0;
+  document.getElementById("repository-conan-manifest-max-entries").value = repo.conan?.manifestMaxEntries ?? "";
+  document.getElementById("repository-conan-manifest-max-bytes").value = repo.conan?.manifestMaxBytes ?? "";
   document.getElementById("repository-pypi-index-path").value =
     repo.pypi?.indexPath ?? "/simple";
   if (repo.type === "GROUP" && repo.group && Array.isArray(repo.group.memberNames)) {
