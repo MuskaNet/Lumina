@@ -6,10 +6,44 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 class CsrfProtectionFilterTest {
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "/service/rest/v1/%73ecurity/users",
+      "/service/rest/v1/security;x/users",
+      "/%69nternal/security/users",
+      "/internal/security;x/users",
+      "/service/rest/internal/ui/%73ecurity/users"
+  })
+  void alternativeManagementPathsStillRequireCsrf(String path) throws Exception {
+    CsrfProtectionFilter filter = filter(true);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    CountingChain chain = new CountingChain();
+    filter.doFilter(new MockHttpServletRequest("POST", path), response, chain);
+    assertEquals(403, response.getStatus());
+    assertEquals(0, chain.calls);
+  }
+
+  @Test
+  void encodedContextBootstrapIssuesUsableCsrfToken() throws Exception {
+    CsrfProtectionFilter filter = filter(false);
+    MockHttpServletRequest bootstrap = new MockHttpServletRequest("GET", "/internal/%73ecurity/context;x");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    filter.doFilter(bootstrap, response, new CountingChain());
+    assertNotNull(response.getHeader(CsrfProtectionFilter.CSRF_HEADER));
+    MockHttpServletRequest mutation = new MockHttpServletRequest("POST", "/internal/security;x/users");
+    mutation.setSession(bootstrap.getSession(false));
+    mutation.addHeader(CsrfProtectionFilter.CSRF_HEADER, response.getHeader(CsrfProtectionFilter.CSRF_HEADER));
+    CountingChain chain = new CountingChain();
+    filter.doFilter(mutation, new MockHttpServletResponse(), chain);
+    assertEquals(1, chain.calls);
+  }
 
   @Test
   void safeInternalRequestIssuesToken() throws Exception {

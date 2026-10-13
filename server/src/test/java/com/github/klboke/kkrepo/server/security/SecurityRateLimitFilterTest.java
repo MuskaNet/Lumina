@@ -17,6 +17,22 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class SecurityRateLimitFilterTest {
 
   @ParameterizedTest
+  @ValueSource(strings = {
+      "/%69nternal/security/login",
+      "/internal/security;%78/login",
+      "/internal/security/%6Cogin;x"
+  })
+  void equivalentLoginRoutesShareTheRateLimit(String path) throws Exception {
+    SecurityRateLimitFilter filter = filter(
+        1, 1, new InMemorySharedCache(), new ForwardedHeaderPolicy(""), new SimpleMeterRegistry(), false);
+    CountingChain chain = new CountingChain();
+    assertEquals(200, invoke(filter,
+        request("POST", "/internal/security/login", "198.51.100.55"), chain).getStatus());
+    assertEquals(429, invoke(filter, request("POST", path, "198.51.100.55"), chain).getStatus());
+    assertEquals(1, chain.calls);
+  }
+
+  @ParameterizedTest
   @CsvSource({
       "10.0.0.0/16, 10.0.12.34, 10.0.200.99",
       "2001:db8::/32, 2001:db8::1, 2001:db8:1234::2"

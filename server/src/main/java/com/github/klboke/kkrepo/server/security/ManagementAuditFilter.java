@@ -93,7 +93,7 @@ public class ManagementAuditFilter extends OncePerRequestFilter {
     if (READ_METHODS.contains(method)) {
       return false;
     }
-    String uri = stripContextPath(request);
+    String uri = SecurityRequestPath.matchingPath(request);
     return uri.startsWith("/internal/")
         || uri.startsWith("/service/rest/v1/security/")
         || uri.startsWith("/service/rest/v1/assets/")

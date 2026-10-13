@@ -19,10 +19,35 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.core.annotation.Order;
 import org.springframework.session.web.http.SessionRepositoryFilter;
 
 class SecurityManagementFilterTest {
+
+  @ParameterizedTest
+  @CsvSource({
+      "/service/rest/v1/%73ecurity/users, nexus:users:read",
+      "/service;x/rest;y/v1;z/security;w/users;q, nexus:users:read",
+      "/internal/%73ecurity/ldap, nexus:ldap:read",
+      "/%69nternal/security/ldap, nexus:ldap:read",
+      "/service/rest/internal/ui/%73ecurity/users, nexus:users:read",
+      "/service/rest/v1/security/api-keys/current%2F123, nexus:apikey:read",
+      "/internal/security/api-keys/current%2F123, nexus:apikey:read"
+  })
+  void alternativePathsRequireTheMappedPermission(String path, String permission) throws Exception {
+    StubAuthenticationService authentication = new StubAuthenticationService(Optional.of(subject("alice")));
+    RecordingSecurityService security = new RecordingSecurityService(AccessDecision.deny("not permitted"));
+    ResponseState response = new ResponseState();
+    ChainState chain = new ChainState();
+
+    filter(authentication, security, true).doFilter(request("GET", path), response.proxy(), chain);
+
+    assertEquals(permission, security.requestedPermission);
+    assertEquals(403, response.status);
+    assertEquals(0, chain.calls);
+  }
 
   @Test
   void managementFilterRunsAfterSpringSessionRepositoryFilter() {

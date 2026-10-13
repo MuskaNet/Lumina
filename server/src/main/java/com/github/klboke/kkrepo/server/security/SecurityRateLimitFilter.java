@@ -64,7 +64,7 @@ public class SecurityRateLimitFilter extends OncePerRequestFilter {
 
   private Limit limitFor(HttpServletRequest request) {
     String method = request.getMethod() == null ? "" : request.getMethod().toUpperCase();
-    String uri = stripContextPath(request);
+    String uri = SecurityRequestPath.matchingPath(request);
     String remote = remoteAddress(request, forwardedHeaderPolicy);
     if ("POST".equals(method) && uri.equals("/internal/security/bootstrap/admin")) {
       return new Limit("bootstrap", "bootstrap:" + remote, bootstrapLimit);
@@ -98,15 +98,6 @@ public class SecurityRateLimitFilter extends OncePerRequestFilter {
       return true;
     }
     return sharedCache.increment(RATE_LIMIT_NAMESPACE, key, window) <= maxRequests;
-  }
-
-  private static String stripContextPath(HttpServletRequest request) {
-    String uri = request.getRequestURI();
-    String contextPath = request.getContextPath();
-    if (contextPath != null && !contextPath.isBlank() && uri.startsWith(contextPath)) {
-      return uri.substring(contextPath.length());
-    }
-    return uri;
   }
 
   private static String remoteAddress(HttpServletRequest request, ForwardedHeaderPolicy forwardedHeaderPolicy) {

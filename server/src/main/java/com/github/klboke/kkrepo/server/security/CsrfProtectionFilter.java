@@ -65,14 +65,14 @@ public class CsrfProtectionFilter extends OncePerRequestFilter {
   }
 
   private boolean csrfProtectedPath(HttpServletRequest request) {
-    String uri = stripContextPath(request);
+    String uri = SecurityRequestPath.matchingPath(request);
     return uri.startsWith("/internal/")
         || legacyUi.csrfProtectedPath(uri)
         || uri.startsWith("/service/rest/v1/security/");
   }
 
   private boolean csrfTokenBootstrapPath(HttpServletRequest request) {
-    String uri = stripContextPath(request);
+    String uri = SecurityRequestPath.matchingPath(request);
     return uri.equals("/internal/security/session")
         || uri.equals("/internal/security/context")
         || legacyUi.csrfTokenBootstrapPath(uri);
@@ -140,15 +140,6 @@ public class CsrfProtectionFilter extends OncePerRequestFilter {
       }
     }
     return null;
-  }
-
-  private static String stripContextPath(HttpServletRequest request) {
-    String uri = request.getRequestURI();
-    String contextPath = request.getContextPath();
-    if (contextPath != null && !contextPath.isBlank() && uri.startsWith(contextPath)) {
-      return uri.substring(contextPath.length());
-    }
-    return uri;
   }
 
   private static String cookiePath(HttpServletRequest request) {

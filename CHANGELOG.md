@@ -4,6 +4,28 @@ All notable public changes to kkrepo are documented in this file.
 
 This project follows a pragmatic release process. Stable releases call out migration impact, compatibility changes, operational notes, and any known behavior changes in their release section.
 
+## 1.3.2 - 2026-10-13
+
+### Security
+
+- Fix a critical authentication and authorization bypass in management APIs caused by inconsistent request-path interpretation. Management authentication, permissions, CSRF checks, rate limiting, and audit selection now use Spring MVC-compatible segment matching. Both JVM and Native deployments are affected by GHSA-5gj5-2jx6-8vcq in versions through `1.3.1`; upgrade every replica to `1.3.2`.
+
+### Added
+
+- Conan manifest limits can be configured globally and per repository. Admin shows effective limits and their source. (#401, #402)
+- Browse supports directory deletion with permission checks, explicit confirmation, and shared confirmation dialogs. (#409)
+
+### Changed
+
+- Upgrade zstd-jni to `1.5.7-22` with complete Native FFM metadata, update AWS SDK to `2.55.13`, and refresh the Go setup action. (#404, #405, #406)
+- Add Alipay and WeChat Pay sponsorship links. (#403)
+- Quickstart defaults, Dockerfile packaging, deployment documentation, Helm application version, runtime checks, and the optional scanner profile now use `1.3.2`.
+
+### Upgrade Notes
+
+- Upgrading from `1.3.1` adds no database migrations; MySQL and PostgreSQL remain at Flyway V59. Back up the relational database and blob store together before upgrading.
+- Upgrade all replicas promptly. Until the upgrade is complete, restrict access to trusted clients at the network or reverse-proxy boundary. Check existing users, roles, API keys, and authentication settings for unexpected changes; affected requests may be missing from management audit logs.
+
 ## 1.3.1 - 2026-10-10
 
 ### Fixed

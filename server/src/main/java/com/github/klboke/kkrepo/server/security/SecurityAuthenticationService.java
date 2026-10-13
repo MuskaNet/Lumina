@@ -482,12 +482,7 @@ public class SecurityAuthenticationService {
   }
 
   private boolean isBasicLoginRequest(HttpServletRequest request) {
-    String uri = request.getRequestURI();
-    String contextPath = request.getContextPath();
-    if (contextPath != null && !contextPath.isBlank() && uri != null && uri.startsWith(contextPath)) {
-      uri = uri.substring(contextPath.length());
-    }
-    return "/internal/security/basic/login".equals(uri);
+    return "/internal/security/basic/login".equals(SecurityRequestPath.matchingPath(request));
   }
 
   private Optional<AuthenticatedSubject> authenticateApiKey(HttpServletRequest request, boolean fresh) {
