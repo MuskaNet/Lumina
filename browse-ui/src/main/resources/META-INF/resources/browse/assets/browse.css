@@ -2937,3 +2937,10 @@ body {
     padding: 0 10px;
   }
 }
+
+/* The bounded preview extends the shared deletion dialog. */
+.kk-confirm-dialog.directory-delete-dialog { width: min(640px, calc(100vw - 32px)); }
+.directory-delete-dialog details { margin: 16px 0; }
+.directory-delete-dialog summary { cursor: pointer; color: var(--ink-2); }
+.directory-delete-paths { max-height: 220px; overflow: auto; padding-left: 24px; }
+.directory-delete-error { color: var(--danger); }

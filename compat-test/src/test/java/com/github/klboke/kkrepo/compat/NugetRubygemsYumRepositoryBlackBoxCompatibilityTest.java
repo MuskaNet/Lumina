@@ -193,6 +193,51 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
   }
 
   @Test
+  void rubygemsColdProxyGroupQuickSpecMatchesNexusWhenConfigured() throws Exception {
+    CompatConfig config = CompatConfig.load();
+    assumeLiveEndpoints(config);
+    // Supply a Nexus base URL reachable from both servers; no public RubyGems dependency.
+    Optional<String> upstream = setting("compat.rubygems.upstreamBaseUrl", "COMPAT_RUBYGEMS_UPSTREAM_BASE_URL");
+    assumeTrue(config.setupEnabled() && config.writeEnabled() && upstream.isPresent(),
+        "Enable writes/setup and set COMPAT_RUBYGEMS_UPSTREAM_BASE_URL for cold proxy compatibility");
+    String prefix = "ruby-cold-" + System.currentTimeMillis();
+    String source = prefix + "-source", proxy = prefix + "-proxy", group = prefix + "-group";
+    try {
+      saveNexusRubygemsHosted(config, source);
+      GemFixture fixture = GemFixture.create();
+      assertEquals(201, post(config.nexus.repository(source, "api/v1/gems"),
+          fixture.bytes(), "application/octet-stream").status());
+      String remote = stripTrailingSlash(upstream.orElseThrow()) + "/repository/" + source + "/";
+      String body = """
+          {"name":"%s","online":true,"storage":{"blobStoreName":"default","strictContentTypeValidation":true},
+           "proxy":{"remoteUrl":"%s","contentMaxAge":1440,"metadataMaxAge":1440},
+           "negativeCache":{"enabled":true,"timeToLive":1440},
+           "httpClient":{"blocked":false,"autoBlock":false}}
+          """.formatted(proxy, remote);
+      saveNexusRepository(config, "/service/rest/v1/repositories/rubygems/proxy", proxy, body);
+      saveNexusRubygemsGroup(config, group, List.of(proxy));
+      saveKkRepoProxy(config, proxy, "rubygems-proxy", remote);
+      saveKkRepoGroup(config, group, "rubygems-group", List.of(proxy));
+      // Real RubyGems clients fetch this metadata before downloading the .gem archive.
+      assertPackageHeadMatches("cold RubyGems group quick spec HEAD",
+          head(config.nexus.repository(group, fixture.quickSpecPath())),
+          head(config.nexusPlus.repository(group, fixture.quickSpecPath())));
+      assertRubyQuickSpecContains("cold RubyGems group quick spec",
+          get(config.nexus.repository(group, fixture.quickSpecPath())),
+          get(config.nexusPlus.repository(group, fixture.quickSpecPath())), fixture);
+      assertBodyMatches("RubyGems gem after quick spec",
+          get(config.nexus.repository(group, fixture.gemPath())),
+          get(config.nexusPlus.repository(group, fixture.gemPath())), fixture.bytes());
+    } finally {
+      for (String repository : List.of(group, proxy)) {
+        send(config.nexusPlus.raw("/internal/repositories/" + repository).DELETE());
+        send(config.nexus.raw("/service/rest/v1/repositories/" + repository).DELETE());
+      }
+      send(config.nexus.raw("/service/rest/v1/repositories/" + source).DELETE());
+    }
+  }
+
+  @Test
   void rubygemsRepositoryRootPagesMatchNexusWhenConfigured() throws Exception {
     CompatConfig config = CompatConfig.load();
     assumeLiveEndpoints(config);
@@ -1250,11 +1295,15 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
       List<List<String>> dependencies) {
   }
 
-  private record NugetFixture(String id, String version, String fileName, byte[] bytes) {
+  record NugetFixture(String id, String version, String fileName, byte[] bytes) {
     static NugetFixture create() throws Exception {
       String stamp = Long.toString(System.currentTimeMillis());
       String id = "KkRepo.Compat.NuGet." + stamp;
       String version = "1.0." + stamp;
+      return create(id, version);
+    }
+
+    static NugetFixture create(String id, String version) throws Exception {
       String fileName = id + "." + version + ".nupkg";
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       try (ZipOutputStream zip = new ZipOutputStream(out)) {
@@ -1269,7 +1318,7 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
               </metadata>
             </package>
             """.formatted(id, version).getBytes(StandardCharsets.UTF_8));
-        putZip(zip, "content/readme.txt", ("nuget fixture " + stamp + "\n").getBytes(StandardCharsets.UTF_8));
+        putZip(zip, "content/readme.txt", ("nuget fixture " + id + "\n").getBytes(StandardCharsets.UTF_8));
       }
       return new NugetFixture(id, version, fileName, out.toByteArray());
     }
@@ -1290,7 +1339,7 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
     }
   }
 
-  private record GemFixture(
+  record GemFixture(
       String name,
       String version,
       String dependencyName,
@@ -1300,6 +1349,10 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
       String stamp = Long.toString(System.currentTimeMillis());
       String name = "kkrepo-compat-gem-" + stamp;
       String version = "0.0." + stamp;
+      return create(name, version);
+    }
+
+    static GemFixture create(String name, String version) throws Exception {
       String dependencyName = "rack";
       List<String> dependencyRequirements = List.of(">= 2.0.0", "< 3.0.0");
       String metadata = """

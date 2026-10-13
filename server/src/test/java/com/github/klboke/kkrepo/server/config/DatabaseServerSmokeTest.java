@@ -3,30 +3,36 @@ package com.github.klboke.kkrepo.server.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.klboke.kkrepo.core.RepositoryFormat;
 import com.github.klboke.kkrepo.core.RepositoryType;
+import com.github.klboke.kkrepo.persistence.jdbc.api.AssetDao;
+import com.github.klboke.kkrepo.persistence.jdbc.api.BrowseNodeDao;
 import com.github.klboke.kkrepo.persistence.jdbc.api.CacheVersionDao;
 import com.github.klboke.kkrepo.persistence.jdbc.api.CleanupPolicyDao.CleanupRun;
 import com.github.klboke.kkrepo.persistence.jdbc.api.MetadataRebuildDao;
 import com.github.klboke.kkrepo.persistence.jdbc.api.SecurityAuditDao;
+import com.github.klboke.kkrepo.persistence.jdbc.internal.JdbcBrowseNodeDao;
 import com.github.klboke.kkrepo.persistence.jdbc.spi.DatabaseDialect;
 import com.github.klboke.kkrepo.persistence.jdbc.spi.DatabaseType;
 import com.github.klboke.kkrepo.protocol.maven.path.MavenPath;
-import com.github.klboke.kkrepo.server.BlobStoresController;
 import com.github.klboke.kkrepo.server.BlobStoresController.BlobStoreRequest;
+import com.github.klboke.kkrepo.server.BlobStoresController;
 import com.github.klboke.kkrepo.server.KkRepoApplication;
-import com.github.klboke.kkrepo.server.cleanup.CleanupPolicyService;
 import com.github.klboke.kkrepo.server.cleanup.CleanupPolicyService.PolicyCommand;
 import com.github.klboke.kkrepo.server.cleanup.CleanupPolicyService.ScheduleCommand;
-import com.github.klboke.kkrepo.server.cleanup.CleanupRunService;
+import com.github.klboke.kkrepo.server.cleanup.CleanupPolicyService;
 import com.github.klboke.kkrepo.server.cleanup.CleanupRunService.RunCommand;
+import com.github.klboke.kkrepo.server.cleanup.CleanupRunService;
 import com.github.klboke.kkrepo.server.maven.BlobStorageRegistry;
 import com.github.klboke.kkrepo.server.maven.MavenExceptions.MavenNotFoundException;
 import com.github.klboke.kkrepo.server.maven.MavenHostedService;
 import com.github.klboke.kkrepo.server.maven.RepositoryRuntime;
 import com.github.klboke.kkrepo.server.maven.RepositoryRuntimeRegistry;
+import com.github.klboke.kkrepo.server.raw.RawHostedService;
 import com.github.klboke.kkrepo.server.repositories.RepositoryCommands.CreateCommand;
 import com.github.klboke.kkrepo.server.repositories.RepositoryCommands.GroupSettings;
 import com.github.klboke.kkrepo.server.repositories.RepositoryCommands.HostedSettings;
@@ -35,6 +41,7 @@ import com.github.klboke.kkrepo.server.repositories.RepositoryService;
 import com.github.klboke.kkrepo.server.security.SecurityManagementService;
 import com.github.klboke.kkrepo.server.security.SecurityPayloads.AdminBootstrapCommand;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -43,15 +50,24 @@ import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.boot.health.actuate.endpoint.HealthEndpoint;
+import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
@@ -97,6 +113,169 @@ class DatabaseServerSmokeTest {
         POSTGRESQL.getUsername(), POSTGRESQL.getPassword());
   }
 
+  private static void concurrentSiblingDeletion(ConfigurableApplicationContext first,
+      ConfigurableApplicationContext second, String mode) throws Exception {
+    String directory = "sibling-delete-" + mode;
+    String firstPath = directory + (mode.equals("directory") ? "/first/a.txt" : "/first.txt");
+    String secondPath = directory + (mode.equals("directory") ? "/second/a.txt" : "/second.txt");
+    var runtime = first.getBean(RepositoryRuntimeRegistry.class).resolve("directory-raw").orElseThrow();
+    var otherRuntime = second.getBean(RepositoryRuntimeRegistry.class).resolve("directory-raw").orElseThrow();
+    put(first, runtime, firstPath);
+    put(first, runtime, secondPath);
+    var secondAsset = second.getBean(AssetDao.class).findAssetByPath(runtime.id(), secondPath).orElseThrow();
+    var branchNodes = mode.equals("directory") ? java.util.Set.of(
+        first.getBean(BrowseNodeDao.class).findNode(runtime.id(), directory + "/first").orElseThrow().id(),
+        first.getBean(BrowseNodeDao.class).findNode(runtime.id(), directory + "/second").orElseThrow().id())
+        : java.util.Set.<Long>of();
+    var branchesLocked = new CountDownLatch(2);
+    var attempts = new java.util.concurrent.atomic.AtomicInteger();
+    for (ConfigurableApplicationContext context : List.of(first, second)) {
+      var initial = new java.util.concurrent.atomic.AtomicBoolean(true);
+      JdbcTemplate jdbc = new JdbcTemplate(context.getBean(JdbcTemplate.class).getDataSource()) {
+        @Override public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
+          List<T> result = super.queryForList(sql, type, args);
+          if (sql.contains("WHERE asset_id = ? FOR UPDATE")) {
+            attempts.incrementAndGet();
+            if (branchNodes.isEmpty()) synchronizeBranches();
+          }
+          return result;
+        }
+        @Override public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
+          List<T> result = super.query(sql, mapper, args);
+          if (sql.startsWith("SELECT parent_id, asset_id, has_asset_subtree")
+              && branchNodes.contains(args[0])) synchronizeBranches();
+          return result;
+        }
+        private void synchronizeBranches() {
+          // Directory leaves have different parents. Lock both branch roots before either
+          // reaches their common ancestor, otherwise READ_COMMITTED can serialize safely.
+          if (initial.getAndSet(false)) {
+            branchesLocked.countDown();
+            await(branchesLocked);
+          }
+        }
+      };
+      for (String bean : List.of("rawAssetWriter", "browseContentDeleteController")) {
+        org.springframework.test.util.ReflectionTestUtils.setField(
+            context.getBean(bean), "browseNodeDao", new JdbcBrowseNodeDao(jdbc));
+      }
+    }
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      java.util.concurrent.Callable<Integer> deleteLeft;
+      java.util.concurrent.Callable<Integer> deleteRight;
+      if (mode.equals("directory")) {
+        String route = "/internal/browse/directory-raw/directory-deletion";
+        String leftCommand = BrowseDirectoryDeletionSmokeChecks.command(
+            BrowseDirectoryDeletionSmokeChecks.preview(first, route, directory + "/first"));
+        String rightCommand = BrowseDirectoryDeletionSmokeChecks.command(
+            BrowseDirectoryDeletionSmokeChecks.preview(second, route, directory + "/second"));
+        deleteLeft = () -> BrowseDirectoryDeletionSmokeChecks.request(first, "POST", route, leftCommand, true).statusCode();
+        deleteRight = () -> BrowseDirectoryDeletionSmokeChecks.request(second, "POST", route, rightCommand, true).statusCode();
+      } else if (mode.equals("browse")) {
+        String route = "/internal/browse/directory-raw?path=";
+        deleteLeft = () -> BrowseDirectoryDeletionSmokeChecks.request(first, "DELETE", route + firstPath, null, true).statusCode();
+        deleteRight = () -> BrowseDirectoryDeletionSmokeChecks.request(second, "DELETE", route + secondPath, null, true).statusCode();
+      } else {
+        deleteLeft = () -> first.getBean(RawHostedService.class).delete(runtime, firstPath).status();
+        deleteRight = () -> second.getBean(RawHostedService.class).deleteById(otherRuntime, secondAsset.id()).status();
+      }
+      var left = executor.submit(deleteLeft);
+      var right = executor.submit(deleteRight);
+      assertEquals(mode.equals("raw") ? 204 : 200, left.get(40, TimeUnit.SECONDS));
+      assertEquals(mode.equals("raw") ? 204 : 200, right.get(40, TimeUnit.SECONDS));
+    } finally {
+      for (ConfigurableApplicationContext context : List.of(first, second)) {
+        for (String bean : List.of("rawAssetWriter", "browseContentDeleteController")) {
+          org.springframework.test.util.ReflectionTestUtils.setField(
+              context.getBean(bean), "browseNodeDao", context.getBean(BrowseNodeDao.class));
+        }
+      }
+    }
+    assertTrue(attempts.get() >= 3, mode + ": one deadlock victim must retry the entire deletion");
+    assertTrue(first.getBean(BrowseNodeDao.class).findNode(runtime.id(), directory).isEmpty());
+    assertTrue(first.getBean(AssetDao.class).findAssetByPath(runtime.id(), firstPath).isEmpty());
+    assertTrue(first.getBean(AssetDao.class).findAssetByPath(runtime.id(), secondPath).isEmpty());
+  }
+
+  private static void concurrentBrowseInsertion(ConfigurableApplicationContext first,
+      ConfigurableApplicationContext second, boolean assetParent) throws Exception {
+    String directory = "concurrent-index-" + (assetParent ? "bound" : "folder");
+    String oldPath = assetParent ? directory : directory + "/old.txt";
+    String newPath = directory + "/new.txt";
+    var runtime = first.getBean(RepositoryRuntimeRegistry.class).resolve("directory-raw").orElseThrow();
+    var otherRuntime = second.getBean(RepositoryRuntimeRegistry.class).resolve("directory-raw").orElseThrow();
+    put(first, runtime, oldPath);
+    var oldAsset = first.getBean(AssetDao.class).findAssetByPath(runtime.id(), oldPath).orElseThrow();
+    var parent = first.getBean(BrowseNodeDao.class).findNode(runtime.id(), directory).orElseThrow();
+    var uploaded = new CountDownLatch(1);
+    var commitUpload = new CountDownLatch(1);
+    var pruning = new CountDownLatch(1);
+    JdbcTemplate jdbc = new JdbcTemplate(first.getBean(JdbcTemplate.class).getDataSource()) {
+      @Override public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
+        if (sql.contains("FROM browse_node WHERE id = ? FOR UPDATE") && args[0].equals(parent.id())) pruning.countDown();
+        return super.query(sql, mapper, args);
+      }
+      @Override public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
+        if (assetParent && sql.contains("WHERE asset_id = ? FOR UPDATE")) pruning.countDown();
+        return super.queryForList(sql, type, args);
+      }
+      @Override public int update(String sql, Object... args) {
+        // Also reaches the former unsafe implementation, after it computed stale child counts.
+        if (sql.startsWith("DELETE FROM browse_node WHERE id IN")
+            || (assetParent && sql.equals("DELETE FROM browse_node WHERE asset_id = ?"))) pruning.countDown();
+        return super.update(sql, args);
+      }
+    };
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var upload = executor.submit(() -> transaction(second, TransactionDefinition.ISOLATION_DEFAULT)
+          .execute(status -> {
+            put(second, otherRuntime, newPath);
+            uploaded.countDown();
+            await(commitUpload);
+            return null;
+          }));
+      try {
+        assertTrue(uploaded.await(10, TimeUnit.SECONDS), "upload holds an uncommitted Browse child");
+        var delete = executor.submit(() -> transaction(first, TransactionDefinition.ISOLATION_DEFAULT)
+            .execute(status -> {
+              // Establish an old MySQL snapshot: only locking reads can observe the later commit.
+              jdbc.queryForObject("SELECT COUNT(*) FROM browse_node", Long.class);
+              return new JdbcBrowseNodeDao(jdbc).deleteByAssetId(oldAsset.id());
+            }));
+        try {
+          assertTrue(pruning.await(10, TimeUnit.SECONDS), "pruning must reach the contested parent");
+          assertThrows(TimeoutException.class, () -> delete.get(250, TimeUnit.MILLISECONDS));
+        } finally { commitUpload.countDown(); }
+        upload.get(20, TimeUnit.SECONDS);
+        assertEquals(1, delete.get(20, TimeUnit.SECONDS));
+      } finally { commitUpload.countDown(); }
+    }
+    var nodes = first.getBean(BrowseNodeDao.class);
+    var retainedParent = nodes.findNode(runtime.id(), directory).orElseThrow();
+    assertNull(retainedParent.assetId());
+    assertTrue(retainedParent.hasAssetSubtree());
+    assertTrue(nodes.listChildren(runtime.id(), directory).stream().anyMatch(node -> newPath.equals(node.path()) && node.leaf()));
+    assertTrue(first.getBean(AssetDao.class).findAssetByPath(runtime.id(), newPath).isPresent());
+    assertEquals("retained", BrowseDirectoryDeletionSmokeChecks.request(first, "GET",
+        "/repository/directory-raw/" + newPath, null, true).body());
+  }
+
+  private static void put(ConfigurableApplicationContext context, RepositoryRuntime runtime, String path) {
+    context.getBean(RawHostedService.class).put(runtime, path,
+        new ByteArrayInputStream("retained".getBytes(StandardCharsets.UTF_8)), "text/plain", "admin", null);
+  }
+
+  private static void await(CountDownLatch latch) {
+    try { assertTrue(latch.await(30, TimeUnit.SECONDS)); }
+    catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new AssertionError(e); }
+  }
+
+  private static TransactionTemplate transaction(ConfigurableApplicationContext context, int isolation) {
+    var transaction = new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
+    transaction.setIsolationLevel(isolation);
+    return transaction;
+  }
+
   private static void smoke(
       DatabaseType type,
       String url,
@@ -114,6 +293,12 @@ class DatabaseServerSmokeTest {
       assertEquals("UP", second.getBean(HealthEndpoint.class).health().getStatus().getCode());
 
       exerciseSharedApplicationFlows(first, second);
+      BrowseDirectoryDeletionSmokeChecks.exercise(first, second);
+      for (String mode : List.of("raw", "browse", "directory")) {
+        concurrentSiblingDeletion(first, second, mode);
+      }
+      concurrentBrowseInsertion(first, second, false);
+      concurrentBrowseInsertion(first, second, true);
       com.github.klboke.kkrepo.server.npm.NpmHostedPublicationSmokeSupport.verify(first, second);
       com.github.klboke.kkrepo.server.npm.NpmHostedPublicationSmokeSupport.verifyDeadlockRetry(first, second);
 
