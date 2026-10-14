@@ -1368,6 +1368,16 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
           - lib/%s.rb
           require_paths:
           - lib
+          required_ruby_version: !ruby/object:Gem::Requirement
+            requirements:
+            - - ">="
+              - !ruby/object:Gem::Version
+                version: '0'
+          required_rubygems_version: !ruby/object:Gem::Requirement
+            requirements:
+            - - ">="
+              - !ruby/object:Gem::Version
+                version: '0'
           dependencies:
           - !ruby/object:Gem::Dependency
             name: %s
@@ -1379,7 +1389,10 @@ class NugetRubygemsYumRepositoryBlackBoxCompatibilityTest {
               - - "<"
                 - !ruby/object:Gem::Version
                   version: 3.0.0
+            type: :runtime
           """.formatted(name, version, name.replace('-', '_'), dependencyName);
+      // Real gem archives include additional root fields after the dependency sequence.
+      metadata += "requirements: []\n";
       ByteArrayOutputStream dataTarGz = new ByteArrayOutputStream();
       try (GZIPOutputStream gzip = new GZIPOutputStream(dataTarGz);
            TarArchiveOutputStream tar = new TarArchiveOutputStream(gzip)) {
