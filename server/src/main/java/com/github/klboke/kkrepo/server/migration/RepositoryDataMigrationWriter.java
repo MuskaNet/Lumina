@@ -34,16 +34,20 @@ import com.github.klboke.kkrepo.protocol.maven.path.ChecksumPayload;
 import com.github.klboke.kkrepo.protocol.maven.path.HashType;
 import com.github.klboke.kkrepo.protocol.maven.path.MavenPath;
 import com.github.klboke.kkrepo.protocol.maven.path.MavenPathParser;
+import com.github.klboke.kkrepo.protocol.npm.NpmPathParser;
 import com.github.klboke.kkrepo.server.alpine.AlpineRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.ansible.AnsibleGalaxyRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.apt.AptRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.blob.BlobReferenceCodec;
 import com.github.klboke.kkrepo.server.blob.BlobTransactionCleanup;
 import com.github.klboke.kkrepo.server.blob.TempBlobFiles;
+import com.github.klboke.kkrepo.server.cache.AssetMetadataCache;
+import com.github.klboke.kkrepo.server.cache.GroupMemberAssetCache;
 import com.github.klboke.kkrepo.server.conan.ConanRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.conda.CondaRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.docker.DockerManifestParser;
 import com.github.klboke.kkrepo.server.maven.BlobStorageRegistry;
+import com.github.klboke.kkrepo.server.npm.NpmGroupPackumentCache;
 import com.github.klboke.kkrepo.server.pub.PubRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.r.RRepositoryDataMigrationWriter;
 import com.github.klboke.kkrepo.server.swift.SwiftRepositoryDataMigrationWriter;
@@ -100,6 +104,17 @@ class RepositoryDataMigrationWriter {
   private HuggingFaceRegistryDao huggingFaceRegistry;
   private final TransientTransactionRetry transactionRetry;
   private final MavenPathParser mavenPathParser = new MavenPathParser();
+  private AssetMetadataCache assetMetadataCache;
+  private NpmGroupPackumentCache npmGroupPackumentCache;
+  private GroupMemberAssetCache groupMemberAssetCache;
+
+  @Autowired
+  void setNpmMigrationCaches(AssetMetadataCache assetMetadataCache,
+      NpmGroupPackumentCache npmGroupPackumentCache, GroupMemberAssetCache groupMemberAssetCache) {
+    this.assetMetadataCache = assetMetadataCache;
+    this.npmGroupPackumentCache = npmGroupPackumentCache;
+    this.groupMemberAssetCache = groupMemberAssetCache;
+  }
 
   RepositoryDataMigrationWriter(
       RepositoryDao repositoryDao,
@@ -245,8 +260,21 @@ class RepositoryDataMigrationWriter {
     this.huggingFaceRegistry = huggingFaceRegistry;
   }
 
+  NpmPackumentSnapshot captureNpmPackument(long repositoryId, String path) {
+    return NpmPackumentSnapshot.of(assetDao.findAssetByPath(repositoryId, path));
+  }
+
   WriteResult write(long targetRepositoryId, RepositoryDataMigrationAssetRecord source, InputStream body,
       String responseContentType, boolean validateSize) {
+    return write(targetRepositoryId, source, body, responseContentType, validateSize, null);
+  }
+
+  WriteResult write(long targetRepositoryId, RepositoryDataMigrationAssetRecord source, InputStream body,
+      String responseContentType, boolean validateSize, NpmPackumentSnapshot expectedPackument) {
+    if (RepositoryDataMigrationPaths.requiresRefresh(source.format(), source.sourcePath())
+        && expectedPackument == null) {
+      throw new IllegalArgumentException("Capture the npm packument before downloading its replacement");
+    }
     RepositoryRecord repository = repositoryDao.findById(targetRepositoryId)
         .orElseThrow(() -> new IllegalArgumentException("target repository not found: " + targetRepositoryId));
     if (repository.blobStoreId() == null) {
@@ -358,14 +386,14 @@ class RepositoryDataMigrationWriter {
       WriteResult result = transactionRetry.execute(
           "Persist migrated asset " + repository.name() + "/" + source.sourcePath(),
           () -> {
-            WriteResult persisted = persist(repository, source, upload, contentType, null);
+            WriteResult persisted = persist(repository, source, upload, contentType, null, expectedPackument);
             indexMigratedDockerAsset(repository, source, upload, contentType, persisted);
             projectMigratedHuggingFace(
                 repository, source, upload, contentType, persisted, huggingFaceIdentity);
             for (Map.Entry<MavenPath, ChecksumUpload> entry : checksumUploads.entrySet()) {
               ChecksumUpload checksum = entry.getValue();
               WriteResult persistedChecksum = persist(
-                  repository, checksum.source(), checksum.upload(), MavenContentType.CHECKSUM, persisted.componentId());
+                  repository, checksum.source(), checksum.upload(), MavenContentType.CHECKSUM, persisted.componentId(), null);
               checksumResults.put(entry.getKey(), persistedChecksum);
             }
             return persisted;
@@ -591,7 +619,8 @@ class RepositoryDataMigrationWriter {
       RepositoryDataMigrationAssetRecord source,
       DigestedUpload upload,
       String contentType,
-      Long componentIdOverride) {
+      Long componentIdOverride,
+      NpmPackumentSnapshot expectedPackument) {
     Instant now = Instant.now();
     Instant lastUpdatedAt = source.sourceLastUpdatedAt() == null ? now : source.sourceLastUpdatedAt();
     BlobReference ref = upload.reference();
@@ -602,6 +631,15 @@ class RepositoryDataMigrationWriter {
         : null;
 
     Optional<AssetRecord> existing = assetDao.findAssetByPath(repository.id(), source.sourcePath());
+    if (expectedPackument != null) {
+      // Recheck the durable blob binding after the row lock. A competing replica may have
+      // committed newer metadata while this worker downloaded its response. Such a response
+      // must be fetched again, never replayed by the transaction-only retry below.
+      if (existing.isPresent()) existing = assetDao.findAssetByIdForUpdate(existing.get().id());
+      if (!expectedPackument.equals(NpmPackumentSnapshot.of(existing))) {
+        throw new StaleNpmPackumentException();
+      }
+    }
     Long previousBlobId = existing.map(AssetRecord::assetBlobId).orElse(null);
 
     AssetBlobRecord persistedBlob = assetDao.findReusableBlobBySha256(
@@ -667,6 +705,8 @@ class RepositoryDataMigrationWriter {
             record.contentType(), record.size(), record.lastDownloadedAt(), record.lastUpdatedAt(),
             record.attributes());
       } else {
+        // Another first import may have won the unique insert after our absent-row read.
+        if (expectedPackument != null) throw new StaleNpmPackumentException();
         AssetRecord prior = assetDao.findAssetByPath(repository.id(), source.sourcePath())
             .orElseThrow(() -> new IllegalStateException("Concurrent migrated asset insert won but row is not visible for "
                 + repository.name() + "/" + source.sourcePath()));
@@ -685,6 +725,14 @@ class RepositoryDataMigrationWriter {
     browseNodeDao.upsertPathAncestors(
         repository.id(), browsePath, persistedAsset.id(), componentId);
     enqueueDerivedIndex(repository, source);
+    if (repository.format() == RepositoryFormat.NPM && assetMetadataCache != null) {
+      assetMetadataCache.evictAfterCommit(repository.id(), source.sourcePath());
+      var packageId = new NpmPathParser().parse(source.sourcePath()).packageId();
+      if (packageId != null) {
+        npmGroupPackumentCache.invalidateMemberPackageAfterCommit(repository.id(), packageId.id());
+      }
+      groupMemberAssetCache.invalidateMemberAfterCommit(repository.id());
+    }
     return new WriteResult(componentId, persistedAsset.id(), persistedBlob.id(), persistedBlob.objectKey());
   }
 
@@ -1402,6 +1450,20 @@ class RepositoryDataMigrationWriter {
   private static void putIfPresent(Map<String, Object> attributes, String key, Object value) {
     if (value != null) {
       attributes.put(key, value);
+    }
+  }
+
+  record NpmPackumentSnapshot(Long assetId, Long assetBlobId) {
+    static NpmPackumentSnapshot of(Optional<AssetRecord> asset) {
+      return new NpmPackumentSnapshot(asset.map(AssetRecord::id).orElse(null),
+          asset.map(AssetRecord::assetBlobId).orElse(null));
+    }
+  }
+
+  // Deliberately not a TransientDataAccessException: retry must include a fresh source GET.
+  static final class StaleNpmPackumentException extends RuntimeException {
+    StaleNpmPackumentException() {
+      super("npm packument changed during download; fetch source metadata again");
     }
   }
 

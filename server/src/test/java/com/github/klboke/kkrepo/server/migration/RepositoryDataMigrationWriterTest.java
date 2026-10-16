@@ -80,6 +80,63 @@ class RepositoryDataMigrationWriterTest {
   private static final byte[] SAMPLE = "kkrepo migration checksum\n".getBytes(StandardCharsets.UTF_8);
   private static final MavenPathParser MAVEN_PATH_PARSER = new MavenPathParser();
 
+  @Test
+  void npmMigrationReplacesMetadataAndInvalidatesHostedAndGroupCaches() {
+    RepositoryRecord repository = new RepositoryRecord(
+        16L, "npm-hosted", RepositoryFormat.NPM, RepositoryType.HOSTED,
+        "npm-hosted", true, 1L, null, null, null, null, "ALLOW_ONCE", true, Map.of());
+    RepositoryDao repositories = mock(RepositoryDao.class);
+    when(repositories.findById(repository.id())).thenReturn(Optional.of(repository));
+    RecordingAssetDao assets = new RecordingAssetDao();
+    var metadataCache = mock(com.github.klboke.kkrepo.server.cache.AssetMetadataCache.class);
+    var packumentCache = mock(com.github.klboke.kkrepo.server.npm.NpmGroupPackumentCache.class);
+    var memberCache = mock(com.github.klboke.kkrepo.server.cache.GroupMemberAssetCache.class);
+    RepositoryDataMigrationWriter writer = new RepositoryDataMigrationWriter(
+        repositories, mock(ComponentDao.class), assets, mock(BrowseNodeDao.class),
+        new FixedBlobStorageRegistry(new MemoryBlobStorage()), mock(RepositoryIndexRebuildDao.class),
+        mock(DockerRegistryDao.class), new DockerManifestParser(new ObjectMapper()), null,
+        new TransientTransactionRetry(new RecordingTransactionManager(), 1, 0));
+    writer.setNpmMigrationCaches(metadataCache, packumentCache, memberCache);
+    String path = "@scope/demo";
+    RepositoryDataMigrationAssetRecord source = new RepositoryDataMigrationAssetRecord(
+        1L, 2L, "source", null, path, PersistenceHashes.pathHash(path),
+        RepositoryFormat.NPM, "@scope", "demo", null, "PACKAGE_ROOT", "application/json", 1L,
+        "source-blob-ref", Instant.EPOCH, null, Instant.EPOCH, Instant.EPOCH, "nexus", null,
+        "PENDING", 0, null, null, null, null, null, null, Map.of(), Instant.EPOCH);
+    assertThrows(IllegalArgumentException.class, () -> writer.write(repository.id(), source,
+        new ByteArrayInputStream(SAMPLE), "application/json", false));
+    assertNull(assets.asset, "npm writes without a pre-download snapshot must be rejected");
+    for (int versions = 1; versions <= 2; versions++) {
+      byte[] body = ("{\"name\":\"@scope/demo\",\"revision\":" + versions + "}")
+          .getBytes(StandardCharsets.UTF_8);
+      writer.write(repository.id(), source, new ByteArrayInputStream(body), "application/json", false,
+          writer.captureNpmPackument(repository.id(), path));
+      assertEquals(sha256Unchecked(body), assets.blob.sha256());
+      assertEquals("package-root", assets.asset.kind());
+    }
+    assertEquals(1, assets.lockedReads);
+    String winnerDigest = assets.blob.sha256();
+    assertThrows(RepositoryDataMigrationWriter.StaleNpmPackumentException.class, () ->
+        writer.write(repository.id(), source, new ByteArrayInputStream(SAMPLE), "application/json", false,
+            new RepositoryDataMigrationWriter.NpmPackumentSnapshot(200L, 100L)));
+    assertEquals(winnerDigest, assets.blob.sha256(), "an older download must not replace the winner");
+    assertThrows(RepositoryDataMigrationWriter.StaleNpmPackumentException.class, () ->
+        writer.write(repository.id(), source, new ByteArrayInputStream(SAMPLE), "application/json", false,
+            new RepositoryDataMigrationWriter.NpmPackumentSnapshot(null, null)));
+    assertEquals(List.of(100L), assets.retiredBlobs, "stale writers must not retire the winning blob");
+    // Another replica inserts the first root after our absent-row check but before our insert.
+    assets.asset = null;
+    assets.loseNextInsert = true;
+    assertThrows(RepositoryDataMigrationWriter.StaleNpmPackumentException.class, () ->
+        writer.write(repository.id(), source, new ByteArrayInputStream(SAMPLE), "application/json", false,
+            writer.captureNpmPackument(repository.id(), path)));
+    assertEquals(900L, assets.asset.assetBlobId(), "the winning first publication must stay bound");
+    assertEquals(List.of(100L), assets.retiredBlobs, "the winner must not be retired by an insert loser");
+    verify(metadataCache, times(2)).evictAfterCommit(repository.id(), path);
+    verify(packumentCache, times(2)).invalidateMemberPackageAfterCommit(repository.id(), path);
+    verify(memberCache, times(2)).invalidateMemberAfterCommit(repository.id());
+  }
+
   @ParameterizedTest
   @CsvSource({
       "packages/demo-package/1.0/demo_package-1.0-py3-none-any.whl, package, demo-package",
@@ -1017,9 +1074,25 @@ class RepositoryDataMigrationWriterTest {
   private static final class RecordingAssetDao extends AssetDaoAdapter {
     private AssetBlobRecord blob;
     private AssetRecord asset;
+    private int lockedReads;
+    private long nextBlobId = 100L;
+    private boolean loseNextInsert;
+    private final java.util.List<Long> retiredBlobs = new java.util.ArrayList<>();
 
     private RecordingAssetDao() {
       super(null, null);
+    }
+
+    @Override
+    public int markBlobDeletedIfUnreferenced(long id, String reason) {
+      retiredBlobs.add(id);
+      return 1;
+    }
+
+    @Override
+    public Optional<AssetRecord> findAssetByIdForUpdate(long id) {
+      lockedReads++;
+      return Optional.ofNullable(asset);
     }
 
     @Override
@@ -1039,7 +1112,7 @@ class RepositoryDataMigrationWriterTest {
 
     @Override
     public AssetBlobRecord insertBlobOrFindExisting(AssetBlobRecord record) {
-      blob = record.withId(100L);
+      blob = record.withId(nextBlobId++);
       return blob;
     }
 
@@ -1049,7 +1122,7 @@ class RepositoryDataMigrationWriterTest {
           200L,
           record.repositoryId(),
           record.componentId(),
-          record.assetBlobId(),
+          loseNextInsert ? 900L : record.assetBlobId(),
           record.format(),
           record.path(),
           record.pathHash(),
@@ -1060,7 +1133,7 @@ class RepositoryDataMigrationWriterTest {
           record.lastDownloadedAt(),
           record.lastUpdatedAt(),
           record.attributes());
-      return OptionalLong.of(asset.id());
+      return loseNextInsert ? OptionalLong.empty() : OptionalLong.of(asset.id());
     }
 
     @Override
