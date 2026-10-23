@@ -6,6 +6,8 @@ const vm = require("node:vm");
 
 const resources = resolve(__dirname, "../../main/resources/META-INF/resources/browse");
 const source = readFileSync(resolve(resources, "assets/browse.js"), "utf8");
+const safeReturnToSource = readFileSync(resolve(__dirname,
+  "../../../../admin-ui/src/main/resources/META-INF/resources/login/assets/safe-return-to.js"), "utf8");
 
 function extractFunction(name) {
   const start = source.indexOf(`function ${name}(`);
@@ -34,7 +36,7 @@ function start(hash) {
     location.href = new URL(target, location).href;
   };
   const context = vm.createContext({
-    URLSearchParams,
+    URL, URLSearchParams,
     APP_HASH_PREFIX: "browse", BROWSE_HASH: "browse/browse",
     DEFAULT_SEARCH_FORMAT: "maven2", CUSTOM_SEARCH_FORMAT: "custom", ALL_SEARCH_FORMAT: "all",
     normalizeSearchFormat: (format) => format,
@@ -64,6 +66,7 @@ function start(hash) {
     renderUpload: () => {}, ensureUploadableRepositories: () => {}, renderMyToken: () => {},
     openPendingLoginIfRequested: () => {},
   });
+  vm.runInContext(safeReturnToSource, context);
   vm.runInContext([
     "parseBrowseHash", "pushBrowseRoute", "canonicalizeBrowseRoute", "repositoryExists",
     "showWelcome", "showUpload", "showMyToken", "applyHashRoute", "bootstrap",

@@ -311,8 +311,7 @@ function currentReturnTo() {
 }
 
 function safeLocalReturnTo(value) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "";
-  return value;
+  return window.kkrepoSafeReturnTo(value, "");
 }
 
 function readPendingLoginReturnTo() {

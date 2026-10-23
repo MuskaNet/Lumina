@@ -25,7 +25,8 @@ class BrowseAccountMenuContractTest {
     assertTrue(index.contains("user-menu-item-icon lucide-icon icon-key-round"));
     assertTrue(index.contains("user-menu-signout-icon lucide-icon icon-log-in"));
     assertTrue(index.contains("/login/assets/login-modal.css?v=20260818-login-icons-1"));
-    assertTrue(index.contains("/login/assets/login-modal.js?v=20261006-shared-primitives-1"));
+    assertTrue(index.contains("/login/assets/safe-return-to.js?v=20261023-safe-return-to-1"));
+    assertTrue(index.contains("/login/assets/login-modal.js?v=20261023-safe-return-to-1"));
   }
 
   @Test

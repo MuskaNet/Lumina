@@ -344,10 +344,21 @@ public class OidcLoginController {
 
   private static String safeReturnTo(String returnTo) {
     String value = asString(returnTo);
-    if (value == null || !value.startsWith("/") || value.startsWith("//")) {
+    if (value == null
+        || !value.startsWith("/")
+        || value.startsWith("//")
+        || value.indexOf('\\') >= 0
+        || value.codePoints().anyMatch(Character::isISOControl)) {
       return DEFAULT_RETURN_TO;
     }
-    return value;
+    try {
+      URI target = URI.create(value);
+      return target.isAbsolute() || target.getRawAuthority() != null
+          ? DEFAULT_RETURN_TO
+          : value;
+    } catch (IllegalArgumentException exception) {
+      return DEFAULT_RETURN_TO;
+    }
   }
 
   private static Map<String, Object> attributes(SecurityRealmRecord realm) {

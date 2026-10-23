@@ -122,16 +122,21 @@ test("both UI entrypoints load shared scripts before their consumers", () => {
     const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((match) => match[1]);
     const csrfIndex = scripts.findIndex((src) => src.startsWith("/login/assets/csrf-fetch.js?"));
     const menuIndex = scripts.findIndex((src) => src.startsWith("/login/assets/account-menu.js?"));
+    const safeReturnToIndex = scripts.findIndex((src) =>
+      src.startsWith("/login/assets/safe-return-to.js?"));
     const confirmationIndex = scripts.findIndex((src) => src.startsWith("/login/assets/delete-confirmation.js?"));
     const consumerIndex = scripts.findIndex((src) => src.includes(`/assets/${page}.js?`));
     assert.ok(csrfIndex >= 0 && csrfIndex < consumerIndex);
     assert.ok(menuIndex >= 0 && menuIndex < consumerIndex);
+    assert.ok(safeReturnToIndex >= 0 && safeReturnToIndex < consumerIndex);
     assert.ok(confirmationIndex >= 0 && confirmationIndex < consumerIndex);
     const source = readFileSync(resolve(base, `assets/${page}.js`), "utf8");
     assert.ok(source.includes("window.nexusPlusAccountMenu"));
     assert.ok(!source.includes("function installCsrfFetch"));
     if (page === "browse") {
-      assert.ok(csrfIndex < scripts.findIndex((src) => src.includes("login-modal.js?")));
+      const loginModalIndex = scripts.findIndex((src) => src.includes("login-modal.js?"));
+      assert.ok(safeReturnToIndex < loginModalIndex);
+      assert.ok(csrfIndex < loginModalIndex);
     }
   }
 });

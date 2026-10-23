@@ -4,10 +4,7 @@
   let returnTo = DEFAULT_RETURN_TO;
 
   function safeReturnTo(value) {
-    if (!value || !value.startsWith("/") || value.startsWith("//")) {
-      return DEFAULT_RETURN_TO;
-    }
-    return value;
+    return window.kkrepoSafeReturnTo(value, DEFAULT_RETURN_TO);
   }
 
   function ensureModal() {

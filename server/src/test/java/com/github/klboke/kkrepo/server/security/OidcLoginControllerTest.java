@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.web.server.ResponseStatusException;
 
 class OidcLoginControllerTest {
@@ -264,6 +266,53 @@ class OidcLoginControllerTest {
         new SecurityAuthenticationService.SessionSubject("Local", "admin", "local", Set.of()),
         session.attributes.get(AuthenticatedSubject.SESSION_ATTRIBUTE));
     assertEquals("/admin/#security-users", response.redirect);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "/\\evil.example/login",
+      "//evil.example/login",
+      "https://evil.example/login",
+      "/\t/evil.example/login"
+  })
+  void loginRedirectsRejectUnsafeReturnTargets(String returnTo) throws Exception {
+    SessionState session = new SessionState();
+    ResponseState response = new ResponseState();
+    AuthenticatedSubject subject = new AuthenticatedSubject(
+        "Local",
+        "admin",
+        "local",
+        null,
+        new PermissionSubject("Local", "admin", Set.of("nx-admin"), null));
+    OidcLoginController controller = controller(new StubAuthenticationService());
+
+    controller.basicLogin(
+        request(session, Map.of(AuthenticatedSubject.REQUEST_ATTRIBUTE, subject)),
+        response.proxy(),
+        returnTo);
+
+    assertEquals("/browse/#browse/welcome", response.redirect);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"/\\evil.example/login", "/\t/evil.example/login"})
+  void passwordLoginReturnsTheDefaultForUnsafeReturnTargets(String returnTo) {
+    SessionState session = new SessionState();
+    StubAuthenticationService authentication = new StubAuthenticationService();
+    AuthenticatedSubject subject = new AuthenticatedSubject(
+        "Local",
+        "admin",
+        "local",
+        null,
+        new PermissionSubject("Local", "admin", Set.of("nx-admin"), null));
+    authentication.credentialSubject = Optional.of(subject);
+    OidcLoginController controller = controller(authentication);
+
+    OidcLoginController.LoginResult result = controller.passwordLogin(
+        request(session),
+        new OidcLoginController.LoginCommand("admin", "admin123", returnTo));
+
+    assertEquals("/browse/#browse/welcome", result.returnTo());
   }
 
   @Test
