@@ -1,5 +1,6 @@
 package com.github.klboke.kkrepo.server.blob;
 
+import com.github.klboke.kkrepo.server.config.RepositoryUrlPrefix;
 import com.github.klboke.kkrepo.core.BlobFileRegion;
 import com.github.klboke.kkrepo.core.BlobStorage;
 import jakarta.servlet.RequestDispatcher;
@@ -210,21 +211,22 @@ public final class TempBlobFiles {
     String rawUri = errorUri instanceof String value ? value : request.getRequestURI();
     String uri = safe(rawUri);
     String rawQuery = request.getQueryString();
-    String query = swiftIdentifiersUri(rawUri) && rawQuery != null
+    String query = swiftIdentifiersUri(rawUri, request) && rawQuery != null
         ? "url=<redacted>"
         : safe(rawQuery);
     return "-".equals(query) ? uri : uri + "?" + query;
   }
 
-  private static boolean swiftIdentifiersUri(String uri) {
+  private static boolean swiftIdentifiersUri(String uri, HttpServletRequest request) {
     if (uri == null) {
       return false;
     }
-    int repositorySegment = uri.lastIndexOf("/repository/");
-    if (repositorySegment < 0) {
+    String contextPath = request.getContextPath();
+    String prefix = (contextPath == null ? "" : contextPath) + RepositoryUrlPrefix.path(request);
+    if (!uri.startsWith(prefix)) {
       return false;
     }
-    String repositoryPath = uri.substring(repositorySegment + "/repository/".length());
+    String repositoryPath = uri.substring(prefix.length());
     int pathSeparator = repositoryPath.indexOf('/');
     return pathSeparator > 0 && "identifiers".equals(repositoryPath.substring(pathSeparator + 1));
   }

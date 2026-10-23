@@ -1,6 +1,7 @@
 package com.github.klboke.kkrepo.server.routing;
 
 import com.github.klboke.kkrepo.core.RepositoryFormat;
+import com.github.klboke.kkrepo.server.config.RepositoryUrlPrefix;
 import com.github.klboke.kkrepo.core.RepositoryType;
 import com.github.klboke.kkrepo.persistence.jdbc.api.model.RepositoryRecord;
 import com.github.klboke.kkrepo.server.maven.MavenExceptions;
@@ -117,7 +118,7 @@ public class RepositoryProtocolDispatcher {
         RepositorySecurityFilter.NORMALIZED_REPOSITORY_PATH_ATTRIBUTE);
     if (normalized instanceof String path) return path;
     String uri = request.getRequestURI();
-    String root = request.getContextPath() + "/repository/" + name;
+    String root = request.getContextPath() + RepositoryUrlPrefix.path(request) + name;
     if (uri.equals(root)) return "";
     String prefix = root + "/";
     return uri.startsWith(prefix) ? uri.substring(prefix.length()) : "";
