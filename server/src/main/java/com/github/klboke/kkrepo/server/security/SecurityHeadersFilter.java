@@ -29,7 +29,9 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("X-Frame-Options", "DENY");
     response.setHeader("Referrer-Policy", "no-referrer");
-    response.setHeader("Content-Security-Policy", "frame-ancestors 'none'; object-src 'none'; base-uri 'self'");
+    response.setHeader(
+        "Content-Security-Policy",
+        "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; script-src 'self'");
     if (hstsEnabled) {
       response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     }

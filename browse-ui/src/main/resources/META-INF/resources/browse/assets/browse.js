@@ -3432,11 +3432,7 @@ async function showAssetDetail(entry) {
   const sourceRepository = detail?.sourceRepository || entry.sourceRepository || "";
   const dockerDetail = isDockerDetail(detail);
   const downloadUrl = dockerDetail ? (entry.downloadUrl || detail?.downloadUrl) : (detail?.downloadUrl || entry.downloadUrl);
-  const download = downloadUrl
-    ? `<div class="download-row">
-        <a class="copy-button" href="${downloadUrl}" target="_blank">${lucideIcon("download")} Download</a>
-      </div>`
-    : "";
+  const download = renderAssetDownloadLink(downloadUrl);
   mount.innerHTML = `
     <div class="detail-pane">
       ${detailHead(iconForFile(entry.name || entry.path, "crumb-icon"), entry.path, browseOnly ? null : entry)}
@@ -3450,6 +3446,14 @@ async function showAssetDetail(entry) {
     </div>`;
   if (dockerUsage || usage) bindUsageControls(mount, (dockerUsage || usage).snippets);
   bindDeleteControl(mount, browseOnly ? null : entry);
+}
+
+function renderAssetDownloadLink(downloadUrl) {
+  const target = typeof downloadUrl === "string" ? downloadUrl : "";
+  if (!target) return "";
+  return `<div class="download-row">
+      <a class="copy-button" href="${escapeHtml(target)}" target="_blank" rel="noopener noreferrer">${lucideIcon("download")} Download</a>
+    </div>`;
 }
 
 async function fetchAssetAttributes(entry) {
