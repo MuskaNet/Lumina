@@ -195,6 +195,17 @@ async function openEdit(wrapper: VueWrapper, name: string): Promise<void> {
   await flushPromises();
 }
 
+async function chooseRecipe(wrapper: VueWrapper, value: string): Promise<void> {
+  const trigger = wrapper.find(".kk-recipe-trigger");
+  expect(trigger.exists(), "recipe trigger").toBe(true);
+  await trigger.trigger("click");
+  await flushPromises();
+  const option = wrapper.find(`[data-recipe-value="${value}"]`);
+  expect(option.exists(), `${value} recipe option`).toBe(true);
+  await option.trigger("click");
+  await flushPromises();
+}
+
 function sentPayload(index = -1): Record<string, unknown> {
   const call = mocks.send.mock.calls.at(index);
   expect(call, "api.send call").toBeTruthy();
@@ -208,8 +219,7 @@ describe("repository dialog: group member transfer", () => {
     const wrapper = await mountView();
     await clickButton(wrapper, "Create repository");
     await wrapper.find("#repo-name").setValue("group-repo");
-    await wrapper.find("#repo-recipe").setValue("maven2-group");
-    await flushPromises();
+    await chooseRecipe(wrapper, "maven2-group");
     await selectTab(wrapper, "Type");
 
     expect(wrapper.find(".kk-member-transfer").exists()).toBe(true);
@@ -308,5 +318,35 @@ describe("repository dialog: status panels and signing", () => {
     const rebuild = mocks.send.mock.calls.at(-1)!;
     expect(rebuild[0]).toContain("/alpine/rebuild");
     expect(rebuild[2]).toEqual({ namespace: "v3.23/main/x86_64" });
+  });
+});
+
+describe("repository table icons", () => {
+  beforeEach(installApi);
+
+  it("renders the restored upstream format logo and the type icon", async () => {
+    const wrapper = await mountView();
+    const row = wrapper.findAll("tr").find((node) => node.text().includes("maven-hosted"));
+    expect(row).toBeTruthy();
+
+    // Upstream brand logo inside the format column, not a generic Material Symbols glyph.
+    expect(row!.find(".format-cell .format-logo-maven").exists()).toBe(true);
+    expect(row!.find(".format-cell .format-cell-label").text()).toBe("maven2");
+    // Leading column keeps the upstream repository type icon (hosted => package).
+    expect(row!.find(".kk-format-icon").text()).toBe("inventory_2");
+  });
+
+  it("uses the per-format brand logo for each row", async () => {
+    const wrapper = await mountView();
+    const cases: [string, string][] = [
+      ["alpine-proxy", "alpine"],
+      ["conan-proxy", "conan"],
+      ["apt-proxy", "apt"],
+    ];
+    for (const [name, logo] of cases) {
+      const row = wrapper.findAll("tr").find((node) => node.text().includes(name));
+      expect(row, `${name} row`).toBeTruthy();
+      expect(row!.find(`.format-cell .format-logo-${logo}`).exists(), `${logo} logo`).toBe(true);
+    }
   });
 });

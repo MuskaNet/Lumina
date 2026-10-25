@@ -2,12 +2,14 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
+import { formatInventoryBytes, inventoryValue, type InventorySnapshot } from "../../shared/inventory";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
 import M3List from "../../shared/components/M3List.vue";
 import M3ListItem from "../../shared/components/M3ListItem.vue";
 import M3Tabs from "../../shared/components/M3Tabs.vue";
+import RepositoryRecipeCombobox from "../components/RepositoryRecipeCombobox.vue";
 import {
   ALPINE_METADATA_MODES,
   ALPINE_SIGNATURE_TYPES,
@@ -21,7 +23,6 @@ import {
   firstAlpineNamespace,
   repositoryDraftFromView,
   type RepositoryDraft,
-  type RepositoryRecipeOption,
   type RepositoryViewLike,
 } from "../repositoryForm";
 import {
@@ -32,6 +33,7 @@ import {
   selectMemberCandidates,
   toggleMemberHighlight,
 } from "../repositoryMembers";
+import { buildRecipeOptions, type RecipeOption } from "../repositoryRecipes";
 import {
   formatAlpineStatus,
   formatAptStatus,
@@ -40,6 +42,7 @@ import {
   type AptStatus,
   type ConanRepositoryStatus,
 } from "../repositoryStatus";
+import { formatLogoClass, typeIconName } from "../repositoryIcons";
 
 interface Recipe {
   recipe?: string;
@@ -57,64 +60,111 @@ interface BlobStoreList {
 const repositories = ref<Repository[]>([]);
 const recipes = ref<Recipe[]>([]);
 const blobStores = ref<{ name: string }[]>([]);
+const usage = ref<InventorySnapshot | null | undefined>(undefined);
 const filter = ref("");
+const blobStoreFilter = ref("");
 const loading = ref(true);
 const busy = ref(false);
 const error = ref("");
 
-const FORMAT_ICONS: Record<string, string> = {
-  maven2: "inventory_2",
-  npm: "deployed_code",
-  pypi: "code",
-  go: "code",
-  helm: "deployed_code",
-  docker: "deployed_code",
-  cargo: "deployed_code",
-  pub: "deployed_code",
-  composer: "code",
-  terraform: "cloud",
-  swift: "code",
-  nuget: "deployed_code",
-  rubygems: "diamond",
-  yum: "system_update_alt",
-  raw: "folder",
-  apt: "system_update_alt",
-  alpine: "system_update_alt",
-  conan: "deployed_code",
-  conda: "deployed_code",
-  ansiblegalaxy: "hub",
-  r: "code",
-  huggingface: "cloud",
-  gitlfs: "folder",
-};
-
 const columns: DataTableColumn[] = [
   { key: "icon", label: "" },
-  { key: "name", label: "Name" },
-  { key: "format", label: "Format" },
-  { key: "type", label: "Type" },
-  { key: "online", label: "Online" },
+  { key: "name", label: "Name", sortable: true },
+  { key: "recipe", label: "Recipe", sortable: true },
+  { key: "type", label: "Type", sortable: true },
+  { key: "format", label: "Format", sortable: true },
+  { key: "online", label: "Status" },
   { key: "blobStoreName", label: "Blob store" },
+  { key: "assetCount", label: "Asset Count", sortable: true, align: "end" },
+  { key: "totalBytes", label: "Logical asset size", sortable: true, align: "end" },
   { key: "url", label: "URL", cellClass: "kk-col-location" },
   { key: "actions", label: "Actions", align: "end" },
 ];
 
-const rows = computed(() => {
-  const needle = filter.value.trim().toLowerCase();
-  const sorted = [...repositories.value].sort((a, b) => a.name.localeCompare(b.name));
-  if (!needle) return sorted;
-  return sorted.filter((repo) =>
-    [repo.name, repo.format, repo.type, repo.blobStoreName, repo.url]
-      .some((value) => String(value ?? "").toLowerCase().includes(needle)),
-  );
+const availableBlobStoreNames = computed(() => {
+  const names = new Set<string>();
+  for (const repo of repositories.value) {
+    if (repo.blobStoreName) names.add(repo.blobStoreName);
+  }
+  for (const store of blobStores.value) {
+    if (store.name) names.add(store.name);
+  }
+  return [...names].sort();
 });
 
-function iconFor(repo: Repository): string {
-  return FORMAT_ICONS[String(repo.format ?? "")] ?? "inventory_2";
+const filteredRepositories = computed(() => {
+  const needle = filter.value.trim().toLowerCase();
+  const selectedStore = blobStoreFilter.value;
+  return repositories.value.filter((repo) => {
+    if (selectedStore && repo.blobStoreName !== selectedStore) return false;
+    if (!needle) return true;
+    return [repo.name, repo.format, repo.type, repo.recipe, repo.blobStoreName, repo.url]
+      .some((value) => String(value ?? "").toLowerCase().includes(needle));
+  });
+});
+
+const rows = computed(() => {
+  return [...filteredRepositories.value].sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const usageRows = computed(() =>
+  filteredRepositories.value.filter((repo) => String(repo.type ?? "").toLowerCase() !== "group"),
+);
+
+const totals = computed(() => {
+  if (usage.value === undefined) return undefined;
+  if (usage.value === null) return null;
+  const keys = ["assetCount", "totalBytes"] as const;
+  const sums: Record<string, bigint | null> = {};
+  for (const key of keys) {
+    const values = usageRows.value.map((repo) => inventoryValue(usage.value, repo.name, key));
+    sums[key] = values.some((value) => value == null) ? null : values.reduce<bigint>((a, b) => a + (b ?? 0n), 0n);
+  }
+  const anyUnknown = usageRows.value.some(
+    (repo) => (inventoryValue(usage.value, repo.name, "unknownSizeCount") ?? 0n) > 0n,
+  );
+  sums.unknownSizeCount = anyUnknown ? 1n : 0n;
+  return sums;
+});
+
+const totalSnapshot = computed<InventorySnapshot | null | undefined>(() => {
+  if (totals.value === undefined) return undefined;
+  if (totals.value === null) return null;
+  return { usage: { all: totals.value } };
+});
+
+const updatedLabel = computed(() => {
+  if (usage.value === undefined) return t("Loading usage…");
+  if (usage.value === null) return "—";
+  const calculatedAt = usage.value.calculatedAt;
+  if (!calculatedAt) return "—";
+  const date = new Date(calculatedAt);
+  return Number.isNaN(date.getTime()) ? calculatedAt : date.toLocaleTimeString();
+});
+
+function metric(key: string, bytes = false): string {
+  const snapshot = totalSnapshot.value;
+  if (snapshot === undefined) return "…";
+  if (filteredRepositories.value.length > 0 && usageRows.value.length === 0) return "—";
+  const value = inventoryValue(snapshot, "all", key);
+  if (value == null) return "—";
+  return bytes ? formatInventoryBytes(value) : value.toLocaleString();
+}
+
+function repoMetric(repo: Repository, key: string, bytes = false): string {
+  if (String(repo.type ?? "").toLowerCase() === "group") return "—";
+  if (usage.value === undefined) return "…";
+  const value = inventoryValue(usage.value, repo.name, key);
+  if (value == null) return "—";
+  if (bytes && key === "totalBytes" && (inventoryValue(usage.value, repo.name, "unknownSizeCount") ?? 0n) > 0n) {
+    return `≥ ${formatInventoryBytes(value)}`;
+  }
+  return bytes ? formatInventoryBytes(value) : value.toLocaleString();
 }
 
 async function load() {
   loading.value = true;
+  usage.value = undefined;
   try {
     const [repos, recipeList, stores] = await Promise.all([
       api.get<Repository[]>("/internal/repositories?purpose=admin"),
@@ -124,6 +174,15 @@ async function load() {
     repositories.value = repos ?? [];
     recipes.value = recipeList ?? [];
     blobStores.value = stores?.stores ?? [];
+    if (repositories.value.length === 0) {
+      usage.value = { usage: {}, calculatedAt: new Date().toISOString() };
+    } else {
+      void api
+        .getOrNull<InventorySnapshot>("/internal/repositories/statistics/usage")
+        .then((snapshot) => {
+          usage.value = snapshot;
+        });
+    }
   } catch (cause) {
     showToast(`${t("Failed to load repositories")}: ${(cause as Error).message}`, "error");
   } finally {
@@ -131,16 +190,7 @@ async function load() {
   }
 }
 
-const recipeOptions = computed<RepositoryRecipeOption[]>(() =>
-  recipes.value
-    .map((recipe) => ({
-      value: String(recipe.recipe ?? recipe.name ?? `${recipe.format}-${recipe.type}`.toLowerCase()),
-      label: `${recipe.format} · ${recipe.type}`,
-      format: String(recipe.format ?? ""),
-      type: String(recipe.type ?? "").toUpperCase(),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label)),
-);
+const recipeOptions = computed<RecipeOption[]>(() => buildRecipeOptions(recipes.value));
 
 /* ---- Dialog state ------------------------------------------------------ */
 
@@ -609,10 +659,6 @@ function typeLabel(repo: Repository): string {
   return String(repo.type ?? "").toLowerCase();
 }
 
-function formatIconValue(repo: Repository): string {
-  return iconFor(repo);
-}
-
 onMounted(load);
 </script>
 
@@ -627,7 +673,36 @@ onMounted(load);
       <label for="repo-filter">{{ t("Filter") }}</label>
       <input id="repo-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s" @click="load">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
+      {{ t("Refresh") }}
+    </button>
+    <div class="micl-textfield-outlined kk-toolbar__spacer" style="min-inline-size: 14rem">
+      <label for="repo-blobstore-filter">{{ t("Blob store") }}</label>
+      <select id="repo-blobstore-filter" v-model="blobStoreFilter">
+        <option value="">{{ t("All blob stores") }}</option>
+        <option v-for="store in availableBlobStoreNames" :key="store" :value="store">{{ store }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="kk-summary" aria-live="polite">
+    <div class="kk-summary__item">
+      <span class="kk-summary__label">{{ t("Updated") }}</span>
+      <strong class="kk-summary__value">{{ updatedLabel }}</strong>
+    </div>
+    <div class="kk-summary__item">
+      <span class="kk-summary__label">{{ t("Matching repositories") }}</span>
+      <strong class="kk-summary__value">{{ filteredRepositories.length.toLocaleString() }}</strong>
+    </div>
+    <div class="kk-summary__item">
+      <span class="kk-summary__label">{{ t("Asset Count") }}</span>
+      <strong class="kk-summary__value">{{ metric("assetCount") }}</strong>
+    </div>
+    <div class="kk-summary__item">
+      <span class="kk-summary__label">{{ t("Logical asset size") }}</span>
+      <strong class="kk-summary__value">{{ metric("totalBytes", true) }}</strong>
+    </div>
   </div>
 
   <M3DataTable
@@ -639,11 +714,16 @@ onMounted(load);
     :aria-label="t('Repositories')"
   >
     <template #cell-icon="{ row }">
-      <span class="material-symbols-outlined kk-format-icon" aria-hidden="true">{{ formatIconValue(row) }}</span>
+      <span class="material-symbols-outlined kk-format-icon" aria-hidden="true">{{ typeIconName(row.type) }}</span>
+    </template>
+    <template #cell-recipe="{ row }">
+      {{ row.recipe }}
     </template>
     <template #cell-format="{ row }">
-      {{ row.format }}
-      <small class="kk-secondary">{{ row.recipe }}</small>
+      <span class="format-cell">
+        <span :class="formatLogoClass(row.format)" aria-hidden="true"></span>
+        <span class="format-cell-label">{{ row.format }}</span>
+      </span>
     </template>
     <template #cell-type="{ row }">
       <span class="kk-badge" :class="typeLabel(row) === 'group' ? 'kk-badge--warn' : 'kk-badge--ok'">
@@ -656,6 +736,12 @@ onMounted(load);
       </span>
     </template>
     <template #cell-blobStoreName="{ row }">{{ row.blobStoreName || "—" }}</template>
+    <template #cell-assetCount="{ row }">
+      {{ repoMetric(row, "assetCount") }}
+    </template>
+    <template #cell-totalBytes="{ row }">
+      {{ repoMetric(row, "totalBytes", true) }}
+    </template>
     <template #cell-url="{ row }"><code class="kk-mono">{{ row.url || "—" }}</code></template>
     <template #cell-actions="{ row }">
       <div class="kk-row-actions">
@@ -673,23 +759,21 @@ onMounted(load);
     :error="error"
     @confirm="save"
   >
-    <M3Tabs :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
+    <M3Tabs v-if="visibleTabs.length > 1" :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
 
     <!-- General -->
-    <template v-if="activeTab === 'general'">
+    <template v-if="!editing || activeTab === 'general'">
       <div class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-name">{{ t("Name") }}</label>
           <input id="repo-name" v-model="draft.name" type="text" :readonly="Boolean(editing)" autocomplete="off">
         </div>
-        <div class="micl-textfield-outlined">
-          <label for="repo-recipe">{{ t("Recipe") }}</label>
-          <select id="repo-recipe" v-model="draft.recipe" :disabled="Boolean(editing)">
-            <option v-for="option in recipeOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-        </div>
+        <RepositoryRecipeCombobox
+          v-model="draft.recipe"
+          :options="recipeOptions"
+          :disabled="Boolean(editing)"
+          field-id="repo-recipe"
+        />
         <div v-if="!editing" class="micl-textfield-outlined kk-field--wide">
           <label for="repo-blobstore">{{ t("Blob store") }}</label>
           <select id="repo-blobstore" v-model="draft.blobStoreName">
@@ -711,7 +795,10 @@ onMounted(load);
     </template>
 
     <!-- Hosted / proxy / group -->
-    <template v-else-if="activeTab === 'behavior'">
+    <template v-if="!editing ? draftType !== '' : activeTab === 'behavior'">
+      <h3 v-if="!editing" class="kk-form-section-title">
+        {{ isHosted ? t("Hosted settings") : isProxy ? t("Proxy settings") : t("Group settings") }}
+      </h3>
       <div v-if="isHosted" class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-write-policy">{{ t("Write policy") }}</label>
@@ -969,7 +1056,8 @@ onMounted(load);
     </template>
 
     <!-- Format-specific -->
-    <template v-else-if="activeTab === 'format'">
+    <template v-if="!editing ? showFormatTab : activeTab === 'format'">
+      <h3 v-if="!editing" class="kk-form-section-title">{{ t("Format settings") }}</h3>
       <div v-if="draftFormat === 'raw'" class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-disposition">{{ t("Content disposition") }}</label>
@@ -1141,7 +1229,7 @@ onMounted(load);
     </template>
 
     <!-- Signing keys and index operations (existing apt/alpine repositories) -->
-    <template v-else-if="activeTab === 'keys'">
+    <template v-if="editing && activeTab === 'keys'">
       <p class="kk-muted">
         {{ t("Signed metadata needs a key. Generating a new key republishes every index that uses it.") }}
       </p>

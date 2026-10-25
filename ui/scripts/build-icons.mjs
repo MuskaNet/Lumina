@@ -40,6 +40,7 @@ const EXTRA_ICONS = [
   "thunderstorm",
   "warning",
   "cloud_off",
+  "cloud_download",
   "download",
   "file_download",
   "close",

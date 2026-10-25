@@ -1,0 +1,153 @@
+/* Repository format logos: Simple Icons brand marks plus the kkRepo
+ * compatibility marks. Restored from the upstream console so the Vue
+ * console shows the same per-format logos as the legacy admin UI. */
+
+.format-logo {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  background-color: var(--format-color);
+  -webkit-mask-image: var(--format-logo);
+  mask-image: var(--format-logo);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.format-logo-maven {
+  --format-color: #c71a36;
+  --format-logo: url("./formats/maven.svg");
+}
+
+.format-logo-npm {
+  --format-color: #cb3837;
+  --format-logo: url("./formats/npm.svg");
+}
+
+.format-logo-pypi {
+  --format-color: #3775a9;
+  --format-logo: url("./formats/pypi.svg");
+}
+
+.format-logo-cargo {
+  --format-color: #292524;
+  --format-logo: url("./formats/cargo.svg");
+}
+
+.format-logo-pub {
+  --format-color: #0175c2;
+  --format-logo: url("./formats/pub.svg");
+}
+
+.format-logo-composer {
+  --format-color: #885630;
+  --format-logo: url("./formats/composer.svg");
+}
+
+.format-logo-go {
+  --format-color: #00a8cf;
+  --format-logo: url("./formats/go.svg");
+}
+
+.format-logo-helm {
+  --format-color: #0f1689;
+  --format-logo: url("./formats/helm.svg");
+}
+
+.format-logo-docker {
+  --format-color: #2496ed;
+  --format-logo: url("./formats/docker.svg");
+}
+
+.format-logo-nuget {
+  --format-color: #004880;
+  --format-logo: url("./formats/nuget.svg");
+}
+
+.format-logo-rubygems {
+  --format-color: #e9573f;
+  --format-logo: url("./formats/rubygems.svg");
+}
+
+.format-logo-yum {
+  --format-color: #9f3f32;
+  --format-logo: url("./formats/yum.svg");
+}
+
+.format-logo-terraform {
+  --format-color: #7b42bc;
+  --format-logo: url("./formats/terraform.svg");
+}
+
+.format-logo-swift {
+  --format-color: #f05138;
+  --format-logo: url("./formats/swift.svg");
+}
+
+.format-logo-ansiblegalaxy {
+  --format-color: #111827;
+  --format-logo: url("./formats/ansiblegalaxy.svg");
+}
+
+.format-logo-conda {
+  --format-color: #44a833;
+  --format-logo: url("./formats/conda.svg");
+}
+
+.format-logo-conan {
+  --format-color: #6699cb;
+  --format-logo: url("./formats/conan.svg");
+}
+
+.format-logo-apt {
+  --format-color: #d70a53;
+  --format-logo: url("./formats/apt.svg");
+}
+
+.format-logo-alpine {
+  --format-color: #0d597f;
+  --format-logo: url("./formats/alpine.svg");
+}
+
+.format-logo-r {
+  --format-color: #276dc3;
+  --format-logo: url("./formats/r.svg");
+}
+
+.format-logo-huggingface {
+  --format-color: #f1b800;
+  --format-logo: url("./formats/huggingface.svg");
+}
+
+.format-logo-raw {
+  --format-color: #52625e;
+  --format-logo: url("./formats/raw.svg");
+}
+
+.format-cell {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.format-cell .format-logo {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+}
+
+.format-cell-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.format-logo-gitlfs {
+  --format-color: #e55335;
+  --format-logo: url("./formats/gitlfs.svg");
+}

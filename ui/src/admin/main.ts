@@ -3,6 +3,7 @@ import "material-inspired-component-library/dist/micl.css";
 import micl from "material-inspired-component-library/dist/micl";
 import "../shared/theme/themes.generated.css";
 import "../shared/fonts/material-symbols.css";
+import "../shared/format-icons/format-icons.css";
 import "../shared/styles/app.css";
 
 import App from "./App.vue";

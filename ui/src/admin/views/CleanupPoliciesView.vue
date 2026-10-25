@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
 import M3Tabs from "../../shared/components/M3Tabs.vue";
+import CleanupRepositoryPicker from "../components/CleanupRepositoryPicker.vue";
+import {
+  buildCleanupFormatOptions,
+  buildCleanupPolicyPayload,
+  cleanupFormatLabel,
+  cleanupPolicyDraftFromView,
+  createCleanupPolicyDraft,
+  validateCleanupPolicyDraft,
+  type CleanupCapability,
+  type CleanupFormatOption,
+  type CleanupPolicyDraft,
+} from "../cleanupPolicy";
 
 interface CleanupPolicy {
   id?: number;
@@ -33,7 +45,7 @@ interface PolicyView {
   policy?: CleanupPolicy;
   repositories?: TargetRepository[];
   schedule?: CleanupSchedule | null;
-  capability?: Record<string, unknown> | null;
+  capability?: CleanupCapability | null;
 }
 
 interface PolicyPage {
@@ -79,6 +91,8 @@ interface Repository {
   id?: number | null;
   name: string;
   format?: string | null;
+  type?: string | null;
+  online?: boolean;
 }
 
 const TABS = [
@@ -90,6 +104,7 @@ const tab = ref("policies");
 const policies = ref<PolicyView[]>([]);
 const runs = ref<RunView[]>([]);
 const repositories = ref<Repository[]>([]);
+const capabilities = ref<CleanupCapability[]>([]);
 const loading = ref(true);
 const busy = ref(false);
 const error = ref("");
@@ -135,14 +150,16 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const [page, runPage, repoList] = await Promise.all([
+    const [page, runPage, repoList, capabilityList] = await Promise.all([
       api.get<PolicyPage>("/internal/cleanup/policies?after=0&limit=50"),
       api.getOrNull<RunPage>("/internal/cleanup/runs?before=0&limit=20"),
       api.getOrNull<Repository[]>("/internal/repositories?purpose=admin"),
+      api.getOrNull<CleanupCapability[]>("/internal/cleanup/capabilities"),
     ]);
     policies.value = page.items ?? [];
     runs.value = runPage?.items ?? [];
     repositories.value = repoList ?? [];
+    capabilities.value = capabilityList ?? [];
   } catch (cause) {
     error.value = (cause as Error).message;
   } finally {
@@ -151,136 +168,170 @@ async function load() {
 }
 
 const dialog = ref<InstanceType<typeof M3Dialog> | null>(null);
-const editing = ref<CleanupPolicy | null>(null);
-const draft = reactive<Record<string, unknown>>({
-  name: "",
-  format: "",
-  notes: "",
-  pattern: "",
-  patternType: "REGEX",
-  publishedOlderThanDays: "",
-  lastDownloadedOlderThanDays: "",
-  retainCount: "",
-  scanLimitPerRepository: 100,
-  deleteLimitPerRepository: 100,
-  repositoryIds: [] as number[],
-  cronExpression: "",
-  timeZone: "UTC",
-  scheduleEnabled: false,
+const editing = ref<PolicyView | null>(null);
+const draft = reactive<CleanupPolicyDraft>(createCleanupPolicyDraft());
+const repositoryError = ref(false);
+const resolvedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+const timeZoneOptions = computed(() => {
+  const values = new Set<string>(["UTC", resolvedTimeZone]);
+  if (typeof Intl.supportedValuesOf === "function") {
+    try {
+      for (const zone of Intl.supportedValuesOf("timeZone")) values.add(zone);
+    } catch {
+      // Older engines may not enumerate zones; the text input still works.
+    }
+  }
+  return [...values].sort();
 });
 
-const formatOptions = computed(() => {
-  const formats = new Set<string>();
-  for (const repo of repositories.value) {
-    if (repo.format) formats.add(repo.format);
+const formatOptions = computed<CleanupFormatOption[]>(() =>
+  buildCleanupFormatOptions(capabilities.value, [
+    ...repositories.value.map((repository) => repository.format ?? ""),
+    ...policies.value.map((view) => policyOf(view).format ?? ""),
+  ]),
+);
+
+const selectedCapability = computed(() =>
+  capabilities.value.find(
+    (capability) => capability.format.toLowerCase() === draft.format.toLowerCase(),
+  ),
+);
+const editingPolicy = computed(() => editing.value?.policy ?? null);
+const editingSchedule = computed(() => editing.value?.schedule ?? null);
+const supportsRetainCount = computed(() => selectedCapability.value?.retainCountSupported !== false);
+const supportsLastDownloaded = computed(
+  () => selectedCapability.value?.lastDownloadedSupported !== false,
+);
+const executeHelp = computed(() => {
+  if (selectedCapability.value?.executeSupported === false) {
+    return t("Try Run is available. Actual deletion and schedule enablement stay blocked until this format's protocol adapter passes deletion validation.");
   }
-  for (const view of policies.value) {
-    const format = policyOf(view).format;
-    if (format) formats.add(format);
-  }
-  return [...formats].sort();
+  return editingPolicy.value
+    ? t("Changing cleanup rules or target repositories pauses automatic execution until you review and re-enable it.")
+    : "";
 });
+
+const previewTitle = ref(t("Manual execution only"));
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let previewSequence = 0;
+
+function formatPreviewTime(value: string, timeZone: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone,
+    }).format(date);
+  } catch {
+    return date.toLocaleString();
+  }
+}
+
+function schedulePreview() {
+  if (previewTimer) clearTimeout(previewTimer);
+  const cronExpression = draft.cronExpression.trim();
+  if (!cronExpression) {
+    previewTitle.value = t("Manual execution only");
+    return;
+  }
+  if (!draft.timeZone.trim()) {
+    previewTitle.value = t("Choose a time zone to preview this schedule.");
+    return;
+  }
+  const sequence = ++previewSequence;
+  previewTitle.value = t("Checking the next two runs…");
+  previewTimer = setTimeout(async () => {
+    try {
+      const preview = await api.send<{ nextRuns?: string[]; timeZone?: string | null }>(
+        "/internal/cleanup/schedules/preview",
+        "POST",
+        { cronExpression, timeZone: draft.timeZone, enabled: false },
+      );
+      if (sequence !== previewSequence) return;
+      const runs = (preview?.nextRuns ?? []).map((value) =>
+        formatPreviewTime(value, preview?.timeZone ?? draft.timeZone),
+      );
+      previewTitle.value = runs.length
+        ? `${runs.length > 1 ? t("Next runs") : t("Next run")}: ${runs.join(" · ")}`
+        : t("Schedule has no future fire time.");
+    } catch (cause) {
+      if (sequence !== previewSequence) return;
+      previewTitle.value = `${t("Check the run schedule")}: ${(cause as Error).message}`;
+    }
+  }, 300);
+}
+
+function applyCapabilityConstraints() {
+  if (!supportsRetainCount.value) draft.retainCount = null;
+  if (!supportsLastDownloaded.value) draft.lastDownloadedOlderThanDays = null;
+}
+
+watch(
+  () => draft.format,
+  () => {
+    applyCapabilityConstraints();
+    repositoryError.value = false;
+  },
+);
+
+watch([() => draft.cronExpression, () => draft.timeZone], schedulePreview);
 
 function openCreate() {
   editing.value = null;
-  Object.assign(draft, {
-    name: "",
-    format: formatOptions.value[0] ?? "",
-    notes: "",
-    pattern: "",
-    patternType: "REGEX",
-    publishedOlderThanDays: "",
-    lastDownloadedOlderThanDays: "",
-    retainCount: "",
-    scanLimitPerRepository: 100,
-    deleteLimitPerRepository: 100,
-    repositoryIds: [],
-    cronExpression: "",
-    timeZone: "UTC",
-    scheduleEnabled: false,
-  });
+  repositoryError.value = false;
+  Object.assign(
+    draft,
+    createCleanupPolicyDraft(formatOptions.value[0]?.value ?? "maven2", resolvedTimeZone),
+  );
   error.value = "";
+  schedulePreview();
   dialog.value?.open();
 }
 
 function openEdit(view: PolicyView) {
-  const policy = policyOf(view);
-  editing.value = policy;
-  const criteria = (policy.criteria ?? {}) as Record<string, unknown>;
-  Object.assign(draft, {
-    name: policy.name ?? "",
-    format: policy.format ?? "",
-    notes: policy.notes ?? "",
-    pattern: String(criteria.pattern ?? ""),
-    patternType: String(criteria.patternType ?? "REGEX"),
-    publishedOlderThanDays: criteria.publishedOlderThanDays ?? "",
-    lastDownloadedOlderThanDays: criteria.lastDownloadedOlderThanDays ?? "",
-    retainCount: criteria.retainCount ?? "",
-    scanLimitPerRepository: policy.scanLimitPerRepository ?? 100,
-    deleteLimitPerRepository: policy.deleteLimitPerRepository ?? 100,
-    repositoryIds: (view.repositories ?? []).map((repo) => Number(repo.id)).filter((id) => Number.isFinite(id)),
-    cronExpression: view.schedule?.cronExpression ?? "",
-    timeZone: view.schedule?.timeZone ?? "UTC",
-    scheduleEnabled: Boolean(view.schedule?.enabled),
-  });
+  editing.value = view;
+  Object.assign(draft, cleanupPolicyDraftFromView(view));
+  if (!draft.format) draft.format = formatOptions.value[0]?.value ?? "maven2";
+  applyCapabilityConstraints();
+  repositoryError.value = false;
   error.value = "";
+  schedulePreview();
   dialog.value?.open();
 }
 
-function toggleRepository(id: number) {
-  const list = draft.repositoryIds as number[];
-  const index = list.indexOf(id);
-  if (index >= 0) list.splice(index, 1);
-  else list.push(id);
-}
-
-function optionalNumber(key: string): number | undefined {
-  const raw = draft[key];
-  if (raw === "" || raw == null) return undefined;
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : undefined;
-}
-
-function buildCriteria(): Record<string, unknown> {
-  const criteria: Record<string, unknown> = {};
-  const pattern = String(draft.pattern ?? "").trim();
-  if (pattern) {
-    criteria.pattern = pattern;
-    criteria.patternType = draft.patternType;
-  }
-  const published = optionalNumber("publishedOlderThanDays");
-  if (published != null) criteria.publishedOlderThanDays = published;
-  const downloaded = optionalNumber("lastDownloadedOlderThanDays");
-  if (downloaded != null) criteria.lastDownloadedOlderThanDays = downloaded;
-  const retain = optionalNumber("retainCount");
-  if (retain != null) criteria.retainCount = retain;
-  return criteria;
-}
-
 async function save() {
-  if (!String(draft.name ?? "").trim()) {
+  const validation = validateCleanupPolicyDraft(draft);
+  repositoryError.value = validation.repositories;
+  if (validation.name) {
     error.value = t("Policy name is required.");
     return;
   }
-  const cronExpression = String(draft.cronExpression ?? "").trim();
-  const payload = {
-    name: String(draft.name).trim(),
-    format: draft.format || null,
-    notes: draft.notes || null,
-    criteria: buildCriteria(),
-    repositoryIds: draft.repositoryIds ?? [],
-    scanLimitPerRepository: optionalNumber("scanLimitPerRepository") ?? null,
-    deleteLimitPerRepository: optionalNumber("deleteLimitPerRepository") ?? null,
-    schedule: cronExpression
-      ? { cronExpression, timeZone: draft.timeZone || "UTC", enabled: Boolean(draft.scheduleEnabled) }
-      : null,
-    revision: editing.value?.revision ?? null,
-  };
+  if (!draft.format || formatOptions.value.find((option) => option.value === draft.format)?.disabled) {
+    error.value = t("Choose a format that supports automatic cleanup.");
+    return;
+  }
+  if (validation.repositories) {
+    error.value = t("Policy name and at least one target repository are required.");
+    return;
+  }
+  if (validation.criteria) {
+    error.value = t("Add at least one pattern, age, or retain rule.");
+    return;
+  }
+  const payload = buildCleanupPolicyPayload(draft, {
+    revision: editingPolicy.value?.revision ?? null,
+    scanLimitPerRepository: editingPolicy.value?.scanLimitPerRepository ?? null,
+    deleteLimitPerRepository: editingPolicy.value?.deleteLimitPerRepository ?? null,
+    scheduleEnabled: Boolean(editingSchedule.value?.enabled),
+  });
   busy.value = true;
   error.value = "";
   try {
-    if (editing.value?.id != null) {
-      await api.send(`/internal/cleanup/policies/${editing.value.id}`, "PUT", payload);
+    if (editingPolicy.value?.id != null) {
+      await api.send(`/internal/cleanup/policies/${editingPolicy.value.id}`, "PUT", payload);
     } else {
       await api.send("/internal/cleanup/policies", "POST", payload);
     }
@@ -406,7 +457,7 @@ onMounted(load);
     :aria-label="t('Cleanup policies')"
   >
     <template #cell-name="{ row }">{{ policyOf(row).name }}</template>
-    <template #cell-format="{ row }">{{ policyOf(row).format }}</template>
+    <template #cell-format="{ row }">{{ cleanupFormatLabel(policyOf(row).format ?? "") }}</template>
     <template #cell-targets="{ row }">{{ (row.repositories ?? []).length }}</template>
     <template #cell-schedule="{ row }">{{ scheduleLabel(row) }}</template>
     <template #cell-revision="{ row }">{{ policyOf(row).revision ?? "—" }}</template>
@@ -454,11 +505,12 @@ onMounted(load);
   <M3Dialog
     ref="dialog"
     wide
-    :title="editing ? t('Edit cleanup policy') : t('Create cleanup policy')"
+    :title="editingPolicy ? `${t('Edit cleanup policy')} · ${editingPolicy.name}` : t('Create cleanup policy')"
     :busy="busy"
     :error="error"
     @confirm="save"
   >
+    <h3 class="kk-schema-form__group">{{ t("Policy details") }}</h3>
     <div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="cleanup-name">{{ t("Name") }}</label>
@@ -467,28 +519,40 @@ onMounted(load);
       <div class="micl-textfield-outlined">
         <label for="cleanup-format">{{ t("Format") }}</label>
         <select id="cleanup-format" v-model="draft.format">
-          <option value="">{{ t("None") }}</option>
-          <option v-for="format in formatOptions" :key="format" :value="format">{{ format }}</option>
+          <option
+            v-for="option in formatOptions"
+            :key="option.value"
+            :value="option.value"
+            :disabled="option.disabled"
+          >
+            {{ option.label }}
+          </option>
         </select>
-      </div>
-      <div class="micl-textfield-outlined kk-field--wide">
-        <label for="cleanup-notes">{{ t("Notes") }}</label>
-        <input id="cleanup-notes" v-model="draft.notes" type="text" autocomplete="off">
       </div>
     </div>
 
-    <h3 class="kk-schema-form__group">{{ t("Criteria") }}</h3>
+    <CleanupRepositoryPicker
+      v-model="draft.repositoryIds"
+      :repositories="repositories"
+      :format="draft.format"
+      :error="repositoryError"
+    />
+    <p v-if="repositoryError" class="kk-form-error" role="alert">
+      {{ t("Select at least one target repository.") }}
+    </p>
+
+    <h3 class="kk-schema-form__group">{{ t("Cleanup rules") }}</h3>
     <div class="kk-field-grid">
-      <div class="micl-textfield-outlined">
-        <label for="cleanup-pattern">{{ t("Path pattern") }}</label>
-        <input id="cleanup-pattern" v-model="draft.pattern" type="text" autocomplete="off">
-      </div>
       <div class="micl-textfield-outlined">
         <label for="cleanup-pattern-type">{{ t("Pattern type") }}</label>
         <select id="cleanup-pattern-type" v-model="draft.patternType">
-          <option value="REGEX">REGEX</option>
-          <option value="GLOB">GLOB</option>
+          <option value="GLOB">{{ t("Wildcard") }}</option>
+          <option value="REGEX">{{ t("Regular expression") }}</option>
         </select>
+      </div>
+      <div class="micl-textfield-outlined">
+        <label for="cleanup-pattern">{{ t("Name/path pattern") }}</label>
+        <input id="cleanup-pattern" v-model="draft.pattern" type="text" autocomplete="off">
       </div>
       <div class="micl-textfield-outlined">
         <label for="cleanup-published-days">{{ t("Published older than (days)") }}</label>
@@ -496,49 +560,45 @@ onMounted(load);
       </div>
       <div class="micl-textfield-outlined">
         <label for="cleanup-downloaded-days">{{ t("Last downloaded older than (days)") }}</label>
-        <input id="cleanup-downloaded-days" v-model="draft.lastDownloadedOlderThanDays" type="number" min="0">
+        <input id="cleanup-downloaded-days" v-model="draft.lastDownloadedOlderThanDays" type="number" min="0" :disabled="!supportsLastDownloaded">
       </div>
       <div class="micl-textfield-outlined">
-        <label for="cleanup-retain">{{ t("Retain last N versions") }}</label>
-        <input id="cleanup-retain" v-model="draft.retainCount" type="number" min="0">
-      </div>
-      <div class="micl-textfield-outlined">
-        <label for="cleanup-scan-limit">{{ t("Scan limit per repository") }}</label>
-        <input id="cleanup-scan-limit" v-model="draft.scanLimitPerRepository" type="number" min="1">
-      </div>
-      <div class="micl-textfield-outlined">
-        <label for="cleanup-delete-limit">{{ t("Delete limit per repository") }}</label>
-        <input id="cleanup-delete-limit" v-model="draft.deleteLimitPerRepository" type="number" min="1">
+        <label for="cleanup-retain">{{ t("Keep newest versions") }}</label>
+        <input id="cleanup-retain" v-model="draft.retainCount" type="number" min="0" :disabled="!supportsRetainCount">
       </div>
     </div>
-
-    <h3 class="kk-schema-form__group">{{ t("Target repositories") }}</h3>
-    <div class="kk-actions-row">
-      <label v-for="repo in repositories" :key="repo.name" class="kk-checkbox-row">
-        <input
-          class="micl-checkbox"
-          type="checkbox"
-          :checked="(draft.repositoryIds as number[]).includes(Number(repo.id))"
-          @change="toggleRepository(Number(repo.id))"
-        >
-        <span>{{ repo.name }}</span>
-      </label>
-    </div>
+    <p class="kk-hint">
+      {{ t("A pattern only narrows the scope; at least one age or retain rule is required and every configured rule must match.") }}
+    </p>
 
     <h3 class="kk-schema-form__group">{{ t("Schedule") }}</h3>
     <div class="kk-field-grid">
       <div class="micl-textfield-outlined">
-        <label for="cleanup-cron">{{ t("Cron expression") }}</label>
+        <label for="cleanup-cron">{{ t("Run schedule (cron)") }}</label>
         <input id="cleanup-cron" v-model="draft.cronExpression" type="text" placeholder="0 0 2 * * ?" autocomplete="off">
       </div>
       <div class="micl-textfield-outlined">
         <label for="cleanup-timezone">{{ t("Time zone") }}</label>
-        <input id="cleanup-timezone" v-model="draft.timeZone" type="text" autocomplete="off">
+        <input
+          id="cleanup-timezone"
+          v-model="draft.timeZone"
+          type="text"
+          list="cleanup-time-zone-options"
+          autocomplete="off"
+          :disabled="!draft.cronExpression.trim()"
+        >
+        <datalist id="cleanup-time-zone-options">
+          <option v-for="zone in timeZoneOptions" :key="zone" :value="zone"></option>
+        </datalist>
       </div>
-      <label class="kk-checkbox-row">
-        <input v-model="draft.scheduleEnabled" class="micl-checkbox" type="checkbox">
-        <span>{{ t("Enable schedule") }}</span>
-      </label>
+    </div>
+    <p class="kk-hint" aria-live="polite">{{ previewTitle }}</p>
+    <p v-if="executeHelp" class="kk-hint">{{ executeHelp }}</p>
+
+    <h3 class="kk-schema-form__group">{{ t("Notes") }}</h3>
+    <div class="micl-textfield-outlined kk-field--wide">
+      <label for="cleanup-notes">{{ t("Notes") }}</label>
+      <textarea id="cleanup-notes" v-model="draft.notes" rows="3" :placeholder="t('Why this policy exists, ownership, or rollback notes')"></textarea>
     </div>
   </M3Dialog>
 

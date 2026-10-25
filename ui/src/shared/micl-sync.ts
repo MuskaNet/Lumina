@@ -79,9 +79,9 @@ export function installMiclValueSync(): void {
       if (mutation.type === "childList") {
         for (const node of mutation.addedNodes) {
           if (node instanceof HTMLElement) {
-            if (node.matches?.('[class*="micl-textfield-"] > input, [class*="micl-textfield-"] > textarea')) {
+            if (node.matches('[class*="micl-textfield-"] > input, [class*="micl-textfield-"] > textarea')) {
               syncElementValue(node);
-            } else if (node.querySelectorAll) {
+            } else {
               syncAllMiclInputs(node);
             }
           }
