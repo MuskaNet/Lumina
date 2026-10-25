@@ -11,3 +11,6 @@ server/blobs/
 .local/
 .claude/settings.local.json
 .playwright-mcp/
+node_modules/
+ui/dist/
+*.html.bak

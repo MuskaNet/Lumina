@@ -58,7 +58,7 @@ Docker / OCI 客户端使用 Registry HTTP API V2 路由：
 6. group 仓库按配置顺序解析 member，并缓存可重建的 member 命中结果。
 7. 响应从 blob storage 流式返回，或返回生成的 metadata asset。
 
-Admin UI 和 Browse UI 由 Spring Boot 服务提供静态资源：
+Admin UI 和 Browse UI 是 `ui/` 构建出的 Vue 3 应用，由 Spring Boot 服务以静态资源方式提供：
 
 - 管理控制台：`/admin/`
 - 用户侧浏览器：`/browse/`
@@ -93,8 +93,8 @@ Admin UI 和 Browse UI 由 Spring Boot 服务提供静态资源：
 | `persistence-postgresql` | PostgreSQL dialect、驱动、迁移和契约测试 |
 | `migration-nexus` | Nexus 元数据和安全数据迁移支持 |
 | `server` | Spring Boot 运行时、controller、service、filter、worker |
-| `admin-ui` | 管理控制台静态资源 |
-| `browse-ui` | 用户侧仓库浏览器静态资源 |
+| `admin-ui` | 构建产物：管理控制台前端包（Vue 3 + MICL），以静态资源方式提供 |
+| `browse-ui` | 构建产物：用户侧仓库浏览器前端包（Vue 3 + MICL），以静态资源方式提供 |
 | `compat-test` | 黑盒和协议兼容性测试 |
 
 协议逻辑应位于 service 和 protocol 模块中，不应堆在 controller 里。精确路径和前缀 route

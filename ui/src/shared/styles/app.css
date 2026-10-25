@@ -1,0 +1,510 @@
+/* kkRepo glue on top of MICL.
+ *
+ * Only layout wrappers and the kk-* components MICL does not provide are styled
+ * here. MICL component internals are never overridden: colours, type and shape
+ * come from the --md-sys-* tokens, component sizing from --md-comp-* tokens.
+ */
+
+#app {
+  /* Let the rail and pane area sit directly under <body class="micl-window">. */
+  display: contents;
+}
+
+/* ---- Shell ------------------------------------------------------------- */
+
+.kk-appbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-padding-xs, 8px);
+  margin-inline-start: auto;
+  padding-inline-end: var(--md-sys-padding-s, 12px);
+}
+
+.kk-user-menu {
+  min-inline-size: 240px;
+}
+
+/* ---- Browse ----------------------------------------------------------- */
+
+.kk-appbar-search {
+  flex: 1 1 20rem;
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.kk-repo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--md-sys-padding-s, 12px);
+}
+
+.kk-repo-card {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-padding-s, 12px);
+  padding: var(--md-sys-padding-s, 12px);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background: var(--md-sys-color-surface);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kk-repo-card:hover {
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.kk-repo-card:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.kk-repo-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.kk-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.kk-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-padding-xs, 8px);
+  font-size: var(--md-sys-typescale-body-small-size);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---- Progress --------------------------------------------------------- */
+
+.kk-progress {
+  block-size: 8px;
+  border-radius: var(--md-sys-shape-corner-full, 999px);
+  background: var(--md-sys-color-surface-container-high);
+  overflow: hidden;
+}
+
+.kk-progress__bar {
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--md-sys-color-primary);
+  transition: inline-size 200ms ease;
+}
+
+/* ---- Login ------------------------------------------------------------ */
+
+.kk-login {
+  inline-size: min(28rem, 92vw);
+}
+
+.kk-login .micl-dialog__actions {
+  justify-content: flex-end;
+}
+
+/* kkRepo navigation labels are longer than the M3 default rail width allows. */
+.kk-rail {
+  --md-comp-nav-rail-collapsed-container-width: 160px;
+  --md-comp-nav-rail-expanded-container-width-minimum: 220px;
+  --md-comp-nav-rail-expanded-container-width-maximum: 300px;
+}
+
+.kk-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-sys-padding-m, 16px);
+  padding: var(--md-sys-padding-m, 16px);
+}
+
+/* ---- Toolbar / summary ------------------------------------------------- */
+
+.kk-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--md-sys-padding-s, 12px);
+}
+
+.kk-toolbar__spacer {
+  margin-inline-start: auto;
+}
+
+.kk-filter {
+  inline-size: min(320px, 100%);
+}
+
+.kk-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-padding-l, 20px);
+  padding: var(--md-sys-padding-m, 16px);
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+}
+
+.kk-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 8rem;
+}
+
+.kk-summary__label {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+.kk-summary__value {
+  font-size: var(--md-sys-typescale-title-medium-size);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+  font-weight: var(--md-sys-typescale-title-medium-weight);
+}
+
+/* ---- Data table -------------------------------------------------------
+ * MICL has no data grid, so this is a kkRepo component built from M3 tokens.
+ */
+
+.kk-table-frame {
+  overflow: auto;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background: var(--md-sys-color-surface);
+}
+
+.kk-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+}
+
+.kk-table th,
+.kk-table td {
+  padding: 10px var(--md-sys-padding-s, 12px);
+  text-align: start;
+  vertical-align: middle;
+  border-block-end: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.kk-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  white-space: nowrap;
+}
+
+.kk-table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.kk-table tbody tr:hover {
+  background: var(--md-sys-color-surface-container-low);
+}
+
+.kk-table .is-end {
+  text-align: end;
+}
+
+.kk-col-location {
+  inline-size: 16rem;
+  max-inline-size: 16rem;
+}
+
+.kk-col-location .kk-mono {
+  overflow-wrap: anywhere;
+}
+
+.kk-table__placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: center;
+  padding-block: var(--md-sys-padding-xl, 24px);
+}
+
+.kk-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+}
+
+.kk-sort-button:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.kk-sort-icon {
+  font-size: 18px;
+  opacity: 0.55;
+}
+
+.kk-sort-button.is-active .kk-sort-icon {
+  opacity: 1;
+  color: var(--md-sys-color-primary);
+}
+
+/* ---- Cell helpers ------------------------------------------------------ */
+
+.kk-mono {
+  font-family: var(--md-sys-typescale-body-medium-font, ui-monospace, SFMono-Regular, monospace);
+  font-size: var(--md-sys-typescale-body-small-size);
+  overflow-wrap: anywhere;
+}
+
+.kk-muted {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-location {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--md-sys-color-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.kk-location:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+}
+
+.kk-secondary {
+  display: block;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+}
+
+.kk-inline-progress {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-row-actions {
+  display: flex;
+  gap: var(--md-sys-padding-xs, 8px);
+  justify-content: flex-end;
+}
+
+/* ---- State badges ------------------------------------------------------ */
+
+.kk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--md-sys-shape-corner-full, 999px);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  white-space: nowrap;
+}
+
+.kk-badge--ok {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.kk-badge--warn {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.kk-badge--bad {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.kk-badge--checking {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---- Empty state ------------------------------------------------------- */
+
+.kk-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--md-sys-padding-s, 12px);
+  padding: var(--md-sys-padding-xxl, 28px);
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-empty-state__icon {
+  font-size: 48px;
+}
+
+.kk-empty-state__title {
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+  font-size: var(--md-sys-typescale-title-medium-size);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+}
+
+.kk-empty-state__body {
+  margin: 0;
+  max-inline-size: 42rem;
+}
+
+/* ---- Form grid -------------------------------------------------------- */
+
+.kk-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--md-sys-padding-m, 16px);
+}
+
+.kk-field--wide {
+  grid-column: 1 / -1;
+}
+
+.kk-schema-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-sys-padding-m, 16px);
+}
+
+.kk-schema-form__group {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+}
+
+.kk-checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--md-sys-padding-xs, 8px);
+}
+
+.kk-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-padding-s, 12px);
+  padding: var(--md-sys-padding-s, 12px);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  max-block-size: 16rem;
+  overflow: auto;
+}
+
+.kk-form-error {
+  margin: 0;
+  padding: var(--md-sys-padding-s, 12px);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.kk-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-sys-padding-m, 16px);
+  max-block-size: 60vh;
+  overflow: auto;
+}
+
+.kk-format-icon {
+  color: var(--md-sys-color-primary);
+  font-size: 20px;
+  vertical-align: middle;
+}
+
+.kk-product-link {
+  color: var(--md-sys-color-on-surface);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  text-decoration: none;
+}
+
+.kk-product-version {
+  color: var(--md-sys-color-primary);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  text-decoration: none;
+}
+
+.kk-dialog--wide {
+  inline-size: min(56rem, 92vw);
+}
+
+.kk-dialog {
+  inline-size: min(36rem, 92vw);
+}
+
+/* ---- Tabs ------------------------------------------------------------- */
+
+.kk-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-padding-xs, 8px);
+  border-block-end: 1px solid var(--md-sys-color-outline-variant);
+  padding-block-end: var(--md-sys-padding-xs, 8px);
+}
+
+.kk-tab {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full, 999px);
+  background: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font: inherit;
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  cursor: pointer;
+}
+
+.kk-tab:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.kk-tab.is-active {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.kk-tab:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+/* ---- Code / JSON panel ------------------------------------------------ */
+
+.kk-code {
+  margin: 0;
+  padding: var(--md-sys-padding-s, 12px);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: 1.5;
+  overflow: auto;
+  max-block-size: 24rem;
+}

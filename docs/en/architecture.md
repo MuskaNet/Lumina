@@ -58,7 +58,7 @@ The server flow is:
 6. Group repositories resolve members in configured order and cache rebuildable member-hit decisions.
 7. Responses are streamed from blob storage or generated metadata assets.
 
-Admin UI and Browse UI are served by the Spring Boot service as static assets:
+Admin UI and Browse UI are Vue 3 applications built from `ui/` and served by the Spring Boot service as static assets:
 
 - Admin console: `/admin/`
 - User browser: `/browse/`
@@ -93,8 +93,8 @@ Admin UI and Browse UI are served by the Spring Boot service as static assets:
 | `persistence-postgresql` | PostgreSQL dialect, driver, migrations, and contract suite |
 | `migration-nexus` | Nexus metadata and security migration support |
 | `server` | Spring Boot runtime, controllers, services, filters, workers |
-| `admin-ui` | Static admin console resources |
-| `browse-ui` | Static repository browser resources |
+| `admin-ui` | Built admin console bundle (Vue 3 + MICL), served as static resources |
+| `browse-ui` | Built repository browser bundle (Vue 3 + MICL), served as static resources |
 | `compat-test` | Black-box and protocol compatibility tests |
 
 Protocol logic should live in services and protocol modules, not in controllers. Exact and prefix

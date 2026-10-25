@@ -1,43 +1,45 @@
 package com.github.klboke.kkrepo.server.browse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.klboke.kkrepo.core.RepositoryFormat;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
+/**
+ * The console renders one icon per repository format. Every catalog format must have an icon
+ * mapping so a newly added protocol does not appear with a fallback glyph.
+ */
 class WelcomeSupportedFormatsContractTest {
 
   @Test
-  void welcomePageStaysAlignedWithRepositoryFormatCatalog() throws IOException {
-    String index = resource("/META-INF/resources/browse/index.html");
-    String formatIcons = resource("/META-INF/resources/browse/assets/format-icons.css");
+  void everyRepositoryFormatHasAnIconMapping() throws IOException {
+    Path view = Path.of("..", "ui", "src", "admin", "views", "RepositoriesView.vue");
+    assertTrue(Files.exists(view), "missing " + view.toAbsolutePath());
+    String source = Files.readString(view, StandardCharsets.UTF_8);
+
     int formatCount = RepositoryFormat.values().length;
-
+    int mapped = 0;
     for (RepositoryFormat format : RepositoryFormat.values()) {
-      assertEquals(1, occurrences(index, "data-format=\"" + format.id() + "\""), format.id());
-      assertEquals(1, occurrences(
-          formatIcons,
-          ".format-logo-" + iconName(format) + " {"), format.id());
+      if (source.contains(format.id() + ":")) {
+        mapped++;
+      }
     }
-    assertEquals(1, occurrences(index, ">" + formatCount + " formats</span>"));
-    assertEquals(formatCount, occurrences(index, "class=\"format-item\""));
+    assertEquals(formatCount, mapped, "every RepositoryFormat needs a FORMAT_ICONS entry");
   }
 
-  private static String iconName(RepositoryFormat format) {
-    return format == RepositoryFormat.MAVEN2 ? "maven" : format.id();
-  }
+  @Test
+  void welcomeViewGroupsRepositoriesByFormatComingFromTheServer() throws IOException {
+    Path view = Path.of("..", "ui", "src", "browse", "views", "WelcomeView.vue");
+    assertTrue(Files.exists(view), "missing " + view.toAbsolutePath());
+    String source = Files.readString(view, StandardCharsets.UTF_8);
 
-  private static int occurrences(String value, String token) {
-    return value.split(java.util.regex.Pattern.quote(token), -1).length - 1;
-  }
-
-  private String resource(String path) throws IOException {
-    try (InputStream stream = getClass().getResourceAsStream(path)) {
-      return new String(Objects.requireNonNull(stream).readAllBytes(), StandardCharsets.UTF_8);
-    }
+    // The format list is data-driven, so the UI cannot drift from the server catalog.
+    assertTrue(source.contains("repo.format"), "format taken from the repository record");
+    assertTrue(source.contains("/repository/"), "copyable repository URL");
   }
 }

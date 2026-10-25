@@ -11,8 +11,5 @@ public class AdminUiResourceConfiguration implements WebMvcConfigurer {
     registry
         .addResourceHandler("/admin/**")
         .addResourceLocations("classpath:/META-INF/resources/admin/");
-    registry
-        .addResourceHandler("/login/**")
-        .addResourceLocations("classpath:/META-INF/resources/login/");
   }
 }
