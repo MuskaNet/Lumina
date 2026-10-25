@@ -100,12 +100,12 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="refreshConnectors">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">refresh</span>
+    <button type="button" class="micl-button-filled-s" @click="refreshConnectors">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh connectors") }}
     </button>
-    <button type="button" class="micl-button-outlined-m" @click="clearCache">{{ t("Clear Docker cache") }}</button>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Reload") }}</button>
+    <button type="button" class="micl-button-outlined-s" @click="clearCache">{{ t("Clear Docker cache") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Reload") }}</button>
   </div>
 
   <p v-if="status" class="kk-form-error" role="alert">{{ status }}</p>

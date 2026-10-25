@@ -124,11 +124,11 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">vpn_key</span>
+    <button type="button" class="micl-button-filled-s" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">vpn_key</span>
       {{ t("Create token") }}
     </button>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <p class="kk-muted">

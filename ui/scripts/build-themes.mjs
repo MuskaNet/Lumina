@@ -85,15 +85,25 @@ function kebab(name) {
   return name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 }
 
-function schemeBlock(selector, brandHct, accentHct, isDark, contrastLevel) {
+function schemeDeclarations(brandHct, accentHct, isDark, contrastLevel) {
   const scheme = new SchemeTonalSpot(brandHct, isDark, contrastLevel);
   scheme.tertiaryPalette = TonalPalette.fromHct(accentHct);
 
-  const lines = ROLE_NAMES.map((role) => {
+  return ROLE_NAMES.map((role) => {
     const value = Roles[role].getArgb(scheme);
     return `  --md-sys-color-${kebab(role)}: ${hexFromArgb(value)};`;
-  });
-  return `${selector} {\n${lines.join("\n")}\n}\n`;
+  }).join("\n");
+}
+
+function schemeBlock(selector, declarations) {
+  return `${selector} {\n${declarations}\n}\n`;
+}
+
+function indent(source, prefix = "  ") {
+  return source
+    .split("\n")
+    .map((line) => (line ? prefix + line : line))
+    .join("\n");
 }
 
 const blocks = [
@@ -105,9 +115,14 @@ for (const theme of THEMES) {
   const brandHct = Hct.fromInt(argbFromHex(theme.brand));
   const accentHct = Hct.fromInt(argbFromHex(theme.accent));
   const selector = `:root[data-theme="${theme.id}"]`;
+  const light = schemeDeclarations(brandHct, accentHct, false, 0);
+  const dark = schemeDeclarations(brandHct, accentHct, true, 0);
   blocks.push(
-    schemeBlock(`${selector}.light, ${selector}`, brandHct, accentHct, false, 0),
-    schemeBlock(`${selector}.dark`, brandHct, accentHct, true, 0),
+    schemeBlock(`${selector}.light, ${selector}`, light),
+    schemeBlock(`${selector}.dark`, dark),
+    // Pre-paint fallback: until the theme bootstrap adds .light/.dark the first
+    // paint must honour the OS scheme instead of flashing the light palette.
+    `@media (prefers-color-scheme: dark) {\n  ${selector}:not(.light) {\n${indent(dark)}\n  }\n}\n`,
   );
 }
 

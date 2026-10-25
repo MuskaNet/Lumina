@@ -2,6 +2,7 @@ import { createRouter, type RouteRecordRaw } from "vue-router";
 import type { Component } from "vue";
 import { ADMIN_NAV, ADMIN_NAV_BY_ID } from "./nav";
 import { createLegacyHashHistory } from "../shared/router/legacy-hash-history";
+import { beginTask, endTask, fail } from "../shared/progress";
 
 import AnonymousView from "./views/AnonymousView.vue";
 import ApiKeysView from "./views/ApiKeysView.vue";
@@ -83,9 +84,22 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach((to) => {
+router.beforeEach((to, from) => {
+  if (to.path !== from.path) {
+    beginTask();
+  }
   const alias = LEGACY_HASH_ROUTES[`#${to.path.replace(/^\//, "")}`.toLowerCase()];
   if (alias && alias !== to.name) return canonicalPath(alias);
   return true;
+});
+
+router.afterEach(() => {
+  setTimeout(() => {
+    endTask();
+  }, 120);
+});
+
+router.onError(() => {
+  fail();
 });
 

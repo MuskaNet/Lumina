@@ -200,8 +200,8 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">person_add</span>
+    <button type="button" class="micl-button-filled-s" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">person_add</span>
       {{ t("Create user") }}
     </button>
     <div class="micl-textfield-outlined kk-filter">
@@ -209,7 +209,7 @@ onMounted(load);
       <label for="user-filter">{{ t("Filter") }}</label>
       <input id="user-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <M3DataTable
@@ -251,11 +251,15 @@ onMounted(load);
 
   <M3Dialog
     ref="deleteDialog"
+    icon="person_off"
+    destructive
     :title="t('Delete user?')"
     :confirm-label="t('Delete')"
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <code class="kk-mono">{{ deleteTarget?.source }}/{{ deleteTarget?.userId }}</code>
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete user") }} <strong class="kk-mono">{{ deleteTarget?.source }}/{{ deleteTarget?.userId }}</strong>?
+    </p>
   </M3Dialog>
 </template>

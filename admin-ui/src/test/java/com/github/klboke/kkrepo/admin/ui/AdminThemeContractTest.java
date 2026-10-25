@@ -74,4 +74,30 @@ class AdminThemeContractTest {
     assertEquals(true, generator.contains("brand: \"#0e7c6f\""), "default brand");
     assertEquals(true, generator.contains("brand: \"#2f7650\""), "nexus brand");
   }
+
+  @Test
+  void entryDocumentsDeclareColorSchemeSupport() throws IOException {
+    for (String document : List.of("admin.html", "browse.html")) {
+      assertTrue(
+          ui(document).contains("<meta name=\"color-scheme\" content=\"light dark\">"),
+          document + " color-scheme meta");
+    }
+  }
+
+  @Test
+  void generatedStylesFallBackToTheSystemSchemeBeforeJavaScriptRuns() throws IOException {
+    String css = ui("src/shared/theme/themes.generated.css");
+
+    assertTrue(css.contains("@media (prefers-color-scheme: dark)"), "system dark fallback");
+    assertTrue(css.contains(":not(.light)"), "fallback yields to an explicit light scheme");
+  }
+
+  @Test
+  void themeBootstrapFollowsTheSystemColorScheme() throws IOException {
+    String theme = ui("src/shared/theme/index.ts");
+
+    assertTrue(theme.contains("(prefers-color-scheme: dark)"), "dark media query");
+    assertTrue(theme.contains("matchMedia"), "media query lookup");
+    assertTrue(theme.contains("addEventListener(\"change\""), "live appearance updates");
+  }
 }

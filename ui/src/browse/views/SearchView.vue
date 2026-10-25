@@ -103,8 +103,8 @@ watch(
       <label for="search-format">{{ t("Format") }}</label>
       <input id="search-format" v-model="format" type="text" placeholder="maven2" autocomplete="off">
     </div>
-    <button type="submit" class="micl-button-filled-m kk-toolbar__spacer">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">search</span>
+    <button type="submit" class="micl-button-filled-s kk-toolbar__spacer">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
       {{ t("Search") }}
     </button>
   </form>

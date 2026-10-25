@@ -23,7 +23,8 @@ class BrowseUiEntryPointContractTest {
   @Test
   void entryPointKeepsMavenVersionFiltering() throws IOException {
     String index = resource("/META-INF/resources/browse/index.html");
-    assertTrue(index.contains("<meta name=\"kkrepo-version\" content=\"@project.version@\">"));
+    assertTrue(index.contains("<meta name=\"kkrepo-version\" content=\""), "version meta tag");
+    assertFalse(index.contains("@project.version@"), "unfiltered Maven placeholder");
   }
 
   @Test

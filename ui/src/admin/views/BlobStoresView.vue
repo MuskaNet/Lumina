@@ -5,6 +5,7 @@ import { t } from "../../shared/i18n";
 import { formatInventoryBytes, inventoryValue, type InventorySnapshot } from "../../shared/inventory";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn, type DataTableSort } from "../../shared/components/M3DataTable.vue";
+import M3Dialog from "../../shared/components/M3Dialog.vue";
 
 interface BlobStore {
   id?: number | null;
@@ -271,7 +272,7 @@ const form = reactive({
   secretKey: "",
   pathStyleAccess: true,
 });
-const formDialog = ref<HTMLDialogElement | null>(null);
+const formDialog = ref<InstanceType<typeof M3Dialog> | null>(null);
 const formError = ref("");
 
 const isFileEngine = computed(() => form.engine === "file");
@@ -300,7 +301,7 @@ function openCreate() {
   resetForm();
   editingId.value = null;
   formOpen.value = true;
-  formDialog.value?.showModal();
+  formDialog.value?.open();
 }
 
 function openEdit(store: BlobStore) {
@@ -320,7 +321,7 @@ function openEdit(store: BlobStore) {
     pathStyleAccess: store.pathStyleAccess ?? true,
   });
   formOpen.value = true;
-  formDialog.value?.showModal();
+  formDialog.value?.open();
 }
 
 function closeForm() {
@@ -387,13 +388,13 @@ async function save() {
 
 /* ---- Delete ------------------------------------------------------------ */
 
-const deleteDialog = ref<HTMLDialogElement | null>(null);
+const deleteDialog = ref<InstanceType<typeof M3Dialog> | null>(null);
 const deleteTarget = ref<BlobStore | null>(null);
 const deleting = ref(false);
 
 function askDelete(store: BlobStore) {
   deleteTarget.value = store;
-  deleteDialog.value?.showModal();
+  deleteDialog.value?.open();
 }
 
 function cancelDelete() {
@@ -424,8 +425,8 @@ onMounted(() => {
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button type="button" class="micl-button-filled-s" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create blob store") }}
     </button>
     <div class="micl-textfield-outlined kk-filter">
@@ -433,8 +434,8 @@ onMounted(() => {
       <label for="blobstore-filter">{{ t("Filter") }}</label>
       <input id="blobstore-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="refresh({ autoCheck: false })">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">refresh</span>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="refresh({ autoCheck: false })">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh") }}
     </button>
   </div>
@@ -520,14 +521,17 @@ onMounted(() => {
   </M3DataTable>
 
   <!-- Create / edit -->
-  <dialog ref="formDialog" class="micl-dialog kk-dialog" aria-labelledby="blobstore-form-title" @close="formOpen = false">
-    <div class="micl-dialog__headline">
-      <h2 id="blobstore-form-title">{{ editingId == null ? t("Create blob store") : t("Edit blob store") }}</h2>
-      <span class="micl-dialog__supporting-text">
-        {{ t("Blob storage holds every artifact payload; metadata stays in the database.") }}
-      </span>
-    </div>
-
+  <M3Dialog
+    ref="formDialog"
+    wide
+    :title="editingId == null ? t('Create blob store') : t('Edit blob store')"
+    :subtitle="t('Blob storage holds every artifact payload; metadata stays in the database.')"
+    :confirm-label="editingId == null ? t('Create blob store') : t('Save blob store')"
+    :busy="saving"
+    :error="formError"
+    @confirm="save"
+    @cancel="closeForm"
+  >
     <div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="blobstore-name">{{ t("Name") }}</label>
@@ -590,32 +594,23 @@ onMounted(() => {
       <input v-model="form.pathStyleAccess" class="micl-checkbox" type="checkbox">
       <span>{{ t("Path style access") }}</span>
     </label>
-
-    <p v-if="formError" class="kk-form-error" role="alert">{{ formError }}</p>
-
-    <div class="micl-dialog__actions">
-      <button type="button" class="micl-button-text-m" @click="closeForm">{{ t("Cancel") }}</button>
-      <button type="button" class="micl-button-filled-m" :disabled="saving" @click="save">
-        {{ saving ? t("Saving…") : t("Save blob store") }}
-      </button>
-    </div>
-  </dialog>
+  </M3Dialog>
 
   <!-- Delete confirmation -->
-  <dialog ref="deleteDialog" class="micl-dialog kk-dialog" aria-labelledby="blobstore-delete-title" @close="deleteTarget = null">
-    <div class="micl-dialog__headline">
-      <h2 id="blobstore-delete-title">{{ t("Delete blob store?") }}</h2>
-      <span class="micl-dialog__supporting-text">
-        {{ t("This removes the configuration only. Storage files and buckets are not deleted.") }}
-      </span>
-    </div>
-    <p class="kk-mono">{{ deleteTarget?.name }}</p>
-    <div class="micl-dialog__actions">
-      <button type="button" class="micl-button-text-m" @click="cancelDelete">{{ t("Cancel") }}</button>
-      <button type="button" class="micl-button-filled-m" :disabled="deleting" @click="confirmDelete">
-        {{ t("Delete") }}
-      </button>
-    </div>
-  </dialog>
+  <M3Dialog
+    ref="deleteDialog"
+    icon="delete"
+    destructive
+    :title="t('Delete blob store?')"
+    :subtitle="t('This removes the configuration only. Storage files and buckets are not deleted.')"
+    :confirm-label="t('Delete')"
+    :busy="deleting"
+    @confirm="confirmDelete"
+    @cancel="cancelDelete"
+  >
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
+    </p>
+  </M3Dialog>
 </template>
 

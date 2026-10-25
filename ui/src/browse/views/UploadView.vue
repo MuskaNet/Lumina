@@ -119,8 +119,8 @@ onMounted(load);
   </div>
 
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" :disabled="busy" @click="upload">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">upload</span>
+    <button type="button" class="micl-button-filled-s" :disabled="busy" @click="upload">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">upload</span>
       {{ busy ? t("Uploading…") : t("Upload") }}
     </button>
     <span v-if="target" class="kk-muted">{{ target.name }} · {{ target.format }}</span>

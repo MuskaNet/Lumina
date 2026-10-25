@@ -21,6 +21,23 @@ const TARGETS: Record<string, { base: string; entry: string; outDir: string }> =
   },
 };
 
+/**
+ * `vite dev` serves the root HTML files by path only, so the production paths
+ * (`/admin/`, `/browse/`) would fall through to the SPA fallback and 404.
+ * Map both to their document files. `/` redirects to `/browse` like the Spring
+ * runtime does, so dev entry behavior matches production.
+ */
+const DEV_HTML_ENTRIES: Record<string, string> = {
+  "/admin": "/admin.html",
+  "/admin/": "/admin.html",
+  "/admin/index.html": "/admin.html",
+  "/browse": "/browse.html",
+  "/browse/": "/browse.html",
+  "/browse/index.html": "/browse.html",
+};
+
+const DEV_ROOT_REDIRECT = "/browse";
+
 export default defineConfig(({ command, mode }) => {
   const targetName = process.env.KKREPO_UI_TARGET ?? (mode === "browse" ? "browse" : "admin");
   const target = TARGETS[targetName];
@@ -32,7 +49,31 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base: dev ? "/" : target.base,
-    plugins: [vue()],
+    plugins: [
+      vue(),
+      {
+        name: "dev-html-fallback",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const url = req.url ?? "/";
+            const queryIndex = url.indexOf("?");
+            const pathname = queryIndex === -1 ? url : url.slice(0, queryIndex);
+            const search = queryIndex === -1 ? "" : url.slice(queryIndex);
+            if (pathname === "/" || pathname === "/index.html") {
+              res.statusCode = 302;
+              res.setHeader("Location", `${DEV_ROOT_REDIRECT}${search}`);
+              res.end();
+              return;
+            }
+            const entry = DEV_HTML_ENTRIES[pathname];
+            if (entry) {
+              req.url = `${entry}${search}`;
+            }
+            next();
+          });
+        },
+      },
+    ],
     resolve: {
       alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
     },

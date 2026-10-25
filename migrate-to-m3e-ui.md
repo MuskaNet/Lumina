@@ -305,7 +305,7 @@ ui/                                    # 新增：单仓 Vite 多入口工程
 
 | 路径 | 内容 |
 | --- | --- |
-| `ui/vite.config.ts` | 开发服务器（`:5173`，代理 `/internal`、`/service`、`/repository`、`/v2`、`/login` 到 `KKREPO_BACKEND`，默认 `:8080`）+ 生产构建（`base=/admin/`，产物固定名 `assets/app.js`、`assets/app.css`，不覆盖手写 `index.html`） |
+| `ui/vite.config.ts` | 开发服务器（`:5173`，`/` 跳转 `/browse`，`/admin` 与 `/browse` 两个入口均按生产路径访问，代理 `/internal`、`/service`、`/repository`、`/v2`、`/login` 到 `KKREPO_BACKEND`，默认 `:8080`）+ 生产构建（`base` 为 `/admin/` 或 `/browse/`，产物固定名 `assets/app.js`、`assets/app.css`，不覆盖手写 `index.html`） |
 | `ui/scripts/build-themes.mjs` | 用 `@material/material-color-utilities` 的 `SchemeTonalSpot` 从 6 套旧主题的 `--brand` / `--accent` 生成 `--md-sys-color-*`（light + dark），产物 `src/shared/theme/themes.generated.css` |
 | `ui/scripts/build-icons.mjs` | 扫描 `src/**/*.{vue,ts}` 收集图标名并子集化 Material Symbols（保留 `rlig`） |
 | `ui/scripts/extract-legacy-i18n.mjs` | 从 `ui-i18n.js` 提取 641 条中文词条到 `src/shared/i18n/zh-CN.json`（翻译零丢失） |
@@ -426,7 +426,7 @@ ui/                                    # 新增：单仓 Vite 多入口工程
 cd ui
 npm install
 npm run dev            # admin:  http://localhost:5173/admin/#admin/repository/repositories
-                       # browse: http://localhost:5173/browse.html#browse/welcome
+                       # browse: http://localhost:5173/browse/#browse/welcome
 npm run build          # admin  → admin-ui/src/main/resources/META-INF/resources/admin/
 npm run build:browse   # browse → browse-ui/src/main/resources/META-INF/resources/browse/
 npm run build:themes   # 主题 token 变更后重新生成
@@ -435,7 +435,19 @@ npm test
 npm run typecheck
 ```
 
-`KKREPO_BACKEND` 覆盖开发代理目标（默认 `http://localhost:8080`），`KKREPO_UI_OUT` 覆盖构建输出目录。
+`KKREPO_BACKEND` 覆盖开发代理目标（默认 `http://localhost:8080`），`KKREPO_UI_OUT` 覆盖构建输出目录。开发服务器把 `/` 重定向到 `/browse`（与 Spring 运行时一致），并把 `/admin`、`/browse`（含结尾斜杠和 `index.html`）映射到对应入口，因此一个 dev server 就能按生产路径调试两个 UI。`KKREPO_UI_TARGET`（或 `--mode browse`）只影响构建产物目录。
+
+Vite 代理默认访问 `http://localhost:8080`，本地后端可以这样启动：
+
+```shell
+docker compose -f docker-compose.dev.yml up -d      # MySQL :13306 + RustFS :9000
+mvn -pl server -am -DskipTests package spring-boot:repackage
+java -jar server/target/kkrepo-server-<version>.jar \
+  --spring.profiles.active=dev --server.port=8080 \
+  --spring.datasource.url='jdbc:mysql://127.0.0.1:13306/kkrepo?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true'
+```
+
+`dev` profile 默认端口是 `18090`，同时需要 `--server.port=8080` 才能匹配 Vite 的默认代理目标；MySQL 8 默认认证插件需要 `allowPublicKeyRetrieval=true`。首次启动会执行 Flyway 迁移，完成后 `/internal/security/context` 会返回 bootstrap 状态。
 
 ### 11.8 已知取舍
 

@@ -12,6 +12,6 @@ const path = computed(() => route.fullPath);
     <span class="material-symbols-outlined kk-empty-state__icon" aria-hidden="true">help</span>
     <h2 class="kk-empty-state__title">{{ t("Unknown administration page") }}</h2>
     <p class="kk-empty-state__body"><code class="kk-mono">{{ path }}</code></p>
-    <a class="micl-button-text-m" href="#admin/repository/repositories">{{ t("Go to repositories") }}</a>
+    <a class="micl-button-text-s" href="#admin/repository/repositories">{{ t("Go to repositories") }}</a>
   </section>
 </template>

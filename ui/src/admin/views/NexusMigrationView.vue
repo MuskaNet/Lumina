@@ -54,12 +54,12 @@ async function run(path: "preflight" | "run") {
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-outlined-m" :disabled="busy" @click="run('preflight')">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">fact_check</span>
+    <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="run('preflight')">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">fact_check</span>
       {{ t("Run preflight") }}
     </button>
-    <button type="button" class="micl-button-filled-m" :disabled="busy" @click="run('run')">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">play_arrow</span>
+    <button type="button" class="micl-button-filled-s" :disabled="busy" @click="run('run')">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">play_arrow</span>
       {{ busy ? t("Running…") : t("Run migration") }}
     </button>
   </div>

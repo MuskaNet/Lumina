@@ -271,8 +271,8 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" :disabled="!options.permissions.create" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button type="button" class="micl-button-filled-s" :disabled="!options.permissions.create" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create selector") }}
     </button>
     <div class="micl-textfield-outlined kk-filter">
@@ -280,8 +280,8 @@ onMounted(load);
       <label for="selector-filter">{{ t("Filter") }}</label>
       <input id="selector-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">refresh</span>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh") }}
     </button>
   </div>
@@ -362,8 +362,8 @@ onMounted(load);
     </div>
 
     <div class="kk-toolbar">
-      <button type="button" class="micl-button-outlined-m" :disabled="!editable" @click="preview">
-        <span class="material-symbols-outlined" aria-hidden="true" slot="icon">search</span>
+      <button type="button" class="micl-button-outlined-s" :disabled="!editable" @click="preview">
+        <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
         {{ t("Preview") }}
       </button>
       <span class="kk-muted">{{ previewStatus }}</span>
@@ -425,12 +425,16 @@ onMounted(load);
 
   <M3Dialog
     ref="deleteDialog"
+    icon="delete"
+    destructive
     :title="t('Delete content selector?')"
     :subtitle="t('Selectors referenced by privileges cannot be deleted.')"
     :confirm-label="t('Delete')"
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <code class="kk-mono">{{ deleteTarget?.name }}</code>
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete content selector") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
+    </p>
   </M3Dialog>
 </template>

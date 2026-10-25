@@ -5,7 +5,11 @@ import { t } from "../shared/i18n";
 import { showToast } from "../shared/snackbar";
 import { session, loadSecurityContext, signOut, qualifiedUser } from "../shared/session";
 import { appVersion, PRODUCT_URL } from "../shared/version";
+import { beginTask } from "../shared/progress";
+import M3TopProgressBar from "../shared/components/M3TopProgressBar.vue";
 import M3Snackbar from "../shared/components/M3Snackbar.vue";
+import M3List from "../shared/components/M3List.vue";
+import M3ListItem from "../shared/components/M3ListItem.vue";
 import LoginDialog from "../shared/components/LoginDialog.vue";
 import { route, navigate, browseHash, BROWSE_PREFIX } from "./route";
 import BrowseView from "./views/BrowseView.vue";
@@ -26,6 +30,16 @@ const repositories = ref<Repository[]>([]);
 const search = ref("");
 const loginOpen = ref(false);
 const version = appVersion();
+
+function focusSearch() {
+  const input = document.getElementById("browse-search") as HTMLInputElement | null;
+  if (input) {
+    input.focus();
+    input.select();
+  } else {
+    navigate(`${BROWSE_PREFIX}search`);
+  }
+}
 
 const NAV = [
   { id: "welcome", label: "Welcome", icon: "home", hash: `${BROWSE_PREFIX}welcome` },
@@ -67,22 +81,47 @@ async function onSignedIn() {
 </script>
 
 <template>
-  <nav class="micl-navigationrail kk-rail" aria-label="Repository browser">
-    <div class="micl-navigationrail__content">
+  <M3TopProgressBar />
+  <nav
+    class="micl-navigationrail kk-rail"
+    aria-label="Repository browser"
+  >
+    <div class="kk-rail-action">
+      <button
+        type="button"
+        class="kk-rail-fab"
+        :title="t('Search')"
+        :aria-label="t('Search')"
+        @click="focusSearch"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+      </button>
+    </div>
+    <div class="micl-navigationrail__content kk-rail-content">
       <a
         v-for="item in NAV"
         :key="item.id"
-        class="micl-navigationrail__item"
+        class="micl-navigationrail__item kk-rail-item"
         :href="item.hash"
         :aria-current="item.id === activeId ? 'page' : undefined"
         :title="t(item.label)"
       >
-        <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
-        <span class="micl-navigationrail__text">{{ t(item.label) }}</span>
+        <div class="kk-rail-indicator">
+          <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
+        </div>
+        <span class="micl-navigationrail__text kk-rail-label">{{ t(item.label) }}</span>
       </a>
-      <a class="micl-navigationrail__item" href="/admin/#admin/repository/repositories" title="kkRepo Admin">
-        <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">settings</span>
-        <span class="micl-navigationrail__text">{{ t("Admin") }}</span>
+
+      <a
+        class="micl-navigationrail__item kk-rail-item"
+        href="/admin/#admin/repository/repositories"
+        :title="t('Admin')"
+        @click="beginTask()"
+      >
+        <div class="kk-rail-indicator">
+          <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">settings</span>
+        </div>
+        <span class="micl-navigationrail__text kk-rail-label">{{ t("Admin") }}</span>
       </a>
     </div>
   </nav>
@@ -120,10 +159,10 @@ async function onSignedIn() {
           <button
             v-else
             type="button"
-            class="micl-button-filled-m"
+            class="micl-button-filled-s"
             @click="loginOpen = true"
           >
-            <span class="material-symbols-outlined" aria-hidden="true" slot="icon">login</span>
+            <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">login</span>
             {{ t("Sign in") }}
           </button>
         </div>
@@ -154,32 +193,28 @@ async function onSignedIn() {
   </main>
 
   <nav id="kk-browse-user-menu" class="micl-menu kk-user-menu" popover>
-    <ul class="micl-list">
-      <li class="micl-list-item-two">
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">account_circle</span>
-        <span class="micl-list-item__text">
-          <span class="micl-list-item__headline">{{ qualifiedUser() }}</span>
-          <span class="micl-list-item__supporting-text">{{ session?.source || t("Local session") }}</span>
-        </span>
-      </li>
-      <li
-        class="micl-list-item-one"
-        tabindex="0"
+    <M3List>
+      <M3ListItem
+        :lines="2"
+        leading-icon="account_circle"
+        :headline="qualifiedUser()"
+        :supporting-text="session?.source || t('Local session')"
+      />
+      <M3ListItem
+        :lines="1"
+        leading-icon="key"
+        :headline="t('My Token')"
+        clickable
         @click="navigate(`${BROWSE_PREFIX}my-token`)"
-        @keydown.enter="navigate(`${BROWSE_PREFIX}my-token`)"
-      >
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">key</span>
-        <span class="micl-list-item__text">
-          <span class="micl-list-item__headline">{{ t("My Token") }}</span>
-        </span>
-      </li>
-      <li class="micl-list-item-one" tabindex="0" @click="signOut()" @keydown.enter="signOut()">
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">logout</span>
-        <span class="micl-list-item__text">
-          <span class="micl-list-item__headline">{{ t("Sign out") }}</span>
-        </span>
-      </li>
-    </ul>
+      />
+      <M3ListItem
+        :lines="1"
+        leading-icon="logout"
+        :headline="t('Sign out')"
+        clickable
+        @click="signOut()"
+      />
+    </M3List>
   </nav>
 
   <M3Snackbar />

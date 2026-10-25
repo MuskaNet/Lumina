@@ -21,6 +21,7 @@ const EXTRA_ICONS = [
   "unfold_more",
   "arrow_upward",
   "arrow_downward",
+  "arrow_back",
   "info",
   "check_circle",
   "error",
@@ -91,7 +92,8 @@ writeFileSync(
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "liga";
+  font-feature-settings: "liga" 1, "rlig" 1;
+  -webkit-font-feature-settings: "liga", "rlig";
 }
 `,
   "utf8",

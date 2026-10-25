@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import { t } from "../i18n";
 import { qualifiedUser, session, signOut } from "../session";
 import { appVersion, PRODUCT_URL } from "../version";
+import { beginTask } from "../progress";
 import M3SnackbarHost from "./M3Snackbar.vue";
+import M3List from "./M3List.vue";
+import M3ListItem from "./M3ListItem.vue";
+import M3TopProgressBar from "./M3TopProgressBar.vue";
 
 export interface ShellNavItem {
   id: string;
   label: string;
   icon: string;
   href: string;
+  group?: string;
 }
 
 const props = defineProps<{
@@ -18,27 +23,6 @@ const props = defineProps<{
   nav: ShellNavItem[];
   activeId?: string;
 }>();
-
-const RAIL_STORAGE_KEY = "kkrepo.railExpanded";
-
-function readRailExpanded(): boolean {
-  try {
-    const stored = localStorage.getItem(RAIL_STORAGE_KEY);
-    // Administration labels are long; an expanded rail is the useful default.
-    return stored === null ? true : stored === "true";
-  } catch {
-    return true;
-  }
-}
-
-const railExpanded = ref(readRailExpanded());
-watch(railExpanded, (value) => {
-  try {
-    localStorage.setItem(RAIL_STORAGE_KEY, String(value));
-  } catch {
-    // Storage can be unavailable; the rail still toggles for this session.
-  }
-});
 
 const accountLabel = computed(() => qualifiedUser() || t("Account"));
 const activeItem = computed(() => props.nav.find((item) => item.id === props.activeId));
@@ -50,34 +34,32 @@ function openMyToken() {
 </script>
 
 <template>
+  <M3TopProgressBar />
   <nav class="micl-navigationrail kk-rail" aria-label="Administration">
-    <div class="micl-navigationrail__headline">
-      <button
-        type="button"
-        class="micl-iconbutton-standard-s micl-button--toggle"
-        :aria-pressed="railExpanded"
-        :aria-label="railExpanded ? t('Collapse navigation') : t('Expand navigation')"
-        :title="railExpanded ? t('Collapse navigation') : t('Expand navigation')"
-        @click="railExpanded = !railExpanded"
+    <div class="kk-rail-action">
+      <a
+        class="kk-rail-fab"
+        href="/browse/#browse/welcome"
+        :title="t('Back to browse')"
+        :aria-label="t('Back to browse')"
+        @click="beginTask()"
       >
-        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
-      </button>
-    </div>
-    <div class="micl-navigationrail__content">
-      <a class="micl-navigationrail__item" href="/browse/#browse/welcome" title="kkRepo Browse">
-        <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">home</span>
-        <span class="micl-navigationrail__text">Browse</span>
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
       </a>
+    </div>
+    <div class="micl-navigationrail__content kk-rail-content">
       <a
         v-for="item in nav"
         :key="item.id"
-        class="micl-navigationrail__item"
+        class="micl-navigationrail__item kk-rail-item"
         :href="item.href"
         :aria-current="item.id === activeId ? 'page' : undefined"
         :title="t(item.label)"
       >
-        <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
-        <span class="micl-navigationrail__text">{{ t(item.label) }}</span>
+        <div class="kk-rail-indicator">
+          <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
+        </div>
+        <span class="micl-navigationrail__text kk-rail-label">{{ t(item.label) }}</span>
       </a>
     </div>
   </nav>
@@ -118,27 +100,28 @@ function openMyToken() {
   </main>
 
   <nav id="kk-user-menu" class="micl-menu kk-user-menu" popover>
-    <ul class="micl-list">
-      <li class="micl-list-item-two">
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">account_circle</span>
-        <span class="micl-list-item__text">
-          <span class="micl-list-item__headline">{{ accountLabel }}</span>
-          <span class="micl-list-item__supporting-text">{{ session?.source || t("Local session") }}</span>
-        </span>
-      </li>
-      <li class="micl-list-item-one" tabindex="0" @click="openMyToken" @keydown.enter="openMyToken">
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">key</span>
-        <span class="micl-list-item__text">
-          <span class="micl-list-item__headline">{{ t("My Token") }}</span>
-        </span>
-      </li>
-      <li class="micl-list-item-one" tabindex="0" @click="signOut()" @keydown.enter="signOut()">
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">logout</span>
-        <span class="micl-list-item__text">
-          <span class="micl-list-item__headline">{{ t("Sign out") }}</span>
-        </span>
-      </li>
-    </ul>
+    <M3List>
+      <M3ListItem
+        :lines="2"
+        leading-icon="account_circle"
+        :headline="accountLabel"
+        :supporting-text="session?.source || t('Local session')"
+      />
+      <M3ListItem
+        :lines="1"
+        leading-icon="key"
+        :headline="t('My Token')"
+        clickable
+        @click="openMyToken"
+      />
+      <M3ListItem
+        :lines="1"
+        leading-icon="logout"
+        :headline="t('Sign out')"
+        clickable
+        @click="signOut()"
+      />
+    </M3List>
   </nav>
 
   <M3SnackbarHost />

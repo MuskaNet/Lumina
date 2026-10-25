@@ -83,7 +83,11 @@ function setSelect(field: FieldDef, event: Event) {
             <span>{{ t(field.label) }}</span>
           </label>
 
-          <div v-else-if="field.type === 'select'" class="micl-textfield-outlined">
+          <div
+            v-else-if="field.type === 'select'"
+            class="micl-textfield-outlined"
+            :class="{ 'kk-field--wide': Boolean(field.wide) }"
+          >
             <label :for="`field-${field.key}`">{{ t(field.label) }}</label>
             <select
               :id="`field-${field.key}`"
@@ -98,7 +102,11 @@ function setSelect(field: FieldDef, event: Event) {
             </select>
           </div>
 
-          <div v-else-if="field.type === 'textarea'" class="micl-textfield-outlined kk-field--wide">
+          <div
+            v-else-if="field.type === 'textarea'"
+            class="micl-textfield-outlined"
+            :class="{ 'kk-field--wide': field.wide !== false }"
+          >
             <label :for="`field-${field.key}`">{{ t(field.label) }}</label>
             <textarea
               :id="`field-${field.key}`"
@@ -110,7 +118,11 @@ function setSelect(field: FieldDef, event: Event) {
             ></textarea>
           </div>
 
-          <div v-else-if="field.type === 'number'" class="micl-textfield-outlined">
+          <div
+            v-else-if="field.type === 'number'"
+            class="micl-textfield-outlined"
+            :class="{ 'kk-field--wide': Boolean(field.wide) }"
+          >
             <label :for="`field-${field.key}`">{{ t(field.label) }}</label>
             <input
               :id="`field-${field.key}`"
@@ -124,7 +136,11 @@ function setSelect(field: FieldDef, event: Event) {
             >
           </div>
 
-          <div v-else-if="field.type === 'list'" class="micl-textfield-outlined kk-field--wide">
+          <div
+            v-else-if="field.type === 'list'"
+            class="micl-textfield-outlined"
+            :class="{ 'kk-field--wide': field.wide !== false }"
+          >
             <label :for="`field-${field.key}`">{{ t(field.label) }}</label>
             <textarea
               :id="`field-${field.key}`"
@@ -136,7 +152,11 @@ function setSelect(field: FieldDef, event: Event) {
             ></textarea>
           </div>
 
-          <div v-else class="micl-textfield-outlined">
+          <div
+            v-else
+            class="micl-textfield-outlined"
+            :class="{ 'kk-field--wide': Boolean(field.wide) }"
+          >
             <label :for="`field-${field.key}`">{{ t(field.label) }}</label>
             <input
               :id="`field-${field.key}`"

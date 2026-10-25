@@ -1,3 +1,5 @@
+import { beginTask, endTask } from "../progress";
+
 const CSRF_COOKIE = "KKREPO_CSRF";
 const CSRF_HEADER = "X-Nexus-Plus-CSRF-Token";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -58,43 +60,50 @@ interface RequestOptions {
   signal?: AbortSignal;
   /** Redirects to the sign-in page on 401/403 instead of throwing. */
   redirectOnAuthFailure?: boolean;
+  skipProgressBar?: boolean;
 }
 
 async function sendRequest(path: string, options: RequestOptions = {}): Promise<Response> {
-  const method = (options.method ?? "GET").toUpperCase();
-  const headers = new Headers(options.headers ?? {});
-  let body: BodyInit | undefined;
+  const track = options.skipProgressBar !== true;
+  if (track) beginTask();
+  try {
+    const method = (options.method ?? "GET").toUpperCase();
+    const headers = new Headers(options.headers ?? {});
+    let body: BodyInit | undefined;
 
-  if (options.body !== undefined) {
-    if (options.body instanceof FormData || options.body instanceof Blob) {
-      body = options.body;
-    } else {
-      headers.set("Content-Type", "application/json");
-      body = JSON.stringify(options.body);
+    if (options.body !== undefined) {
+      if (options.body instanceof FormData || options.body instanceof Blob) {
+        body = options.body;
+      } else {
+        headers.set("Content-Type", "application/json");
+        body = JSON.stringify(options.body);
+      }
     }
-  }
-  if (!SAFE_METHODS.has(method)) {
-    const token = csrfToken();
-    if (token) headers.set(CSRF_HEADER, token);
-  }
-
-  const response = await fetch(path, {
-    method,
-    headers,
-    body,
-    signal: options.signal,
-    cache: SAFE_METHODS.has(method) ? "no-store" : undefined,
-    credentials: "same-origin",
-  });
-
-  if (!response.ok) {
-    if (options.redirectOnAuthFailure !== false && (response.status === 401 || response.status === 403)) {
-      globalThis.location?.assign(authRequiredLocation(currentReturnTo()));
-      throw new ApiError(response.status, "Authentication required.");
+    if (!SAFE_METHODS.has(method)) {
+      const token = csrfToken();
+      if (token) headers.set(CSRF_HEADER, token);
     }
-    throw new ApiError(response.status, await responseErrorMessage(response));
+
+    const response = await fetch(path, {
+      method,
+      headers,
+      body,
+      signal: options.signal,
+      cache: SAFE_METHODS.has(method) ? "no-store" : undefined,
+      credentials: "same-origin",
+    });
+
+    if (!response.ok) {
+      if (options.redirectOnAuthFailure !== false && (response.status === 401 || response.status === 403)) {
+        globalThis.location?.assign(authRequiredLocation(currentReturnTo()));
+        throw new ApiError(response.status, "Authentication required.");
+      }
+      throw new ApiError(response.status, await responseErrorMessage(response));
+    }
+    return response;
+  } finally {
+    if (track) endTask();
   }
-  return response;
 }
 
 export function currentReturnTo(): string {

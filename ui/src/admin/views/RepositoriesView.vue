@@ -1,11 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
 import M3Tabs from "../../shared/components/M3Tabs.vue";
+import {
+  ALPINE_METADATA_MODES,
+  ALPINE_SIGNATURE_TYPES,
+  APT_METADATA_MODES,
+  LAYOUT_POLICIES,
+  VERSION_POLICIES,
+  WRITE_POLICIES,
+  applyRecipeDefaults,
+  buildRepositoryPayload,
+  createRepositoryDraft,
+  repositoryDraftFromView,
+  type RepositoryDraft,
+  type RepositoryRecipeOption,
+  type RepositoryViewLike,
+} from "../repositoryForm";
 
 interface Recipe {
   recipe?: string;
@@ -14,52 +29,7 @@ interface Recipe {
   type?: string;
 }
 
-interface HostedSettings {
-  writePolicy?: string | null;
-  versionPolicy?: string | null;
-  layoutPolicy?: string | null;
-}
-
-interface ProxySettings {
-  remoteUrl?: string | null;
-  contentMaxAgeMinutes?: number | null;
-  metadataMaxAgeMinutes?: number | null;
-  autoBlock?: boolean | null;
-  remoteUsername?: string | null;
-  remotePasswordConfigured?: boolean | null;
-  remoteBearerTokenConfigured?: boolean | null;
-  outboundProxyType?: string | null;
-  outboundProxyHost?: string | null;
-  outboundProxyPort?: number | null;
-  minimumReleaseAgeMinutes?: number | null;
-  allowedRedirectHosts?: string[] | null;
-  remoteAuthenticationType?: string | null;
-  remoteNtlmDomain?: string | null;
-  remoteNtlmHost?: string | null;
-}
-
-interface Repository {
-  id?: number | null;
-  name: string;
-  recipe?: string | null;
-  format?: string | null;
-  type?: string | null;
-  online?: boolean;
-  blobStoreName?: string | null;
-  strictContentTypeValidation?: boolean;
-  url?: string | null;
-  hosted?: HostedSettings | null;
-  proxy?: ProxySettings | null;
-  raw?: { contentDisposition?: string | null } | null;
-  docker?: { connectorEnabled?: boolean | null; connectorPort?: number | null; connectorPublicUrl?: string | null } | null;
-  cargo?: { requireAuthentication?: boolean | null } | null;
-  group?: { memberNames?: string[] | null } | null;
-  apt?: Record<string, unknown> | null;
-  alpine?: Record<string, unknown> | null;
-  pypi?: { indexPath?: string | null } | null;
-  yum?: { repodataDepth?: number | null } | null;
-  conan?: { manifestMaxEntries?: number | null; manifestMaxBytes?: number | null } | null;
-}
+type Repository = RepositoryViewLike;
 
 interface BlobStoreList {
   stores?: { name: string }[];
@@ -142,7 +112,7 @@ async function load() {
   }
 }
 
-const recipeOptions = computed(() =>
+const recipeOptions = computed<RepositoryRecipeOption[]>(() =>
   recipes.value
     .map((recipe) => ({
       value: String(recipe.recipe ?? recipe.name ?? `${recipe.format}-${recipe.type}`.toLowerCase()),
@@ -166,50 +136,7 @@ const dialog = ref<InstanceType<typeof M3Dialog> | null>(null);
 const editing = ref<Repository | null>(null);
 const activeTab = ref("general");
 
-const draft = reactive<Record<string, unknown>>({
-  name: "",
-  recipe: "",
-  online: true,
-  strictContentTypeValidation: false,
-  blobStoreName: "",
-  writePolicy: "ALLOW",
-  versionPolicy: "RELEASE",
-  layoutPolicy: "STRICT",
-  remoteUrl: "",
-  contentMaxAgeMinutes: 1440,
-  metadataMaxAgeMinutes: 1440,
-  autoBlock: true,
-  minimumReleaseAgeMinutes: 0,
-  remoteUsername: "",
-  remotePassword: "",
-  allowedRedirectHosts: "",
-  memberText: "",
-  contentDisposition: "",
-  dockerConnectorEnabled: false,
-  dockerConnectorPort: 5000,
-  dockerConnectorPublicUrl: "",
-  cargoRequireAuthentication: false,
-  aptDistribution: "",
-  aptComponent: "main",
-  aptArchitectures: "",
-  aptFlat: false,
-  aptEnforceDistribution: false,
-  aptMetadataMode: "SIGNED",
-  aptValidUntilDays: 30,
-  aptOrigin: "",
-  aptLabel: "",
-  alpineDistributions: "",
-  alpineChannels: "",
-  alpineArchitectures: "",
-  alpineMetadataMode: "SIGNED",
-  alpineKeyFilename: "",
-  alpineSignatureType: "RSA_SHA256",
-  alpineDescription: "",
-  pypiIndexPath: "",
-  yumRepodataDepth: 1,
-  conanManifestMaxEntries: null as number | null,
-  conanManifestMaxBytes: null as number | null,
-});
+const draft = reactive<RepositoryDraft>(createRepositoryDraft());
 
 const selectedRecipe = computed(() =>
   recipeOptions.value.find((option) => option.value === String(draft.recipe)),
@@ -226,9 +153,50 @@ const isHosted = computed(() => draftType.value === "HOSTED");
 const isProxy = computed(() => draftType.value === "PROXY");
 const isGroup = computed(() => draftType.value === "GROUP");
 
-const showFormatTab = computed(() =>
-  ["apt", "alpine", "docker", "cargo", "pypi", "yum", "conan", "raw"].includes(draftFormat.value),
+/** NTLM upstream authentication is only supported for NuGet proxies. */
+const ntlmAvailable = computed(() => draftFormat.value === "nuget" && isProxy.value);
+const ntlmSelected = computed(
+  () => ntlmAvailable.value && draft.remoteAuthenticationType === "ntlm",
 );
+const aptHosted = computed(() => draftFormat.value === "apt" && isHosted.value);
+const aptProxy = computed(() => draftFormat.value === "apt" && isProxy.value);
+/** Valid-Until/Origin/Label only take effect on locally signed APT metadata. */
+const aptLocallySigned = computed(
+  () => aptHosted.value || (aptProxy.value && !draft.aptFlat && draft.aptMetadataMode === "RESIGN"),
+);
+const alpineProxy = computed(() => draftFormat.value === "alpine" && isProxy.value);
+const alpineResignProxy = computed(
+  () => alpineProxy.value && draft.alpineMetadataMode === "RESIGN",
+);
+const pypiIndexVisible = computed(() => draftFormat.value === "pypi" && isProxy.value);
+const minimumReleaseAgeVisible = computed(
+  () => draftFormat.value === "npm" && isProxy.value,
+);
+const swiftProxyNote = computed(() => draftFormat.value === "swift" && isProxy.value);
+const savedPasswordPlaceholder = computed(() =>
+  editing.value?.proxy?.remotePasswordConfigured ? t("Saved password unchanged") : "",
+);
+const savedBearerTokenPlaceholder = computed(() =>
+  editing.value?.proxy?.remoteBearerTokenConfigured ? t("Saved bearer token unchanged") : "",
+);
+const savedOutboundPasswordPlaceholder = computed(() =>
+  editing.value?.proxy?.outboundProxyPasswordConfigured ? t("Saved proxy password unchanged") : "",
+);
+
+const showFormatTab = computed(() => {
+  switch (draftFormat.value) {
+    case "conan":
+      return !isGroup.value;
+    case "apt":
+    case "alpine":
+    case "docker":
+    case "cargo":
+    case "raw":
+      return true;
+    default:
+      return false;
+  }
+});
 const showKeysTab = computed(
   () => Boolean(editing.value) && ["apt", "alpine"].includes(draftFormat.value) && isHosted.value,
 );
@@ -242,6 +210,35 @@ const visibleTabs = computed(() =>
   }),
 );
 
+watch(
+  () => draft.recipe,
+  () => {
+    if (editing.value) return;
+    applyRecipeDefaults(draft, draftFormat.value, draftType.value);
+  },
+);
+
+watch(
+  () => draft.aptFlat,
+  (flat) => {
+    if (aptProxy.value && flat) draft.aptMetadataMode = "PASSTHROUGH";
+  },
+);
+
+watch(
+  () => draft.alpineMetadataMode,
+  (mode) => {
+    if (alpineProxy.value && mode === "RESIGN") draft.alpineVerifyUpstreamSignatures = true;
+  },
+);
+
+/** Git LFS relies on exact content types, so strict validation is unavailable. */
+const strictDisabled = computed(() => draftFormat.value === "gitlfs");
+
+watch(strictDisabled, (disabled) => {
+  if (disabled) draft.strictContentTypeValidation = false;
+});
+
 function listFromText(value: unknown): string[] {
   return String(value ?? "")
     .split(/[\n,]/)
@@ -252,50 +249,9 @@ function listFromText(value: unknown): string[] {
 function openCreate() {
   editing.value = null;
   activeTab.value = "general";
-  Object.assign(draft, {
-    name: "",
-    recipe: recipeOptions.value[0]?.value ?? "",
-    online: true,
-    strictContentTypeValidation: false,
-    blobStoreName: blobStores.value[0]?.name ?? "",
-    writePolicy: "ALLOW",
-    versionPolicy: "RELEASE",
-    layoutPolicy: "STRICT",
-    remoteUrl: "",
-    contentMaxAgeMinutes: 1440,
-    metadataMaxAgeMinutes: 1440,
-    autoBlock: true,
-    minimumReleaseAgeMinutes: 0,
-    remoteUsername: "",
-    remotePassword: "",
-    allowedRedirectHosts: "",
-    memberText: "",
-    contentDisposition: "",
-    dockerConnectorEnabled: false,
-    dockerConnectorPort: 5000,
-    dockerConnectorPublicUrl: "",
-    cargoRequireAuthentication: false,
-    aptDistribution: "",
-    aptComponent: "main",
-    aptArchitectures: "",
-    aptFlat: false,
-    aptEnforceDistribution: false,
-    aptMetadataMode: "SIGNED",
-    aptValidUntilDays: 30,
-    aptOrigin: "",
-    aptLabel: "",
-    alpineDistributions: "",
-    alpineChannels: "",
-    alpineArchitectures: "",
-    alpineMetadataMode: "SIGNED",
-    alpineKeyFilename: "",
-    alpineSignatureType: "RSA_SHA256",
-    alpineDescription: "",
-    pypiIndexPath: "",
-    yumRepodataDepth: 1,
-    conanManifestMaxEntries: null,
-    conanManifestMaxBytes: null,
-  });
+  const recipe = recipeOptions.value[0];
+  Object.assign(draft, createRepositoryDraft(recipe, blobStores.value[0]?.name ?? ""));
+  applyRecipeDefaults(draft, recipe?.format ?? "", recipe?.type ?? "");
   error.value = "";
   dialog.value?.open();
 }
@@ -303,152 +259,46 @@ function openCreate() {
 function openEdit(repo: Repository) {
   editing.value = repo;
   activeTab.value = "general";
-  const apt = (repo.apt ?? {}) as Record<string, unknown>;
-  const alpine = (repo.alpine ?? {}) as Record<string, unknown>;
-  Object.assign(draft, {
-    name: repo.name,
-    recipe: repo.recipe ?? "",
-    online: repo.online ?? true,
-    strictContentTypeValidation: repo.strictContentTypeValidation ?? false,
-    blobStoreName: repo.blobStoreName ?? "",
-    writePolicy: repo.hosted?.writePolicy ?? "ALLOW",
-    versionPolicy: repo.hosted?.versionPolicy ?? "RELEASE",
-    layoutPolicy: repo.hosted?.layoutPolicy ?? "STRICT",
-    remoteUrl: repo.proxy?.remoteUrl ?? "",
-    contentMaxAgeMinutes: repo.proxy?.contentMaxAgeMinutes ?? 1440,
-    metadataMaxAgeMinutes: repo.proxy?.metadataMaxAgeMinutes ?? 1440,
-    autoBlock: repo.proxy?.autoBlock ?? true,
-    minimumReleaseAgeMinutes: repo.proxy?.minimumReleaseAgeMinutes ?? 0,
-    remoteUsername: repo.proxy?.remoteUsername ?? "",
-    remotePassword: "",
-    allowedRedirectHosts: (repo.proxy?.allowedRedirectHosts ?? []).join("\n"),
-    memberText: (repo.group?.memberNames ?? []).join("\n"),
-    contentDisposition: repo.raw?.contentDisposition ?? "",
-    dockerConnectorEnabled: repo.docker?.connectorEnabled ?? false,
-    dockerConnectorPort: repo.docker?.connectorPort ?? 5000,
-    dockerConnectorPublicUrl: repo.docker?.connectorPublicUrl ?? "",
-    cargoRequireAuthentication: repo.cargo?.requireAuthentication ?? false,
-    aptDistribution: String(apt.distribution ?? ""),
-    aptComponent: String(apt.component ?? "main"),
-    aptArchitectures: (Array.isArray(apt.architectures) ? (apt.architectures as string[]) : []).join(", "),
-    aptFlat: Boolean(apt.flat),
-    aptEnforceDistribution: Boolean(apt.enforceDistribution),
-    aptMetadataMode: String(apt.metadataMode ?? "SIGNED"),
-    aptValidUntilDays: (apt.validUntilDays as number | null) ?? 30,
-    aptOrigin: String(apt.origin ?? ""),
-    aptLabel: String(apt.label ?? ""),
-    alpineDistributions: (Array.isArray(alpine.distributions) ? (alpine.distributions as string[]) : []).join(", "),
-    alpineChannels: (Array.isArray(alpine.channels) ? (alpine.channels as string[]) : []).join(", "),
-    alpineArchitectures: (Array.isArray(alpine.architectures) ? (alpine.architectures as string[]) : []).join(", "),
-    alpineMetadataMode: String(alpine.metadataMode ?? "SIGNED"),
-    alpineKeyFilename: String(alpine.keyFilename ?? ""),
-    alpineSignatureType: String(alpine.signatureType ?? "RSA_SHA256"),
-    alpineDescription: String(alpine.description ?? ""),
-    pypiIndexPath: repo.pypi?.indexPath ?? "",
-    yumRepodataDepth: repo.yum?.repodataDepth ?? 1,
-    conanManifestMaxEntries: repo.conan?.manifestMaxEntries ?? null,
-    conanManifestMaxBytes: repo.conan?.manifestMaxBytes ?? null,
-  });
+  Object.assign(draft, repositoryDraftFromView(repo));
   error.value = "";
   dialog.value?.open();
 }
 
 function buildPayload(creating: boolean): Record<string, unknown> {
-  const payload: Record<string, unknown> = {
-    online: Boolean(draft.online),
-    strictContentTypeValidation: Boolean(draft.strictContentTypeValidation),
-  };
-  if (creating) {
-    payload.name = String(draft.name).trim();
-    payload.recipe = draft.recipe || null;
-    payload.blobStoreName = draft.blobStoreName || null;
-  }
-  if (isHosted.value) {
-    payload.hosted = {
-      writePolicy: draft.writePolicy,
-      versionPolicy: draftFormat.value === "maven2" ? draft.versionPolicy : null,
-      layoutPolicy: draftFormat.value === "maven2" ? draft.layoutPolicy : null,
-    };
-  } else if (isProxy.value) {
-    payload.proxy = {
-      remoteUrl: String(draft.remoteUrl ?? "").trim(),
-      contentMaxAgeMinutes: Number(draft.contentMaxAgeMinutes ?? 0) || null,
-      metadataMaxAgeMinutes: Number(draft.metadataMaxAgeMinutes ?? 0) || null,
-      autoBlock: Boolean(draft.autoBlock),
-      remoteUsername: draft.remoteUsername || null,
-      remotePassword: draft.remotePassword ? String(draft.remotePassword) : null,
-      minimumReleaseAgeMinutes: Number(draft.minimumReleaseAgeMinutes ?? 0) || null,
-      allowedRedirectHosts: listFromText(draft.allowedRedirectHosts),
-    };
-  } else if (isGroup.value) {
-    payload.group = { memberNames: listFromText(draft.memberText) };
-  }
-
-  switch (draftFormat.value) {
-    case "raw":
-      payload.raw = { contentDisposition: draft.contentDisposition || null };
-      break;
-    case "docker":
-      payload.docker = {
-        connectorEnabled: Boolean(draft.dockerConnectorEnabled),
-        connectorPort: Number(draft.dockerConnectorPort) || null,
-        connectorPublicUrl: draft.dockerConnectorPublicUrl || null,
-      };
-      break;
-    case "cargo":
-      payload.cargo = { requireAuthentication: Boolean(draft.cargoRequireAuthentication) };
-      break;
-    case "apt":
-      payload.apt = {
-        distribution: draft.aptDistribution || null,
-        component: draft.aptComponent || "main",
-        architectures: listFromText(draft.aptArchitectures),
-        flat: Boolean(draft.aptFlat),
-        enforceDistribution: Boolean(draft.aptEnforceDistribution),
-        metadataMode: draft.aptMetadataMode,
-        validUntilDays: Number(draft.aptValidUntilDays) || null,
-        origin: draft.aptOrigin || null,
-        label: draft.aptLabel || null,
-      };
-      break;
-    case "alpine":
-      payload.alpine = {
-        distributions: listFromText(draft.alpineDistributions),
-        channels: listFromText(draft.alpineChannels),
-        architectures: listFromText(draft.alpineArchitectures),
-        metadataMode: draft.alpineMetadataMode,
-        keyFilename: draft.alpineKeyFilename || null,
-        signatureType: draft.alpineSignatureType,
-        description: draft.alpineDescription || null,
-      };
-      break;
-    case "pypi":
-      payload.pypi = { indexPath: draft.pypiIndexPath || null };
-      break;
-    case "yum":
-      payload.yum = { repodataDepth: Number(draft.yumRepodataDepth) || null };
-      break;
-    case "conan":
-      payload.conan = {
-        manifestMaxEntries: draft.conanManifestMaxEntries === null ? null : Number(draft.conanManifestMaxEntries),
-        manifestMaxBytes: draft.conanManifestMaxBytes === null ? null : Number(draft.conanManifestMaxBytes),
-      };
-      break;
-    default:
-      break;
-  }
-  return payload;
+  return buildRepositoryPayload(draft, draftFormat.value, draftType.value, creating);
 }
 
 async function save() {
-  if (!editing.value && !String(draft.name ?? "").trim()) {
+  if (!editing.value && !draft.name.trim()) {
     error.value = t("Repository name is required.");
     activeTab.value = "general";
     return;
   }
-  if (isProxy.value && !String(draft.remoteUrl ?? "").trim()) {
+  if (isProxy.value && !draft.remoteUrl.trim()) {
     error.value = t("Remote URL is required for proxy repositories.");
     activeTab.value = "behavior";
+    return;
+  }
+  if (aptHosted.value && !draft.aptDistribution.trim()) {
+    error.value = t("APT distribution is required for hosted repositories.");
+    activeTab.value = "format";
+    return;
+  }
+  if (
+    draftFormat.value === "docker"
+    && draft.dockerConnectorEnabled
+    && (draft.dockerConnectorPort === null || draft.dockerConnectorPort === "")
+  ) {
+    error.value = t("Connector port is required when the Docker connector is enabled.");
+    activeTab.value = "format";
+    return;
+  }
+  if (
+    alpineResignProxy.value
+    && (!draft.alpineVerifyUpstreamSignatures || !draft.alpineUpstreamPublicKey.trim())
+  ) {
+    error.value = t("Alpine re-sign proxy requires signature verification and upstream public keys.");
+    activeTab.value = "format";
     return;
   }
   busy.value = true;
@@ -596,8 +446,8 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button type="button" class="micl-button-filled-s" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create repository") }}
     </button>
     <div class="micl-textfield-outlined kk-filter">
@@ -605,7 +455,7 @@ onMounted(load);
       <label for="repo-filter">{{ t("Filter") }}</label>
       <input id="repo-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <M3DataTable
@@ -654,35 +504,39 @@ onMounted(load);
     <M3Tabs :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
 
     <!-- General -->
-    <div v-if="activeTab === 'general'" class="kk-field-grid">
-      <div class="micl-textfield-outlined">
-        <label for="repo-name">{{ t("Name") }}</label>
-        <input id="repo-name" v-model="draft.name" type="text" :readonly="Boolean(editing)" autocomplete="off">
+    <template v-if="activeTab === 'general'">
+      <div class="kk-field-grid">
+        <div class="micl-textfield-outlined">
+          <label for="repo-name">{{ t("Name") }}</label>
+          <input id="repo-name" v-model="draft.name" type="text" :readonly="Boolean(editing)" autocomplete="off">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="repo-recipe">{{ t("Recipe") }}</label>
+          <select id="repo-recipe" v-model="draft.recipe" :disabled="Boolean(editing)">
+            <option v-for="option in recipeOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        <div v-if="!editing" class="micl-textfield-outlined kk-field--wide">
+          <label for="repo-blobstore">{{ t("Blob store") }}</label>
+          <select id="repo-blobstore" v-model="draft.blobStoreName">
+            <option value="">{{ t("Default") }}</option>
+            <option v-for="store in blobStores" :key="store.name" :value="store.name">{{ store.name }}</option>
+          </select>
+        </div>
       </div>
-      <div class="micl-textfield-outlined">
-        <label for="repo-recipe">{{ t("Recipe") }}</label>
-        <select id="repo-recipe" v-model="draft.recipe" :disabled="Boolean(editing)">
-          <option v-for="option in recipeOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+      <div class="kk-form-switches">
+        <label class="kk-checkbox-row">
+          <input v-model="draft.online" class="micl-checkbox" type="checkbox">
+          <span>{{ t("Online") }}</span>
+        </label>
+        <label class="kk-checkbox-row">
+          <input v-model="draft.strictContentTypeValidation" class="micl-checkbox" type="checkbox" :disabled="strictDisabled">
+          <span>{{ t("Strict content type validation") }}</span>
+        </label>
       </div>
-      <div v-if="!editing" class="micl-textfield-outlined">
-        <label for="repo-blobstore">{{ t("Blob store") }}</label>
-        <select id="repo-blobstore" v-model="draft.blobStoreName">
-          <option value="">{{ t("Default") }}</option>
-          <option v-for="store in blobStores" :key="store.name" :value="store.name">{{ store.name }}</option>
-        </select>
-      </div>
-      <label class="kk-checkbox-row">
-        <input v-model="draft.online" class="micl-checkbox" type="checkbox">
-        <span>{{ t("Online") }}</span>
-      </label>
-      <label class="kk-checkbox-row">
-        <input v-model="draft.strictContentTypeValidation" class="micl-checkbox" type="checkbox">
-        <span>{{ t("Strict content type validation") }}</span>
-      </label>
-    </div>
+    </template>
 
     <!-- Hosted / proxy / group -->
     <template v-else-if="activeTab === 'behavior'">
@@ -690,78 +544,152 @@ onMounted(load);
         <div class="micl-textfield-outlined">
           <label for="repo-write-policy">{{ t("Write policy") }}</label>
           <select id="repo-write-policy" v-model="draft.writePolicy">
-            <option value="ALLOW">ALLOW</option>
-            <option value="ALLOW_ONCE">ALLOW_ONCE</option>
-            <option value="DENY">DENY</option>
+            <option v-for="policy in WRITE_POLICIES" :key="policy.value" :value="policy.value">
+              {{ t(policy.label) }}
+            </option>
           </select>
         </div>
         <template v-if="draftFormat === 'maven2'">
           <div class="micl-textfield-outlined">
             <label for="repo-version-policy">{{ t("Version policy") }}</label>
             <select id="repo-version-policy" v-model="draft.versionPolicy">
-              <option value="RELEASE">RELEASE</option>
-              <option value="SNAPSHOT">SNAPSHOT</option>
-              <option value="MIXED">MIXED</option>
+              <option v-for="policy in VERSION_POLICIES" :key="policy.value" :value="policy.value">
+                {{ t(policy.label) }}
+              </option>
             </select>
           </div>
           <div class="micl-textfield-outlined">
             <label for="repo-layout-policy">{{ t("Layout policy") }}</label>
             <select id="repo-layout-policy" v-model="draft.layoutPolicy">
-              <option value="STRICT">STRICT</option>
-              <option value="PERMISSIVE">PERMISSIVE</option>
+              <option v-for="policy in LAYOUT_POLICIES" :key="policy.value" :value="policy.value">
+                {{ t(policy.label) }}
+              </option>
             </select>
           </div>
         </template>
+        <div v-if="draftFormat === 'yum'" class="micl-textfield-outlined kk-field--wide">
+          <label for="repo-yum-depth">{{ t("Repodata Depth") }}</label>
+          <input id="repo-yum-depth" v-model.number="draft.yumRepodataDepth" type="number" min="0" step="1">
+          <small class="kk-hint">{{ t("0 generates metadata at the repository root; 1 uses folders such as fedora-45. Changing the depth rebuilds metadata.") }}</small>
+        </div>
       </div>
 
       <div v-else-if="isProxy" class="kk-field-grid">
+        <p v-if="swiftProxyNote" class="kk-hint kk-field--wide">
+          {{ t("Swift proxy follows the Nexus-compatible GitHub source mode. The remote is fixed to https://github.com/; use the username/token fields for private GitHub repositories. Production SwiftPM clients should always connect to kkrepo over HTTPS.") }}
+        </p>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-remote-url">{{ t("Remote URL") }}</label>
-          <input id="repo-remote-url" v-model="draft.remoteUrl" type="url" autocomplete="off">
+          <input id="repo-remote-url" v-model="draft.remoteUrl" type="url" autocomplete="off" :readonly="draftFormat === 'swift'">
         </div>
-        <div class="micl-textfield-outlined">
-          <label for="repo-content-age">{{ t("Content max age (minutes)") }}</label>
-          <input id="repo-content-age" v-model.number="draft.contentMaxAgeMinutes" type="number" min="0">
+        <div v-if="pypiIndexVisible" class="micl-textfield-outlined kk-field--wide">
+          <label for="repo-pypi-index">{{ t("Remote Index Path") }}</label>
+          <input id="repo-pypi-index" v-model="draft.pypiIndexPath" type="text" placeholder="/simple" spellcheck="false" autocomplete="off">
+          <small class="kk-hint">
+            {{ t("PyPI proxy only. Use /simple for standard package indexes. Leave this empty when the upstream serves project indexes directly from its root, such as the PyTorch package indexes. Client URLs remain under /simple.") }}
+          </small>
         </div>
-        <div class="micl-textfield-outlined">
-          <label for="repo-metadata-age">{{ t("Metadata max age (minutes)") }}</label>
-          <input id="repo-metadata-age" v-model.number="draft.metadataMaxAgeMinutes" type="number" min="0">
+        <div v-if="ntlmAvailable" class="micl-textfield-outlined">
+          <label for="repo-remote-auth">{{ t("Upstream authentication") }}</label>
+          <select id="repo-remote-auth" v-model="draft.remoteAuthenticationType">
+            <option value="auto">{{ t("Basic / Bearer") }}</option>
+            <option value="ntlm">{{ t("NTLM") }}</option>
+          </select>
         </div>
-        <div class="micl-textfield-outlined">
-          <label for="repo-min-release-age">{{ t("Minimum release age (minutes)") }}</label>
-          <input id="repo-min-release-age" v-model.number="draft.minimumReleaseAgeMinutes" type="number" min="0">
-        </div>
+        <template v-if="ntlmSelected">
+          <div class="micl-textfield-outlined">
+            <label for="repo-ntlm-domain">{{ t("NTLM domain") }}</label>
+            <input id="repo-ntlm-domain" v-model="draft.remoteNtlmDomain" type="text" autocomplete="off" placeholder="DOMAIN">
+          </div>
+          <div class="micl-textfield-outlined">
+            <label for="repo-ntlm-host">{{ t("NTLM workstation (optional)") }}</label>
+            <input id="repo-ntlm-host" v-model="draft.remoteNtlmHost" type="text" autocomplete="off">
+          </div>
+        </template>
         <div class="micl-textfield-outlined">
           <label for="repo-remote-user">{{ t("Remote username") }}</label>
           <input id="repo-remote-user" v-model="draft.remoteUsername" type="text" autocomplete="off">
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-remote-pass">{{ t("Remote password") }}</label>
-          <input id="repo-remote-pass" v-model="draft.remotePassword" type="password" autocomplete="new-password">
+          <input id="repo-remote-pass" v-model="draft.remotePassword" type="password" :placeholder="savedPasswordPlaceholder" autocomplete="new-password">
         </div>
+        <label class="kk-checkbox-row">
+          <input v-model="draft.remotePasswordClear" class="micl-checkbox" type="checkbox">
+          <span>{{ t("Clear saved password") }}</span>
+        </label>
+        <div class="micl-textfield-outlined">
+          <label for="repo-remote-token">{{ t("Remote bearer token") }}</label>
+          <input id="repo-remote-token" v-model="draft.remoteBearerToken" type="password" :placeholder="savedBearerTokenPlaceholder" autocomplete="new-password">
+        </div>
+        <label class="kk-checkbox-row">
+          <input v-model="draft.remoteBearerTokenClear" class="micl-checkbox" type="checkbox">
+          <span>{{ t("Clear saved bearer token") }}</span>
+        </label>
+        <div class="micl-textfield-outlined">
+          <label for="repo-content-age">{{ t("Content max age (min)") }}</label>
+          <input id="repo-content-age" v-model.number="draft.contentMaxAgeMinutes" type="number" min="-1">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="repo-metadata-age">{{ t("Metadata max age (min)") }}</label>
+          <input id="repo-metadata-age" v-model.number="draft.metadataMaxAgeMinutes" type="number" min="-1">
+        </div>
+        <div v-if="minimumReleaseAgeVisible" class="micl-textfield-outlined">
+          <label for="repo-min-release-age">{{ t("Minimum release age (min)") }}</label>
+          <input id="repo-min-release-age" v-model.number="draft.minimumReleaseAgeMinutes" type="number" min="0">
+        </div>
+        <p v-if="minimumReleaseAgeVisible" class="kk-hint kk-field--wide">
+          {{ t("npm proxy only. A version is hidden from package metadata and its tarball is blocked until this many minutes have passed since publication. Use 0 to disable this policy and preserve existing behavior. This is independent of content and metadata cache max age. Versions with a missing or invalid publish time are blocked while enabled.") }}
+        </p>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-redirect-hosts">{{ t("Allowed redirect hosts") }}</label>
-          <textarea
-            id="repo-redirect-hosts"
-            :value="String(draft.allowedRedirectHosts ?? '')"
-            rows="2"
-            @input="draft.allowedRedirectHosts = ($event.target as HTMLTextAreaElement).value"
-          ></textarea>
+          <textarea id="repo-redirect-hosts" :value="draft.allowedRedirectHosts" rows="2" @input="draft.allowedRedirectHosts = ($event.target as HTMLTextAreaElement).value"></textarea>
         </div>
         <label class="kk-checkbox-row">
           <input v-model="draft.autoBlock" class="micl-checkbox" type="checkbox">
-          <span>{{ t("Auto-block on upstream failure") }}</span>
+          <span>{{ t("Auto-block remote") }}</span>
+        </label>
+        <p class="kk-hint kk-field--wide">
+          {{ t("Route upstream fetches for this proxy repository through an HTTP or SOCKS proxy (e.g. a corporate Clash on the LAN). Useful when the remote registry (hub.docker.com, pypi.org, ...) is unreachable from the server.") }}
+        </p>
+        <div class="micl-textfield-outlined">
+          <label for="repo-outbound-type">{{ t("Proxy type") }}</label>
+          <select id="repo-outbound-type" v-model="draft.outboundProxyType">
+            <option value="">{{ t("Direct (no proxy)") }}</option>
+            <option value="HTTP">HTTP</option>
+            <option value="SOCKS">SOCKS</option>
+          </select>
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="repo-outbound-host">{{ t("Proxy host") }}</label>
+          <input id="repo-outbound-host" v-model="draft.outboundProxyHost" type="text" autocomplete="off" placeholder="192.168.1.10">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="repo-outbound-port">{{ t("Proxy port") }}</label>
+          <input id="repo-outbound-port" v-model.number="draft.outboundProxyPort" type="number" min="1" max="65535" placeholder="7890">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="repo-outbound-user">{{ t("Proxy username") }}</label>
+          <input id="repo-outbound-user" v-model="draft.outboundProxyUsername" type="text" autocomplete="off">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="repo-outbound-pass">{{ t("Proxy password") }}</label>
+          <input id="repo-outbound-pass" v-model="draft.outboundProxyPassword" type="password" :placeholder="savedOutboundPasswordPlaceholder" autocomplete="new-password">
+        </div>
+        <label class="kk-checkbox-row">
+          <input v-model="draft.outboundProxyPasswordClear" class="micl-checkbox" type="checkbox">
+          <span>{{ t("Clear saved proxy password") }}</span>
         </label>
       </div>
 
-      <div v-else-if="isGroup">
-        <p class="kk-muted">{{ t("One repository name per line. Order defines resolution priority.") }}</p>
+      <div v-else-if="isGroup" class="kk-schema-form">
+        <p class="kk-hint">{{ t("One repository name per line. Order defines resolution priority.") }}</p>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-members">{{ t("Member repositories") }}</label>
           <textarea
             id="repo-members"
             :value="String(draft.memberText ?? '')"
-            rows="5"
+            rows="6"
             @input="draft.memberText = ($event.target as HTMLTextAreaElement).value"
           ></textarea>
         </div>
@@ -778,24 +706,30 @@ onMounted(load);
       </div>
 
       <div v-else-if="draftFormat === 'docker'" class="kk-field-grid">
+        <p class="kk-hint kk-field--wide">
+          {{ t("Optional compatibility entrypoint for repository-specific Docker traffic. Leave it disabled to use path-based Docker routing on the main service port; enable it only when clients need a dedicated /v2/ port or isolated upload/download traffic.") }}
+        </p>
         <label class="kk-checkbox-row">
           <input v-model="draft.dockerConnectorEnabled" class="micl-checkbox" type="checkbox">
-          <span>{{ t("Enable connector") }}</span>
+          <span>{{ t("Enable HTTP connector") }}</span>
         </label>
         <div class="micl-textfield-outlined">
           <label for="repo-docker-port">{{ t("Connector port") }}</label>
-          <input id="repo-docker-port" v-model.number="draft.dockerConnectorPort" type="number" min="1" max="65535">
+          <input id="repo-docker-port" v-model.number="draft.dockerConnectorPort" type="number" min="1" max="65535" placeholder="5000" :disabled="!draft.dockerConnectorEnabled">
         </div>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-docker-url">{{ t("Public URL") }}</label>
-          <input id="repo-docker-url" v-model="draft.dockerConnectorPublicUrl" type="url" autocomplete="off">
+          <input id="repo-docker-url" v-model="draft.dockerConnectorPublicUrl" type="url" autocomplete="off" placeholder="https://registry.example.com" :disabled="!draft.dockerConnectorEnabled">
         </div>
       </div>
 
       <div v-else-if="draftFormat === 'cargo'" class="kk-field-grid">
+        <p class="kk-hint kk-field--wide">
+          {{ t("Controls the Cargo registry `auth-required` client hint. Repository access is still decided by anonymous settings and security privileges.") }}
+        </p>
         <label class="kk-checkbox-row">
           <input v-model="draft.cargoRequireAuthentication" class="micl-checkbox" type="checkbox">
-          <span>{{ t("Require authentication") }}</span>
+          <span>{{ t("Authentication requirements") }}</span>
         </label>
       </div>
 
@@ -805,7 +739,7 @@ onMounted(load);
           <input id="repo-apt-dist" v-model="draft.aptDistribution" type="text" placeholder="stable" autocomplete="off">
         </div>
         <div class="micl-textfield-outlined">
-          <label for="repo-apt-component">{{ t("Component") }}</label>
+          <label for="repo-apt-component">{{ t("Default component") }}</label>
           <input id="repo-apt-component" v-model="draft.aptComponent" type="text" placeholder="main" autocomplete="off">
         </div>
         <div class="micl-textfield-outlined kk-field--wide">
@@ -814,37 +748,46 @@ onMounted(load);
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-apt-mode">{{ t("Metadata mode") }}</label>
-          <select id="repo-apt-mode" v-model="draft.aptMetadataMode">
-            <option value="SIGNED">SIGNED</option>
-            <option value="UNSIGNED">UNSIGNED</option>
+          <select id="repo-apt-mode" v-model="draft.aptMetadataMode" :disabled="aptHosted">
+            <option
+              v-for="mode in APT_METADATA_MODES"
+              :key="mode.value"
+              :value="mode.value"
+              :disabled="aptProxy && draft.aptFlat && mode.value === 'RESIGN'"
+            >
+              {{ t(mode.label) }}
+            </option>
           </select>
         </div>
         <div class="micl-textfield-outlined">
-          <label for="repo-apt-days">{{ t("Valid until (days)") }}</label>
-          <input id="repo-apt-days" v-model.number="draft.aptValidUntilDays" type="number" min="1">
+          <label for="repo-apt-days">{{ t("Valid-Until (days)") }}</label>
+          <input id="repo-apt-days" v-model.number="draft.aptValidUntilDays" type="number" min="0" max="3650" :disabled="!aptLocallySigned">
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-apt-origin">{{ t("Origin") }}</label>
-          <input id="repo-apt-origin" v-model="draft.aptOrigin" type="text" autocomplete="off">
+          <input id="repo-apt-origin" v-model="draft.aptOrigin" type="text" maxlength="128" :disabled="!aptLocallySigned">
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-apt-label">{{ t("Label") }}</label>
-          <input id="repo-apt-label" v-model="draft.aptLabel" type="text" autocomplete="off">
+          <input id="repo-apt-label" v-model="draft.aptLabel" type="text" maxlength="128" :disabled="!aptLocallySigned">
         </div>
-        <label class="kk-checkbox-row">
+        <label v-if="aptProxy" class="kk-checkbox-row">
           <input v-model="draft.aptFlat" class="micl-checkbox" type="checkbox">
-          <span>{{ t("Flat repository") }}</span>
+          <span>{{ t("Flat upstream layout") }}</span>
         </label>
-        <label class="kk-checkbox-row">
+        <label v-if="aptProxy" class="kk-checkbox-row">
           <input v-model="draft.aptEnforceDistribution" class="micl-checkbox" type="checkbox">
-          <span>{{ t("Enforce distribution") }}</span>
+          <span>{{ t("Enforce configured distribution") }}</span>
         </label>
+        <p class="kk-hint kk-field--wide">
+          {{ t("Hosted repositories always publish atomically signed Release/InRelease metadata. Proxy passthrough preserves upstream bytes; re-signing publishes only packages that have been completely cached and checksum-verified.") }}
+        </p>
       </div>
 
       <div v-else-if="draftFormat === 'alpine'" class="kk-field-grid">
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-alpine-dists">{{ t("Distributions") }}</label>
-          <input id="repo-alpine-dists" v-model="draft.alpineDistributions" type="text" placeholder="v3.20, v3.21" autocomplete="off">
+          <input id="repo-alpine-dists" v-model="draft.alpineDistributions" type="text" placeholder="v3.23, edge" autocomplete="off">
         </div>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-alpine-channels">{{ t("Channels") }}</label>
@@ -856,50 +799,60 @@ onMounted(load);
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-alpine-mode">{{ t("Metadata mode") }}</label>
-          <select id="repo-alpine-mode" v-model="draft.alpineMetadataMode">
-            <option value="SIGNED">SIGNED</option>
-            <option value="UNSIGNED">UNSIGNED</option>
+          <select id="repo-alpine-mode" v-model="draft.alpineMetadataMode" :disabled="!alpineProxy">
+            <option v-for="mode in ALPINE_METADATA_MODES" :key="mode.value" :value="mode.value">
+              {{ t(mode.label) }}
+            </option>
           </select>
         </div>
         <div class="micl-textfield-outlined">
-          <label for="repo-alpine-keyfile">{{ t("Key filename") }}</label>
-          <input id="repo-alpine-keyfile" v-model="draft.alpineKeyFilename" type="text" autocomplete="off">
+          <label for="repo-alpine-keyfile">{{ t("Public key filename") }}</label>
+          <input id="repo-alpine-keyfile" v-model="draft.alpineKeyFilename" type="text" maxlength="192" autocomplete="off">
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-alpine-sig">{{ t("Signature type") }}</label>
           <select id="repo-alpine-sig" v-model="draft.alpineSignatureType">
-            <option value="RSA_SHA256">RSA_SHA256</option>
-            <option value="RSA_SHA512">RSA_SHA512</option>
+            <option v-for="signature in ALPINE_SIGNATURE_TYPES" :key="signature.value" :value="signature.value">
+              {{ t(signature.label) }}
+            </option>
           </select>
         </div>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-alpine-desc">{{ t("Description") }}</label>
-          <input id="repo-alpine-desc" v-model="draft.alpineDescription" type="text" autocomplete="off">
+          <input id="repo-alpine-desc" v-model="draft.alpineDescription" type="text" maxlength="255" autocomplete="off">
         </div>
-      </div>
-
-      <div v-else-if="draftFormat === 'pypi'" class="kk-field-grid">
-        <div class="micl-textfield-outlined kk-field--wide">
-          <label for="repo-pypi-index">{{ t("Remote index path") }}</label>
-          <input id="repo-pypi-index" v-model="draft.pypiIndexPath" type="text" placeholder="simple/" autocomplete="off">
+        <label v-if="alpineProxy" class="kk-checkbox-row">
+          <input v-model="draft.alpineVerifyUpstreamSignatures" class="micl-checkbox" type="checkbox">
+          <span>{{ t("Verify upstream index signature before projection") }}</span>
+        </label>
+        <label v-if="alpineProxy" class="kk-checkbox-row">
+          <input v-model="draft.alpineStaleIfError" class="micl-checkbox" type="checkbox">
+          <span>{{ t("Serve last verified index when upstream fails") }}</span>
+        </label>
+        <div v-if="alpineResignProxy" class="micl-textfield-outlined kk-field--wide">
+          <label for="repo-alpine-upstream-key">{{ t("Upstream trust entry") }}</label>
+          <textarea
+            id="repo-alpine-upstream-key"
+            v-model="draft.alpineUpstreamPublicKey"
+            rows="5"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="filename=upstream.rsa.pub&#10;-----BEGIN PUBLIC KEY-----"
+          ></textarea>
         </div>
-      </div>
-
-      <div v-else-if="draftFormat === 'yum'" class="kk-field-grid">
-        <div class="micl-textfield-outlined">
-          <label for="repo-yum-depth">{{ t("Repodata depth") }}</label>
-          <input id="repo-yum-depth" v-model.number="draft.yumRepodataDepth" type="number" min="0">
-        </div>
+        <p class="kk-hint kk-field--wide">
+          {{ t("This generation serves APK v2 APKINDEX.tar.gz. Hosted and group repositories publish fenced, atomic signed snapshots. Proxy passthrough preserves upstream bytes; re-signing requires the upstream public key above.") }}
+        </p>
       </div>
 
       <div v-else-if="draftFormat === 'conan'" class="kk-field-grid">
         <div class="micl-textfield-outlined">
-          <label for="repo-conan-entries">{{ t("Manifest max entries") }}</label>
-          <input id="repo-conan-entries" v-model.number="draft.conanManifestMaxEntries" type="number" min="1">
+          <label for="repo-conan-entries">{{ t("Manifest entry limit") }}</label>
+          <input id="repo-conan-entries" v-model.number="draft.conanManifestMaxEntries" type="number" min="1" max="2147483647" step="1" placeholder="Inherit server default">
         </div>
         <div class="micl-textfield-outlined">
-          <label for="repo-conan-bytes">{{ t("Manifest max bytes") }}</label>
-          <input id="repo-conan-bytes" v-model.number="draft.conanManifestMaxBytes" type="number" min="1">
+          <label for="repo-conan-bytes">{{ t("Manifest size limit (bytes)") }}</label>
+          <input id="repo-conan-bytes" v-model.number="draft.conanManifestMaxBytes" type="number" min="1" max="2147483646" step="1" placeholder="Inherit server default">
         </div>
       </div>
     </template>
@@ -910,13 +863,13 @@ onMounted(load);
         {{ t("Signed metadata needs a key. Generating a new key republishes every index that uses it.") }}
       </p>
       <div class="kk-toolbar">
-        <button type="button" class="micl-button-outlined-m" :disabled="busy" @click="loadSigningStatus">
+        <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="loadSigningStatus">
           {{ t("Load status") }}
         </button>
-        <button type="button" class="micl-button-outlined-m" :disabled="busy" @click="rebuildMetadata">
+        <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="rebuildMetadata">
           {{ t("Rebuild metadata") }}
         </button>
-        <button type="button" class="micl-button-filled-m" :disabled="busy" @click="rotateSigningKey(true)">
+        <button type="button" class="micl-button-filled-s" :disabled="busy" @click="rotateSigningKey(true)">
           {{ t("Generate new key") }}
         </button>
       </div>
@@ -940,7 +893,7 @@ onMounted(load);
       </div>
 
       <div class="kk-toolbar">
-        <button type="button" class="micl-button-outlined-m" :disabled="busy" @click="rotateSigningKey(false)">
+        <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="rotateSigningKey(false)">
           {{ t("Import key") }}
         </button>
       </div>
@@ -951,12 +904,16 @@ onMounted(load);
 
   <M3Dialog
     ref="deleteDialog"
+    icon="delete"
+    destructive
     :title="t('Delete repository?')"
     :subtitle="t('Repository content is removed from the blob store when no other repository references it.')"
     :confirm-label="t('Delete')"
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <code class="kk-mono">{{ deleteTarget?.name }}</code>
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete repository") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
+    </p>
   </M3Dialog>
 </template>

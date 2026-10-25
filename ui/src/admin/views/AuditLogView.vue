@@ -110,8 +110,8 @@ onMounted(() => load(0));
       <label for="audit-to">{{ t("To") }}</label>
       <input id="audit-to" v-model="filters.to" type="datetime-local">
     </div>
-    <button type="button" class="micl-button-filled-m" @click="load(0)">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">search</span>
+    <button type="button" class="micl-button-filled-s" @click="load(0)">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
       {{ t("Apply") }}
     </button>
   </div>
@@ -119,12 +119,12 @@ onMounted(() => load(0));
   <div class="kk-toolbar">
     <span class="kk-muted">{{ summary() }}</span>
     <span class="kk-muted kk-toolbar__spacer">{{ t("Page") }} {{ page.page + 1 }} / {{ totalPages() }}</span>
-    <button type="button" class="micl-button-outlined-m" :disabled="page.page <= 0" @click="load(page.page - 1)">
+    <button type="button" class="micl-button-outlined-s" :disabled="page.page <= 0" @click="load(page.page - 1)">
       {{ t("Previous") }}
     </button>
     <button
       type="button"
-      class="micl-button-outlined-m"
+      class="micl-button-outlined-s"
       :disabled="page.page >= totalPages() - 1"
       @click="load(page.page + 1)"
     >

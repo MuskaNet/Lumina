@@ -385,11 +385,11 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button type="button" class="micl-button-filled-s" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
     </button>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <M3Tabs :tabs="TABS" :active="tab" @select="tab = $event" />
@@ -544,12 +544,16 @@ onMounted(load);
 
   <M3Dialog
     ref="deleteDialog"
+    icon="delete"
+    destructive
     :title="t('Delete cleanup policy?')"
     :confirm-label="t('Delete')"
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <code class="kk-mono">{{ deleteTarget?.name }}</code>
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete policy") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
+    </p>
   </M3Dialog>
 
   <M3Dialog

@@ -536,15 +536,15 @@ onMounted(() => load(true));
       <input class="micl-checkbox" type="checkbox" :checked="currentOnly" @change="onCurrentOnlyChange">
       <span>{{ t("Current findings") }}</span>
     </label>
-    <button v-if="tab === 'policies'" type="button" class="micl-button-filled-m" @click="openPolicy()">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button v-if="tab === 'policies'" type="button" class="micl-button-filled-s" @click="openPolicy()">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
     </button>
-    <button v-if="tab === 'waivers'" type="button" class="micl-button-filled-m" @click="openWaiver">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button v-if="tab === 'waivers'" type="button" class="micl-button-filled-s" @click="openWaiver">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create waiver") }}
     </button>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load(true)">
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load(true)">
       {{ t("Refresh") }}
     </button>
   </div>
@@ -658,12 +658,12 @@ onMounted(() => load(true));
     <div class="kk-toolbar">
       <span class="kk-muted">{{ t("Page") }} {{ page + 1 }}</span>
       <div class="kk-toolbar__spacer"></div>
-      <button type="button" class="micl-button-outlined-m" :disabled="page === 0 || loading" @click="previousPage">
+      <button type="button" class="micl-button-outlined-s" :disabled="page === 0 || loading" @click="previousPage">
         {{ t("Previous") }}
       </button>
       <button
         type="button"
-        class="micl-button-outlined-m"
+        class="micl-button-outlined-s"
         :disabled="nextAfter == null || loading"
         @click="nextPage"
       >
@@ -821,11 +821,15 @@ onMounted(() => load(true));
 
   <M3Dialog
     ref="deleteDialog"
+    icon="delete"
+    destructive
     :title="t('Delete record?')"
     :confirm-label="t('Delete')"
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <code class="kk-mono">{{ deleteTarget?.id }}</code>
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete this scan record") }}?
+    </p>
   </M3Dialog>
 </template>

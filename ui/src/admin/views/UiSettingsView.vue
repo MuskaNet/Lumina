@@ -69,12 +69,12 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" :disabled="busy || loading" @click="save">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">save</span>
+    <button type="button" class="micl-button-filled-s" :disabled="busy || loading" @click="save">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">save</span>
       {{ busy ? t("Saving…") : t("Save settings") }}
     </button>
-    <button type="button" class="micl-button-outlined-m" @click="load">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">refresh</span>
+    <button type="button" class="micl-button-outlined-s" @click="load">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Reload") }}
     </button>
   </div>

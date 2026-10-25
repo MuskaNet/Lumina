@@ -29,6 +29,17 @@ class AdminUiEntryPointContractTest {
   }
 
   @Test
+  void entryPointDeclaresColorSchemeSupport() throws IOException {
+    String index = resource("/META-INF/resources/admin/index.html");
+
+    // Without this meta tag browsers do not know the console supports both schemes,
+    // so UA widgets and the initial canvas ignore the OS appearance.
+    assertTrue(
+        index.contains("<meta name=\"color-scheme\" content=\"light dark\">"),
+        "color-scheme meta tag");
+  }
+
+  @Test
   void entryPointKeepsMavenVersionFiltering() throws IOException {
     String index = resource("/META-INF/resources/admin/index.html");
 

@@ -78,6 +78,12 @@ function close() {
   emit("close");
 }
 
+function onBackdropClick(event: MouseEvent) {
+  if (event.target === dialog.value && !busy.value) {
+    close();
+  }
+}
+
 function signOutAndReload() {
   globalThis.location.assign("/internal/security/logout?returnTo=" + encodeURIComponent(authRequiredLocation()));
 }
@@ -107,62 +113,82 @@ defineExpose({ close, signOutAndReload });
 </script>
 
 <template>
-  <dialog ref="dialog" class="micl-dialog kk-login" aria-labelledby="kk-login-title" @close="emit('close')">
+  <dialog
+    ref="dialog"
+    class="micl-dialog kk-dialog kk-dialog--login has-icon"
+    aria-labelledby="kk-login-title"
+    @click="onBackdropClick"
+    @close="emit('close')"
+  >
     <div class="micl-dialog__headline">
-      <h2 id="kk-login-title">{{ t("Sign in") }}</h2>
-      <span class="micl-dialog__supporting-text">{{ t("Sign in to browse or manage this repository.") }}</span>
+      <span class="micl-dialog__icon material-symbols-outlined" aria-hidden="true">account_circle</span>
+      <div class="kk-dialog__title-block">
+        <h2 id="kk-login-title">{{ t("Sign in") }}</h2>
+        <span class="micl-dialog__supporting-text">{{ t("Sign in to browse or manage this repository.") }}</span>
+      </div>
     </div>
 
-    <div class="kk-tabs" role="tablist">
-      <button
-        type="button"
-        role="tab"
-        class="kk-tab"
-        :class="{ 'is-active': tab === 'password' }"
-        :aria-selected="tab === 'password'"
-        @click="tab = 'password'"
-      >
-        {{ t(passwordTabLabel) }}
-      </button>
-      <button
-        v-if="options.oidcEnabled"
-        type="button"
-        role="tab"
-        class="kk-tab"
-        :class="{ 'is-active': tab === 'oidc' }"
-        :aria-selected="tab === 'oidc'"
-        @click="tab = 'oidc'"
-      >
-        OIDC
-      </button>
+    <div class="micl-dialog__content kk-dialog__content">
+      <div v-if="options.oidcEnabled" class="kk-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="kk-tab"
+          :class="{ 'is-active': tab === 'password' }"
+          :aria-selected="tab === 'password'"
+          @click="tab = 'password'"
+        >
+          {{ t(passwordTabLabel) }}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="kk-tab"
+          :class="{ 'is-active': tab === 'oidc' }"
+          :aria-selected="tab === 'oidc'"
+          @click="tab = 'oidc'"
+        >
+          OIDC
+        </button>
+      </div>
+
+      <form v-if="tab === 'password'" id="kk-login-form" class="kk-schema-form" @submit.prevent="submit">
+        <div class="micl-textfield-outlined">
+          <label for="kk-login-username">{{ t("Username") }}</label>
+          <input id="kk-login-username" v-model="username" type="text" autocomplete="username" required>
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="kk-login-password">{{ t("Password") }}</label>
+          <input id="kk-login-password" v-model="password" type="password" autocomplete="current-password" required>
+        </div>
+        <p v-if="error" class="kk-form-error" role="alert">{{ error }}</p>
+      </form>
+
+      <div v-else class="kk-oidc-prompt">
+        <p class="kk-muted">{{ t("Continue with the configured OIDC identity provider.") }}</p>
+      </div>
     </div>
 
-    <form v-if="tab === 'password'" class="kk-schema-form" @submit.prevent="submit">
-      <div class="micl-textfield-outlined">
-        <label for="kk-login-username">{{ t("Username") }}</label>
-        <input id="kk-login-username" v-model="username" type="text" autocomplete="username" required>
-      </div>
-      <div class="micl-textfield-outlined">
-        <label for="kk-login-password">{{ t("Password") }}</label>
-        <input id="kk-login-password" v-model="password" type="password" autocomplete="current-password" required>
-      </div>
-      <p v-if="error" class="kk-form-error" role="alert">{{ error }}</p>
-      <div class="micl-dialog__actions">
-        <button type="button" class="micl-button-text-m" @click="close">{{ t("Cancel") }}</button>
-        <button type="submit" class="micl-button-filled-m" :disabled="busy">
-          {{ busy ? t("Signing in…") : t("Sign in") }}
-        </button>
-      </div>
-    </form>
-
-    <template v-else>
-      <p class="kk-muted">{{ t("Continue with the configured OIDC identity provider.") }}</p>
-      <div class="micl-dialog__actions">
-        <button type="button" class="micl-button-text-m" @click="close">{{ t("Cancel") }}</button>
-        <button type="button" class="micl-button-filled-m" @click="signInWithOidc">
-          {{ t("Continue with OIDC") }}
-        </button>
-      </div>
-    </template>
+    <div class="micl-dialog__actions">
+      <button type="button" class="micl-button-text-s" :disabled="busy" @click="close">{{ t("Cancel") }}</button>
+      <button
+        v-if="tab === 'password'"
+        type="submit"
+        form="kk-login-form"
+        class="micl-button-filled-s"
+        :disabled="busy"
+      >
+        <span v-if="busy" class="kk-button-spinner" aria-hidden="true"></span>
+        {{ busy ? t("Signing in…") : t("Sign in") }}
+      </button>
+      <button
+        v-else
+        type="button"
+        class="micl-button-filled-s"
+        @click="signInWithOidc"
+      >
+        {{ t("Continue with OIDC") }}
+      </button>
+    </div>
   </dialog>
 </template>

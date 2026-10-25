@@ -120,7 +120,7 @@ watch(() => [props.repo, props.path, props.source], load, { immediate: true });
       <label for="entry-filter">{{ t("Filter") }}</label>
       <input id="entry-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <p v-if="currentRepo" class="kk-muted">

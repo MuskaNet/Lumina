@@ -154,11 +154,11 @@ onMounted(load);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" @click="openCreate">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
+    <button type="button" class="micl-button-filled-s" @click="openCreate">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create realm") }}
     </button>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <M3DataTable
@@ -195,11 +195,15 @@ onMounted(load);
 
   <M3Dialog
     ref="deleteDialog"
+    icon="delete"
+    destructive
     :title="t('Delete realm?')"
     :confirm-label="t('Delete')"
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <code class="kk-mono">{{ deleteTarget?.realmId }}</code>
+    <p class="kk-dialog-message">
+      {{ t("Are you sure you want to delete realm") }} <strong class="kk-mono">{{ deleteTarget?.realmId }}</strong>?
+    </p>
   </M3Dialog>
 </template>

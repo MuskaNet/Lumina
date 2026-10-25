@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { beginTask, endTask } from "../shared/progress";
 
 export type BrowseViewName = "welcome" | "browse" | "search" | "upload" | "my-token";
 
@@ -45,12 +46,20 @@ export function parseBrowseHash(hash: string): BrowseRoute {
 export const route = ref<BrowseRoute>(parseBrowseHash(globalThis.location?.hash ?? ""));
 
 globalThis.addEventListener?.("hashchange", () => {
+  beginTask();
   route.value = parseBrowseHash(globalThis.location?.hash ?? "");
+  setTimeout(() => {
+    endTask();
+  }, 120);
 });
 
 export function navigate(hash: string): void {
+  beginTask();
   globalThis.location.hash = hash.replace(/^#/, "");
   route.value = parseBrowseHash(globalThis.location.hash);
+  setTimeout(() => {
+    endTask();
+  }, 120);
 }
 
 export function browseHash(repo: string, path = "", source = ""): string {

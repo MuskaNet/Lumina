@@ -30,6 +30,8 @@ export interface FieldDef {
   readOnly?: boolean;
   /** Hides the field when it returns false. */
   showWhen?: (model: Record<string, unknown>) => boolean;
+  /** Whether the field should span the full width of the form grid. */
+  wide?: boolean;
   /** For `list` fields: how raw input is split. */
   listSeparator?: "newline" | "comma";
 }

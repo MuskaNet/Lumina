@@ -191,14 +191,14 @@ onMounted(loadJobs);
 
 <template>
   <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-m" :disabled="busy" @click="start">
-      <span class="material-symbols-outlined" aria-hidden="true" slot="icon">play_arrow</span>
+    <button type="button" class="micl-button-filled-s" :disabled="busy" @click="start">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">play_arrow</span>
       {{ busy ? t("Starting…") : t("Start repository data migration") }}
     </button>
-    <button type="button" class="micl-button-outlined-m" :disabled="selected == null" @click="refreshJob()">
+    <button type="button" class="micl-button-outlined-s" :disabled="selected == null" @click="refreshJob()">
       {{ t("Refresh job") }}
     </button>
-    <button type="button" class="micl-button-outlined-m kk-toolbar__spacer" @click="loadJobs">
+    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="loadJobs">
       {{ t("Reload jobs") }}
     </button>
   </div>
@@ -286,7 +286,7 @@ onMounted(loadJobs);
     <div class="kk-toolbar">
       <button
         type="button"
-        class="micl-button-outlined-m"
+        class="micl-button-outlined-s"
         :disabled="busy"
         @click="jobAction(selected.jobId, 'metadata/start')"
       >
@@ -294,7 +294,7 @@ onMounted(loadJobs);
       </button>
       <button
         type="button"
-        class="micl-button-outlined-m"
+        class="micl-button-outlined-s"
         :disabled="busy"
         @click="jobAction(selected.jobId, 'packages/start')"
       >
@@ -302,7 +302,7 @@ onMounted(loadJobs);
       </button>
       <button
         type="button"
-        class="micl-button-outlined-m"
+        class="micl-button-outlined-s"
         :disabled="busy"
         @click="jobAction(selected.jobId, 'packages/retry-failed')"
       >
