@@ -95,9 +95,17 @@ const loading = ref(true);
 const busy = ref(false);
 const error = ref("");
 const search = ref("");
+/**
+ * The findings list defaults to scan results that still apply to the current
+ * artifact content. The server keeps historical results available, so the
+ * console asks for the current view explicitly and retains the user's choice.
+ */
+const currentOnly = ref(true);
 const page = ref(0);
 const nextAfter = ref<number | null>(null);
 const pageHistory = ref<number[]>([0]);
+/** Monotonic token so a superseded response cannot replace newer rows. */
+let requestVersion = 0;
 
 function timestamp(value?: string | null): string {
   if (!value) return "—";
@@ -114,6 +122,7 @@ function badgeTone(value?: string | null): string {
 }
 
 async function load(reset = false) {
+  const version = ++requestVersion;
   loading.value = true;
   error.value = "";
   if (reset) {
@@ -123,16 +132,20 @@ async function load(reset = false) {
   }
   try {
     if (tab.value === "overview") {
-      overview.value = await api.get<Overview>("/internal/security/scanning/summary");
+      const data = await api.get<Overview>("/internal/security/scanning/summary");
+      if (version !== requestVersion) return;
+      overview.value = data;
       items.value = [];
       return;
     }
     const after = pageHistory.value[page.value] ?? 0;
     const params = new URLSearchParams({ after: String(after), limit: "25" });
     if (search.value.trim()) params.set("q", search.value.trim());
+    if (tab.value === "findings") params.set("currentOnly", String(currentOnly.value));
     const payload = await api.get<CursorPage<Row>>(
       `/internal/security/scanning/${tab.value}?${params.toString()}`,
     );
+    if (version !== requestVersion) return;
     items.value = payload.items ?? [];
     nextAfter.value = payload.nextAfter ?? null;
     overview.value = null;
@@ -140,11 +153,22 @@ async function load(reset = false) {
       repositories.value = items.value as unknown as ScanRepository[];
     }
   } catch (cause) {
+    if (version !== requestVersion) return;
     error.value = (cause as Error).message;
     items.value = [];
   } finally {
-    loading.value = false;
+    if (version === requestVersion) loading.value = false;
   }
+}
+
+function setCurrentOnly(checked: boolean) {
+  if (currentOnly.value === checked) return;
+  currentOnly.value = checked;
+  if (tab.value === "findings") void load(true);
+}
+
+function onCurrentOnlyChange(event: Event) {
+  setCurrentOnly((event.target as HTMLInputElement).checked);
 }
 
 function nextPage() {
@@ -504,6 +528,14 @@ onMounted(() => load(true));
       <label for="scan-search">{{ t("Search") }}</label>
       <input id="scan-search" v-model="search" type="search" autocomplete="off" @keyup.enter="load(true)">
     </div>
+    <label
+      v-if="tab === 'findings'"
+      class="kk-checkbox-row kk-current-findings"
+      :title="t('Only findings from scans applicable to current artifact content. Uncheck to include historical findings.')"
+    >
+      <input class="micl-checkbox" type="checkbox" :checked="currentOnly" @change="onCurrentOnlyChange">
+      <span>{{ t("Current findings") }}</span>
+    </label>
     <button v-if="tab === 'policies'" type="button" class="micl-button-filled-m" @click="openPolicy()">
       <span class="material-symbols-outlined" aria-hidden="true" slot="icon">add</span>
       {{ t("Create policy") }}

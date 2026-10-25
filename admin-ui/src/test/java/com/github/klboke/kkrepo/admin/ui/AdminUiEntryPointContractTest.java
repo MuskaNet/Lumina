@@ -31,7 +31,11 @@ class AdminUiEntryPointContractTest {
   @Test
   void entryPointKeepsMavenVersionFiltering() throws IOException {
     String index = resource("/META-INF/resources/admin/index.html");
-    assertTrue(index.contains("<meta name=\"kkrepo-version\" content=\"@project.version@\">"));
+
+    // maven-resources-plugin filters this document, so the packaged copy carries the
+    // resolved version and must no longer contain the raw placeholder.
+    assertTrue(index.contains("<meta name=\"kkrepo-version\" content=\""), "version meta tag");
+    assertFalse(index.contains("@project.version@"), "unfiltered Maven placeholder");
   }
 
   @Test
