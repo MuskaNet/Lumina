@@ -6,6 +6,7 @@ import {
   applyRecipeDefaults,
   buildRepositoryPayload,
   createRepositoryDraft,
+  firstAlpineNamespace,
   repositoryDraftFromView,
   type RepositoryDraft,
 } from "./repositoryForm";
@@ -359,5 +360,23 @@ describe("edit drafts", () => {
     expect(proxy.alpineMetadataMode).toBe("PASSTHROUGH");
     expect(proxy.alpineKeyFilename).toBe("alpine-proxy.rsa.pub");
     expect(proxy.alpineSignatureType).toBe("RSA");
+  });
+});
+
+describe("alpine rebuild namespace", () => {
+  it("uses the first configured distribution, channel and architecture", () => {
+    const draft = createRepositoryDraft();
+    draft.alpineDistributions = "v3.20, v3.23";
+    draft.alpineChannels = "main, community";
+    draft.alpineArchitectures = "aarch64, x86_64";
+    expect(firstAlpineNamespace(draft)).toBe("v3.20/main/aarch64");
+  });
+
+  it("falls back to the official defaults when the lists are empty", () => {
+    const draft = createRepositoryDraft();
+    draft.alpineDistributions = "";
+    draft.alpineChannels = "";
+    draft.alpineArchitectures = "";
+    expect(firstAlpineNamespace(draft)).toBe("v3.23/main/x86_64");
   });
 });

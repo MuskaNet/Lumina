@@ -10,7 +10,9 @@ import { router } from "./router";
 import { initTheme } from "../shared/theme";
 import { applyLanguagePreference } from "../shared/i18n";
 import { readSettings } from "../shared/settings";
+import { installMiclValueSync } from "../shared/micl-sync";
 
+installMiclValueSync();
 initTheme();
 document.body.classList.add("micl-window");
 applyLanguagePreference(readSettings().defaultLanguage);

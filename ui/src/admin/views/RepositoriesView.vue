@@ -5,6 +5,8 @@ import { t } from "../../shared/i18n";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
+import M3List from "../../shared/components/M3List.vue";
+import M3ListItem from "../../shared/components/M3ListItem.vue";
 import M3Tabs from "../../shared/components/M3Tabs.vue";
 import {
   ALPINE_METADATA_MODES,
@@ -16,11 +18,28 @@ import {
   applyRecipeDefaults,
   buildRepositoryPayload,
   createRepositoryDraft,
+  firstAlpineNamespace,
   repositoryDraftFromView,
   type RepositoryDraft,
   type RepositoryRecipeOption,
   type RepositoryViewLike,
 } from "../repositoryForm";
+import {
+  addMemberNames,
+  availableMembers,
+  moveMember,
+  removeMemberNames,
+  selectMemberCandidates,
+  toggleMemberHighlight,
+} from "../repositoryMembers";
+import {
+  formatAlpineStatus,
+  formatAptStatus,
+  formatConanStatus,
+  type AlpineStatus,
+  type AptStatus,
+  type ConanRepositoryStatus,
+} from "../repositoryStatus";
 
 interface Recipe {
   recipe?: string;
@@ -183,6 +202,134 @@ const savedOutboundPasswordPlaceholder = computed(() =>
   editing.value?.proxy?.outboundProxyPasswordConfigured ? t("Saved proxy password unchanged") : "",
 );
 
+/* ---- Group member transfer --------------------------------------------- */
+
+const memberFilter = ref("");
+const memberAvailableHighlight = ref<string[]>([]);
+const memberSelectedHighlight = ref<string[]>([]);
+
+const memberCandidates = computed(() =>
+  selectMemberCandidates(repositories.value, draftFormat.value, editing.value?.name ?? ""),
+);
+/** The newline-joined member list, in resolution priority order. */
+const memberNames = computed(() =>
+  draft.memberText
+    .split(/\r?\n/)
+    .map((name) => name.trim())
+    .filter(Boolean),
+);
+const memberAvailable = computed(() =>
+  availableMembers(memberCandidates.value, memberNames.value, memberFilter.value),
+);
+
+function setMemberNames(names: string[]) {
+  draft.memberText = names.join("\n");
+}
+
+function resetMemberTransfer() {
+  memberFilter.value = "";
+  memberAvailableHighlight.value = [];
+  memberSelectedHighlight.value = [];
+}
+
+function addMembersToSelection(names: string[]) {
+  if (!names.length) return;
+  setMemberNames(addMemberNames(memberNames.value, names));
+  memberAvailableHighlight.value = [];
+  memberSelectedHighlight.value = names.filter((name) => memberNames.value.includes(name));
+}
+
+function removeMembersFromSelection(names: string[]) {
+  if (!names.length) return;
+  setMemberNames(removeMemberNames(memberNames.value, names));
+  memberSelectedHighlight.value = [];
+  memberAvailableHighlight.value = names;
+}
+
+function onMemberClick(
+  side: "available" | "selected",
+  name: string,
+  event: MouseEvent | KeyboardEvent,
+) {
+  const mouse = event instanceof MouseEvent ? event : null;
+  if (mouse && mouse.detail > 1) {
+    if (side === "available") addMembersToSelection([name]);
+    else removeMembersFromSelection([name]);
+    return;
+  }
+  const additive = Boolean(mouse && (mouse.ctrlKey || mouse.metaKey || mouse.shiftKey));
+  if (side === "available") {
+    memberAvailableHighlight.value = toggleMemberHighlight(
+      memberAvailableHighlight.value, name, additive,
+    );
+    if (!additive) memberSelectedHighlight.value = [];
+  } else {
+    memberSelectedHighlight.value = toggleMemberHighlight(
+      memberSelectedHighlight.value, name, additive,
+    );
+    if (!additive) memberAvailableHighlight.value = [];
+  }
+}
+
+function addHighlightedMembers() {
+  addMembersToSelection([...memberAvailableHighlight.value]);
+}
+
+function addAllMembers() {
+  addMembersToSelection(memberAvailable.value.map((repo) => repo.name));
+}
+
+function removeHighlightedMembers() {
+  removeMembersFromSelection([...memberSelectedHighlight.value]);
+}
+
+function removeAllMembers() {
+  removeMembersFromSelection([...memberNames.value]);
+}
+
+function orderMember(name: string, offset: number) {
+  setMemberNames(moveMember(memberNames.value, name, offset));
+  memberSelectedHighlight.value = [name];
+}
+
+// A recipe change (create mode only) can invalidate selected members: the server
+// only accepts members of the group's own format and rejects nested groups for
+// most formats, so prune the stale entries instead of failing on save.
+watch(draftFormat, () => {
+  resetMemberTransfer();
+  if (editing.value) return;
+  const valid = new Set(memberCandidates.value.map((repo) => repo.name));
+  setMemberNames(memberNames.value.filter((name) => valid.has(name)));
+});
+
+/* ---- Conan status ------------------------------------------------------ */
+
+const conanStatusText = ref("");
+const conanStatusBusy = ref(false);
+
+async function loadConanStatus() {
+  const repo = editing.value;
+  if (!repo) return;
+  conanStatusBusy.value = true;
+  conanStatusText.value = t("Loading status…");
+  try {
+    const status = await api.get<ConanRepositoryStatus>(
+      `/internal/repositories/${encodeURIComponent(repo.name)}/conan/status`,
+    );
+    conanStatusText.value = formatConanStatus(status);
+  } catch (cause) {
+    conanStatusText.value = `${t("Conan status unavailable.")} ${(cause as Error).message}`;
+  } finally {
+    conanStatusBusy.value = false;
+  }
+}
+
+const alpinePublicKeyHref = computed(() =>
+  editing.value
+    ? `/internal/repositories/${encodeURIComponent(editing.value.name)}/alpine/public-key`
+    : "",
+);
+
 const showFormatTab = computed(() => {
   switch (draftFormat.value) {
     case "conan":
@@ -198,7 +345,8 @@ const showFormatTab = computed(() => {
   }
 });
 const showKeysTab = computed(
-  () => Boolean(editing.value) && ["apt", "alpine"].includes(draftFormat.value) && isHosted.value,
+  () => Boolean(editing.value)
+    && ((draftFormat.value === "apt" && !isGroup.value) || draftFormat.value === "alpine"),
 );
 
 const visibleTabs = computed(() =>
@@ -252,6 +400,9 @@ function openCreate() {
   const recipe = recipeOptions.value[0];
   Object.assign(draft, createRepositoryDraft(recipe, blobStores.value[0]?.name ?? ""));
   applyRecipeDefaults(draft, recipe?.format ?? "", recipe?.type ?? "");
+  resetMemberTransfer();
+  conanStatusText.value = "";
+  statusText.value = "";
   error.value = "";
   dialog.value?.open();
 }
@@ -260,6 +411,10 @@ function openEdit(repo: Repository) {
   editing.value = repo;
   activeTab.value = "general";
   Object.assign(draft, repositoryDraftFromView(repo));
+  resetMemberTransfer();
+  conanStatusText.value = "";
+  statusText.value = "";
+  if (String(repo.format ?? "") === "conan") void loadConanStatus();
   error.value = "";
   dialog.value?.open();
 }
@@ -339,11 +494,17 @@ async function loadSigningStatus() {
   if (!repo) return;
   statusText.value = t("Loading status…");
   try {
-    const path = draftFormat.value === "apt"
-      ? `/internal/repositories/${encodeURIComponent(repo.name)}/apt/status`
-      : `/internal/repositories/${encodeURIComponent(repo.name)}/alpine/status`;
-    const payload = await api.get<Record<string, unknown>>(path);
-    statusText.value = JSON.stringify(payload, null, 2);
+    if (draftFormat.value === "apt") {
+      const status = await api.get<AptStatus>(
+        `/internal/repositories/${encodeURIComponent(repo.name)}/apt/status`,
+      );
+      statusText.value = formatAptStatus(status);
+    } else {
+      const status = await api.get<AlpineStatus>(
+        `/internal/repositories/${encodeURIComponent(repo.name)}/alpine/status`,
+      );
+      statusText.value = formatAlpineStatus(status);
+    }
   } catch (cause) {
     statusText.value = (cause as Error).message;
   }
@@ -354,11 +515,18 @@ async function rebuildMetadata() {
   if (!repo) return;
   busy.value = true;
   try {
-    const path = draftFormat.value === "apt"
-      ? `/internal/repositories/${encodeURIComponent(repo.name)}/apt/rebuild`
-      : `/internal/repositories/${encodeURIComponent(repo.name)}/alpine/rebuild`;
-    await api.send(path, draftFormat.value === "apt" ? "POST" : "POST", {});
-    showToast(t("Metadata rebuild queued."), "ok");
+    if (draftFormat.value === "apt") {
+      await api.send(`/internal/repositories/${encodeURIComponent(repo.name)}/apt/rebuild`, "POST", {
+        distribution: draft.aptDistribution.trim() || null,
+      });
+      showToast(t("APT metadata rebuild queued."), "ok");
+    } else {
+      const namespace = firstAlpineNamespace(draft);
+      await api.send(`/internal/repositories/${encodeURIComponent(repo.name)}/alpine/rebuild`, "POST", {
+        namespace,
+      });
+      showToast(`${t("Alpine index rebuild queued.")} ${namespace}`, "ok");
+    }
     await loadSigningStatus();
   } catch (cause) {
     showToast(`${t("Rebuild failed")}: ${(cause as Error).message}`, "error");
@@ -366,6 +534,10 @@ async function rebuildMetadata() {
     busy.value = false;
   }
 }
+
+watch(activeTab, (tab) => {
+  if (tab === "keys") void loadSigningStatus();
+});
 
 async function rotateSigningKey(generate: boolean) {
   const repo = editing.value;
@@ -682,17 +854,117 @@ onMounted(load);
         </label>
       </div>
 
-      <div v-else-if="isGroup" class="kk-schema-form">
-        <p class="kk-hint">{{ t("One repository name per line. Order defines resolution priority.") }}</p>
-        <div class="micl-textfield-outlined kk-field--wide">
-          <label for="repo-members">{{ t("Member repositories") }}</label>
-          <textarea
-            id="repo-members"
-            :value="String(draft.memberText ?? '')"
-            rows="6"
-            @input="draft.memberText = ($event.target as HTMLTextAreaElement).value"
-          ></textarea>
+      <div v-else-if="isGroup" class="kk-member-transfer">
+        <section class="kk-member-pane" aria-labelledby="member-available-title">
+          <header class="kk-member-pane__head">
+            <span id="member-available-title">{{ t("Available") }}</span>
+            <span class="kk-member-count">{{ memberAvailable.length }}</span>
+          </header>
+          <div class="micl-textfield-outlined">
+            <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
+            <label for="member-filter">{{ t("Filter") }}</label>
+            <input id="member-filter" v-model="memberFilter" type="search" autocomplete="off">
+          </div>
+          <M3List class="kk-member-list" :aria-label="t('Available')">
+            <M3ListItem
+              v-for="repo in memberAvailable"
+              :key="repo.name"
+              :headline="repo.name"
+              :supporting-text="String(repo.type ?? '').toLowerCase()"
+              clickable
+              :selected="memberAvailableHighlight.includes(repo.name)"
+              @click="onMemberClick('available', repo.name, $event)"
+            />
+            <li v-if="!memberAvailable.length" class="kk-member-empty">
+              {{ memberFilter.trim() ? t("No matches") : t("No eligible members") }}
+            </li>
+          </M3List>
+        </section>
+
+        <div class="kk-member-actions" role="group" :aria-label="t('Member repositories')">
+          <button
+            type="button"
+            class="micl-iconbutton-standard-s"
+            :disabled="!memberAvailable.length"
+            :title="t('Add all')"
+            :aria-label="t('Add all')"
+            @click="addAllMembers"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_right</span>
+          </button>
+          <button
+            type="button"
+            class="micl-iconbutton-standard-s"
+            :disabled="!memberAvailableHighlight.length"
+            :title="t('Add selected')"
+            :aria-label="t('Add selected')"
+            @click="addHighlightedMembers"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+          </button>
+          <button
+            type="button"
+            class="micl-iconbutton-standard-s"
+            :disabled="!memberSelectedHighlight.length"
+            :title="t('Remove selected')"
+            :aria-label="t('Remove selected')"
+            @click="removeHighlightedMembers"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+          </button>
+          <button
+            type="button"
+            class="micl-iconbutton-standard-s"
+            :disabled="!memberNames.length"
+            :title="t('Remove all')"
+            :aria-label="t('Remove all')"
+            @click="removeAllMembers"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_left</span>
+          </button>
         </div>
+
+        <section class="kk-member-pane" aria-labelledby="member-selected-title">
+          <header class="kk-member-pane__head">
+            <span id="member-selected-title">{{ t("Selected") }}</span>
+            <span class="kk-member-count">{{ memberNames.length }}</span>
+          </header>
+          <p class="kk-member-hint">{{ t("Priority (top → bottom)") }}</p>
+          <M3List class="kk-member-list" :aria-label="t('Selected')">
+            <M3ListItem
+              v-for="(name, index) in memberNames"
+              :key="name"
+              :headline="name"
+              clickable
+              :selected="memberSelectedHighlight.includes(name)"
+              @click="onMemberClick('selected', name, $event)"
+            >
+              <template #trailing>
+                <span class="kk-member-order">{{ index + 1 }}</span>
+                <button
+                  type="button"
+                  class="micl-iconbutton-standard-s"
+                  :title="t('Move up')"
+                  :aria-label="t('Move up')"
+                  :disabled="index === 0"
+                  @click.stop="orderMember(name, -1)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+                </button>
+                <button
+                  type="button"
+                  class="micl-iconbutton-standard-s"
+                  :title="t('Move down')"
+                  :aria-label="t('Move down')"
+                  :disabled="index === memberNames.length - 1"
+                  @click.stop="orderMember(name, 1)"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
+                </button>
+              </template>
+            </M3ListItem>
+          </M3List>
+        </section>
       </div>
     </template>
 
@@ -854,21 +1126,41 @@ onMounted(load);
           <label for="repo-conan-bytes">{{ t("Manifest size limit (bytes)") }}</label>
           <input id="repo-conan-bytes" v-model.number="draft.conanManifestMaxBytes" type="number" min="1" max="2147483646" step="1" placeholder="Inherit server default">
         </div>
+        <p v-if="editing" class="kk-hint kk-field--wide">{{ conanStatusText }}</p>
+        <div v-if="editing" class="kk-toolbar kk-field--wide">
+          <button
+            type="button"
+            class="micl-button-outlined-s"
+            :disabled="busy || conanStatusBusy"
+            @click="loadConanStatus"
+          >
+            {{ t("Refresh status") }}
+          </button>
+        </div>
       </div>
     </template>
 
-    <!-- Signing keys (existing hosted apt/alpine) -->
+    <!-- Signing keys and index operations (existing apt/alpine repositories) -->
     <template v-else-if="activeTab === 'keys'">
       <p class="kk-muted">
         {{ t("Signed metadata needs a key. Generating a new key republishes every index that uses it.") }}
       </p>
       <div class="kk-toolbar">
         <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="loadSigningStatus">
-          {{ t("Load status") }}
+          {{ t("Refresh status") }}
         </button>
         <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="rebuildMetadata">
           {{ t("Rebuild metadata") }}
         </button>
+        <a
+          v-if="draftFormat === 'alpine'"
+          class="micl-button-outlined-s"
+          :href="alpinePublicKeyHref"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ t("Download public key") }}
+        </a>
         <button type="button" class="micl-button-filled-s" :disabled="busy" @click="rotateSigningKey(true)">
           {{ t("Generate new key") }}
         </button>
@@ -898,7 +1190,7 @@ onMounted(load);
         </button>
       </div>
 
-      <pre v-if="statusText" class="kk-code">{{ statusText }}</pre>
+      <p v-if="statusText" class="kk-hint" role="status">{{ statusText }}</p>
     </template>
   </M3Dialog>
 

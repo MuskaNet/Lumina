@@ -410,6 +410,19 @@ export function applyRecipeDefaults(draft: RepositoryDraft, format: string, type
   }
 }
 
+/**
+ * Alpine namespace targeted by the "rebuild index" action: the first configured
+ * distribution/channel/architecture, matching the upstream console.
+ */
+export function firstAlpineNamespace(draft: RepositoryDraft): string {
+  const first = (value: unknown, fallback: string) => splitList(value)[0] ?? fallback;
+  return [
+    first(draft.alpineDistributions, "v3.23"),
+    first(draft.alpineChannels, "main"),
+    first(draft.alpineArchitectures, "x86_64"),
+  ].join("/");
+}
+
 /** Builds the create/update request body for the repository API. */
 export function buildRepositoryPayload(
   draft: RepositoryDraft,

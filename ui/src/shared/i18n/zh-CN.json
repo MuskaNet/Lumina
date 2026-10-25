@@ -676,5 +676,17 @@
   "This generation serves APK v2 APKINDEX.tar.gz. Hosted and group repositories publish fenced, atomic signed snapshots. Proxy passthrough preserves upstream bytes; re-signing requires the upstream public key above.": "此代实现提供 APK v2 APKINDEX.tar.gz。Hosted 与 Group 仓库发布带围栏的原子签名快照；代理透传保留上游字节，重签名需要上方配置的上游公钥。",
   "npm proxy only. A version is hidden from package metadata and its tarball is blocked until this many minutes have passed since publication. Use 0 to disable this policy and preserve existing behavior. This is independent of content and metadata cache max age. Versions with a missing or invalid publish time are blocked while enabled.": "仅适用于 npm 代理。版本发布后需经过该分钟数才会出现在元数据中并允许下载 tarball；0 表示关闭此策略。此设置独立于内容/元数据缓存时间。启用时缺少或无效发布时间会被阻止。",
   "Swift proxy follows the Nexus-compatible GitHub source mode. The remote is fixed to https://github.com/; use the username/token fields for private GitHub repositories. Production SwiftPM clients should always connect to kkrepo over HTTPS.": "Swift 代理遵循 Nexus 兼容的 GitHub 源模式，远端固定为 https://github.com/；私有 GitHub 仓库请使用用户名/token 字段。生产环境的 SwiftPM 客户端应始终通过 HTTPS 连接 kkrepo。",
-  "PyPI proxy only. Use /simple for standard package indexes. Leave this empty when the upstream serves project indexes directly from its root, such as the PyTorch package indexes. Client URLs remain under /simple.": "仅适用于 PyPI 代理。标准包索引使用 /simple；当上游直接从根路径提供项目索引（例如 PyTorch 索引）时留空。客户端 URL 仍位于 /simple 下。"
+  "PyPI proxy only. Use /simple for standard package indexes. Leave this empty when the upstream serves project indexes directly from its root, such as the PyTorch package indexes. Client URLs remain under /simple.": "仅适用于 PyPI 代理。标准包索引使用 /simple；当上游直接从根路径提供项目索引（例如 PyTorch 索引）时留空。客户端 URL 仍位于 /simple 下。",
+  "Member repositories": "成员仓库",
+  "Priority (top → bottom)": "优先级（从上到下）",
+  "Refresh status": "刷新状态",
+  "Download public key": "下载公钥",
+  "Rebuild metadata": "重建元数据",
+  "Loading status…": "正在加载状态…",
+  "Conan status unavailable.": "Conan 状态不可用。",
+  "APT metadata rebuild queued.": "APT 元数据重建已排队。",
+  "Alpine index rebuild queued.": "Alpine 索引重建已排队。",
+  "Move up": "上移",
+  "Move down": "下移",
+  "Rebuild failed": "重建失败"
 }
