@@ -60,6 +60,13 @@ function setView(patch: Partial<BrowseRoute>): void {
   route.value = { view: "welcome", repo: "", path: "", query: new URLSearchParams(), ...patch };
 }
 
+/** The dialog is always mounted; only its native `open` state tells whether it is showing. */
+function loginDialogOpen(): boolean {
+  const dialog = wrapper!.find(".kk-dialog--login");
+  expect(dialog.exists()).toBe(true);
+  return (dialog.element as HTMLDialogElement).open;
+}
+
 afterEach(() => {
   wrapper?.unmount();
   wrapper = null;
@@ -119,16 +126,35 @@ describe("browse application", () => {
     expect(urls).toContain("/internal/security/api-keys/current");
   });
 
-  it("opens the login dialog for ?login=1", async () => {
-    const urls = await renderApp({ search: "login=1" });
+  it("does not open the sign-in form when an anonymous visitor opens the browser", async () => {
+    // Browsing may be allowed without a session, so the visit itself must not
+    // force the form. Opening it is the user's decision (or an explicit challenge).
+    const urls = await renderApp({ session: null });
 
-    expect(urls).toContain("/internal/security/login/options");
-    expect(wrapper!.find(".kk-dialog--login").exists()).toBe(true);
+    expect(loginDialogOpen()).toBe(false);
+    expect(urls).not.toContain("/internal/security/login/options");
   });
 
-  it("keeps the login dialog closed for an authenticated session", async () => {
+  it("keeps the sign-in form closed for an authenticated session", async () => {
     const urls = await renderApp();
 
+    expect(loginDialogOpen()).toBe(false);
+    expect(urls).not.toContain("/internal/security/login/options");
+  });
+
+  it("opens the sign-in form for the explicit ?login=1 challenge", async () => {
+    const urls = await renderApp({ search: "login=1", session: null });
+
+    expect(loginDialogOpen()).toBe(true);
+    expect(urls).toContain("/internal/security/login/options");
+  });
+
+  it("ignores ?login=1 once a session exists", async () => {
+    // The login endpoint redirects back to the same URL, so a reload after
+    // signing in must not reopen the form.
+    const urls = await renderApp({ search: "login=1" });
+
+    expect(loginDialogOpen()).toBe(false);
     expect(urls).not.toContain("/internal/security/login/options");
   });
 });

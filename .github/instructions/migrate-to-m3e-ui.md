@@ -475,3 +475,41 @@ java -jar server/target/kkrepo-server-<version>.jar \
 Java 侧只保留 Node 无法覆盖的构建契约：`AdminUiEntryPointContractTest` / `BrowseUiEntryPointContractTest` 各剩一个用例，验证 `maven-resources-plugin` 过滤后 classpath 中的 `index.html` 已替换 `@project.version@`；`UiUnitTestBridgeTest` 在 Maven 构建里执行 Vitest（原类名 `UiUnitTestBridge` 不匹配 Surefire 默认的 `*Test` 命名，实际从未被执行，本次一并改名修复）。CI 增加 `npm ci && npm test` 步骤（`.github/workflows/ci.yml`），保证没有 Maven 桥接时 UI 测试也会执行。
 
 当前结果：`cd ui && npm test` → **30 个文件 / 172 个用例通过**；`npm run typecheck` 通过。
+
+### UI 修复验证（2026-10-26）
+
+- 仓库列表按 usage 接口的仓库 ID 读取 assetCount / totalBytes，保留 BigInt 精度；汇总排除 group，存在未知大小时显示下界标记。
+- 创建仓库采用连续表单，不显示 General / Type / Format 分页；编辑仓库保留分页。
+- 上传页依据服务端 upload-specs 渲染组件字段与文件字段，支持编号多文件和 Swift 命名签名文件；不对字段标签进行截断或缩写。
+- 浏览器确认异步回填字段标签不重叠，inbox / search_off 使用 Material Symbols 字形；保留 MICL。
+- 验证：npm --prefix ui test（32 文件 / 191 用例通过）、npm --prefix ui run typecheck、npm --prefix ui run build:admin、npm --prefix ui run build:browse 均通过；构建后入口兼容测试 10 用例通过。
+
+### 单选开关统一为 MICL Switch（2026-10-26）
+
+管理端原先把**单个 on/off 设置**也渲染成 `micl-checkbox`。按 M3 语义，checkbox 表示"从一组选项里选任意多个"，单个开关设置必须用 Switch，否则读屏会播报为"select all that apply"，视觉上也与其余 M3 Expressive 控件不一致。
+
+已逐视图 / 逐对话框审计管理端全部 checkbox，把 24 处单选布尔改为 `<input type="checkbox" class="micl-switch" role="switch">` + `<label class="kk-switch-row">`：
+
+| 位置 | 数量 | 设置 |
+| --- | --- | --- |
+| `AnonymousView.vue` | 1 | Allow anonymous access |
+| `BlobStoresView.vue`（表单对话框） | 1 | Path style access |
+| `RepositoriesView.vue`（创建/编辑对话框） | 12 | Online、strict content type、清除已存密码/令牌/代理密码、auto-block、Docker connector、Cargo auth-required、apt / alpine proxy 选项 |
+| `RepositoryDataMigrationView.vue` | 1 | Validate checksums |
+| `ScanningView.vue` | 8 | Findings 的 Current findings 过滤 + 扫描策略 4 项 + 仓库扫描配置 3 项 |
+| `M3SchemaForm.vue`（LDAP 5 / OIDC 1 / Realms 1） | 7 | Enabled、use trust store、user/group subtree、LDAP groups as roles 等 |
+
+- **schema 字段类型**：`FieldType` 的 `"checkbox"` 改名为 `"switch"`（`schema.ts` + LDAP/OIDC/Realms 字段声明），避免"声明 checkbox 渲染 switch"的误导。布尔字段仍复用 `setBool`。
+- **新增 row 样式**：`.kk-switch-row`（48px 命中区、`max-inline-size:100%` 保证窄对话框换行）与 `.kk-form-switches`；`.kk-checkbox-row` 保留给多选组。
+- **保持 checkbox 的两处多选**：`ContentSelectorsView` 的 privilege 动作集合、`CleanupRepositoryPicker` 的仓库多选；`browse` 的 upload `BOOLEAN` 字段属于用户侧界面，本次未改动。
+- **回归护栏**：`ui/src/admin/switchControls.test.ts` 断言 admin/shared 里出现 `micl-checkbox` 的文件只允许那两个多选文件、每个 `micl-switch` 都带 `role="switch"`；`ui/src/shared/components/M3SchemaForm.test.ts` 覆盖 switch 渲染 / 写回模型 / disabled；`ScanningView.test.ts` 增加 role 断言。
+- **验证**：`npm run typecheck` 通过；`npm test` → 34 文件 / 199 用例通过；`npm run build`、`npm run build:browse` 重新生成入库产物；用 headless Edge 对入库 `app.css` 做了亮色、禁用态、长标签与 328px 窄对话框的渲染核对（开关轨道/手柄、×/✓ 图标、标签换行均正常）。
+
+### browse 登录弹窗不再自动弹出（2026-10-26）
+
+`ui/src/browse/App.vue` 的挂载逻辑把"当前没有登录用户"也当成了需要弹登录框的条件（`params.get("login") === "1" || !session.value?.userId`），因此匿名访问 `/browse/`（以及 `/` 重定向到 browse）时登录框会自动弹出，与"匿名可浏览"的产品语义冲突。
+
+修复为只响应显式挑战：`login=1 && !session.userId` 才打开。`?login=1` 保留，因为 `/admin` 未登录时由 `AdminUiController` 重定向到 `/browse/?login=1#browse/welcome`，401 处理器也走同一 URL；而 `/internal/repositories` 对匿名返回空列表，普通浏览不会触发登录重定向。已登录后刷新仍带 `login=1` 的 URL 也不会再弹框。
+
+回归测试（`ui/src/browse/App.test.ts`）覆盖四种组合：匿名普通访问不弹、已登录普通访问不弹、匿名 `?login=1` 弹、已登录 `?login=1` 不弹。断言从原来的"登录对话框元素存在"改为原生 `dialog.open` 状态——该组件始终挂载，存在性无法区分开/关，旧断言无法发现这个回归。验证：`npm test` 34 文件 / 199 用例通过、`npm run typecheck`、重编 browse/admin 入库产物，并用 headless Edge + stub API 实测入库 bundle：`/browse/` 无弹窗、`/browse/?login=1` 弹窗。
+

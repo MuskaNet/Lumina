@@ -232,8 +232,8 @@ onMounted(loadJobs);
       <label for="rdm-since">{{ t("Metadata since") }}</label>
       <input id="rdm-since" v-model="draft.metadataSince" type="datetime-local">
     </div>
-    <label class="kk-checkbox-row">
-      <input v-model="draft.checksumValidation" class="micl-checkbox" type="checkbox">
+    <label class="kk-switch-row">
+      <input v-model="draft.checksumValidation" class="micl-switch" type="checkbox" role="switch">
       <span>{{ t("Validate checksums") }}</span>
     </label>
     <div class="micl-textfield-outlined kk-field--wide">

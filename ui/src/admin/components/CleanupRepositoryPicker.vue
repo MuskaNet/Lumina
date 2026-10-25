@@ -265,6 +265,7 @@ onBeforeUnmount(unbindListeners);
         </div>
       </div>
 
+      <!-- Choosing several repositories for one policy: a multi-select set, so checkboxes rather than switches. -->
       <M3List class="kk-cleanup-repo-options" :aria-label="t('Repositories')">
         <li v-for="repository in visible" :key="repository.id ?? repository.name">
           <label

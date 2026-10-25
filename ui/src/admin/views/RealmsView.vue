@@ -61,7 +61,7 @@ const fields = computed<FieldDef[]>(() => [
   { key: "realmId", label: "Realm ID", type: "text", required: true, readOnly: Boolean(editing.value) },
   { key: "type", label: "Type", type: "text" },
   { key: "name", label: "Name", type: "text" },
-  { key: "enabled", label: "Enabled", type: "checkbox" },
+  { key: "enabled", label: "Enabled", type: "switch" },
   { key: "priority", label: "Priority", type: "number" },
   { key: "attributes", label: "Attributes (JSON)", type: "textarea", group: "Advanced" },
 ]);

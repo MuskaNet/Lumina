@@ -12,7 +12,7 @@ const loading = ref(true);
 const secretDirty = ref(false);
 
 const FIELDS: FieldDef[] = [
-  { key: "enabled", label: "Enabled", type: "checkbox" },
+  { key: "enabled", label: "Enabled", type: "switch" },
   { key: "priority", label: "Priority", type: "number" },
   { key: "name", label: "Realm name", type: "text" },
   { key: "source", label: "Source", type: "text" },

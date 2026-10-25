@@ -66,24 +66,36 @@ function openMyToken() {
 
   <main class="micl-panes">
     <section class="micl-pane">
-      <header class="micl-appbar">
-        <div class="micl-appbar__headline">
-          <h1>{{ t(activeItem?.label ?? title) }}</h1>
-          <p v-if="subtitle" class="micl-appbar__subtitle">{{ t(subtitle) }}</p>
-        </div>
-        <div class="kk-appbar-actions">
-          <a class="kk-product-link" :href="PRODUCT_URL" target="_blank" rel="noopener noreferrer">kkRepo</a>
-          <a
-            v-if="version"
-            class="kk-product-version"
-            :href="`${PRODUCT_URL}/releases`"
-            target="_blank"
-            rel="noopener noreferrer"
-          >v{{ version }}</a>
+      <div class="kk-page-header">
+        <h1 class="kk-page-title">{{ t(activeItem?.label ?? title) }}</h1>
+        <p v-if="subtitle" class="kk-page-subtitle">{{ t(subtitle) }}</p>
+      </div>
+
+      <div class="kk-page">
+        <slot />
+      </div>
+
+      <!-- Floating bottom toolbar -->
+      <aside class="kk-bottom-toolbar" role="toolbar" :aria-label="t('Quick toolbar')">
+        <div class="kk-bottom-toolbar__inner">
+          <div class="kk-bottom-toolbar__brand">
+            <a class="kk-product-link" :href="PRODUCT_URL" target="_blank" rel="noopener noreferrer">kkRepo</a>
+            <a
+              v-if="version"
+              class="kk-product-version"
+              :href="`${PRODUCT_URL}/releases`"
+              target="_blank"
+              rel="noopener noreferrer"
+            >v{{ version }}</a>
+          </div>
+
+          <div v-if="$slots.actions" class="kk-bottom-toolbar__divider"></div>
           <slot name="actions" />
+
+          <div class="kk-bottom-toolbar__divider"></div>
           <button
             type="button"
-            class="micl-iconbutton-standard-s"
+            class="micl-iconbutton-standard-s kk-bottom-toolbar__account-btn"
             popovertarget="kk-user-menu"
             :aria-label="`Account menu for ${accountLabel}`"
             :title="`Account menu for ${accountLabel}`"
@@ -91,11 +103,7 @@ function openMyToken() {
             <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
           </button>
         </div>
-      </header>
-
-      <div class="kk-page">
-        <slot />
-      </div>
+      </aside>
     </section>
   </main>
 

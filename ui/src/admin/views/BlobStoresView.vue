@@ -590,8 +590,8 @@ onMounted(() => {
       </template>
     </div>
 
-    <label v-if="isS3Engine" class="kk-checkbox-row">
-      <input v-model="form.pathStyleAccess" class="micl-checkbox" type="checkbox">
+    <label v-if="isS3Engine" class="kk-switch-row">
+      <input v-model="form.pathStyleAccess" class="micl-switch" type="checkbox" role="switch">
       <span>{{ t("Path style access") }}</span>
     </label>
   </M3Dialog>

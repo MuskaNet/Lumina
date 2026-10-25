@@ -784,12 +784,12 @@ onMounted(load);
         </div>
       </div>
       <div class="kk-form-switches">
-        <label class="kk-checkbox-row">
-          <input v-model="draft.online" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.online" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Online") }}</span>
         </label>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.strictContentTypeValidation" class="micl-checkbox" type="checkbox" :disabled="strictDisabled">
+        <label class="kk-switch-row">
+          <input v-model="draft.strictContentTypeValidation" class="micl-switch" type="checkbox" role="switch" :disabled="strictDisabled">
           <span>{{ t("Strict content type validation") }}</span>
         </label>
       </div>
@@ -874,16 +874,16 @@ onMounted(load);
           <label for="repo-remote-pass">{{ t("Remote password") }}</label>
           <input id="repo-remote-pass" v-model="draft.remotePassword" type="password" :placeholder="savedPasswordPlaceholder" autocomplete="new-password">
         </div>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.remotePasswordClear" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.remotePasswordClear" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Clear saved password") }}</span>
         </label>
         <div class="micl-textfield-outlined">
           <label for="repo-remote-token">{{ t("Remote bearer token") }}</label>
           <input id="repo-remote-token" v-model="draft.remoteBearerToken" type="password" :placeholder="savedBearerTokenPlaceholder" autocomplete="new-password">
         </div>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.remoteBearerTokenClear" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.remoteBearerTokenClear" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Clear saved bearer token") }}</span>
         </label>
         <div class="micl-textfield-outlined">
@@ -905,8 +905,8 @@ onMounted(load);
           <label for="repo-redirect-hosts">{{ t("Allowed redirect hosts") }}</label>
           <textarea id="repo-redirect-hosts" :value="draft.allowedRedirectHosts" rows="2" @input="draft.allowedRedirectHosts = ($event.target as HTMLTextAreaElement).value"></textarea>
         </div>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.autoBlock" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.autoBlock" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Auto-block remote") }}</span>
         </label>
         <p class="kk-hint kk-field--wide">
@@ -936,8 +936,8 @@ onMounted(load);
           <label for="repo-outbound-pass">{{ t("Proxy password") }}</label>
           <input id="repo-outbound-pass" v-model="draft.outboundProxyPassword" type="password" :placeholder="savedOutboundPasswordPlaceholder" autocomplete="new-password">
         </div>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.outboundProxyPasswordClear" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.outboundProxyPasswordClear" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Clear saved proxy password") }}</span>
         </label>
       </div>
@@ -1070,8 +1070,8 @@ onMounted(load);
         <p class="kk-hint kk-field--wide">
           {{ t("Optional compatibility entrypoint for repository-specific Docker traffic. Leave it disabled to use path-based Docker routing on the main service port; enable it only when clients need a dedicated /v2/ port or isolated upload/download traffic.") }}
         </p>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.dockerConnectorEnabled" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.dockerConnectorEnabled" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Enable HTTP connector") }}</span>
         </label>
         <div class="micl-textfield-outlined">
@@ -1088,8 +1088,8 @@ onMounted(load);
         <p class="kk-hint kk-field--wide">
           {{ t("Controls the Cargo registry `auth-required` client hint. Repository access is still decided by anonymous settings and security privileges.") }}
         </p>
-        <label class="kk-checkbox-row">
-          <input v-model="draft.cargoRequireAuthentication" class="micl-checkbox" type="checkbox">
+        <label class="kk-switch-row">
+          <input v-model="draft.cargoRequireAuthentication" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Authentication requirements") }}</span>
         </label>
       </div>
@@ -1132,12 +1132,12 @@ onMounted(load);
           <label for="repo-apt-label">{{ t("Label") }}</label>
           <input id="repo-apt-label" v-model="draft.aptLabel" type="text" maxlength="128" :disabled="!aptLocallySigned">
         </div>
-        <label v-if="aptProxy" class="kk-checkbox-row">
-          <input v-model="draft.aptFlat" class="micl-checkbox" type="checkbox">
+        <label v-if="aptProxy" class="kk-switch-row">
+          <input v-model="draft.aptFlat" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Flat upstream layout") }}</span>
         </label>
-        <label v-if="aptProxy" class="kk-checkbox-row">
-          <input v-model="draft.aptEnforceDistribution" class="micl-checkbox" type="checkbox">
+        <label v-if="aptProxy" class="kk-switch-row">
+          <input v-model="draft.aptEnforceDistribution" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Enforce configured distribution") }}</span>
         </label>
         <p class="kk-hint kk-field--wide">
@@ -1182,12 +1182,12 @@ onMounted(load);
           <label for="repo-alpine-desc">{{ t("Description") }}</label>
           <input id="repo-alpine-desc" v-model="draft.alpineDescription" type="text" maxlength="255" autocomplete="off">
         </div>
-        <label v-if="alpineProxy" class="kk-checkbox-row">
-          <input v-model="draft.alpineVerifyUpstreamSignatures" class="micl-checkbox" type="checkbox">
+        <label v-if="alpineProxy" class="kk-switch-row">
+          <input v-model="draft.alpineVerifyUpstreamSignatures" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Verify upstream index signature before projection") }}</span>
         </label>
-        <label v-if="alpineProxy" class="kk-checkbox-row">
-          <input v-model="draft.alpineStaleIfError" class="micl-checkbox" type="checkbox">
+        <label v-if="alpineProxy" class="kk-switch-row">
+          <input v-model="draft.alpineStaleIfError" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Serve last verified index when upstream fails") }}</span>
         </label>
         <div v-if="alpineResignProxy" class="micl-textfield-outlined kk-field--wide">
@@ -1298,4 +1298,3 @@ onMounted(load);
     </p>
   </M3Dialog>
 </template>
-

@@ -12,7 +12,7 @@ const loading = ref(true);
 const passwordDirty = computed(() => String(draft.authPassword ?? "") !== "");
 
 const FIELDS: FieldDef[] = [
-  { key: "enabled", label: "Enabled", type: "checkbox" },
+  { key: "enabled", label: "Enabled", type: "switch" },
   { key: "priority", label: "Priority", type: "number" },
   { key: "name", label: "Realm name", type: "text" },
   { key: "source", label: "Source", type: "text" },
@@ -21,7 +21,7 @@ const FIELDS: FieldDef[] = [
   { key: "protocol", label: "Protocol", type: "text" },
   { key: "host", label: "Host", type: "text" },
   { key: "port", label: "Port", type: "number" },
-  { key: "useTrustStore", label: "Use trust store", type: "checkbox" },
+  { key: "useTrustStore", label: "Use trust store", type: "switch" },
   { key: "searchBase", label: "Search base", type: "text" },
   { key: "connectionTimeout", label: "Connection timeout (s)", type: "number" },
   { key: "connectionRetryDelay", label: "Retry delay (s)", type: "number" },
@@ -33,7 +33,7 @@ const FIELDS: FieldDef[] = [
   { key: "authPassword", label: "Auth password", type: "password" },
 
   { key: "userBaseDn", label: "User base DN", type: "text", group: "User mapping" },
-  { key: "userSubtree", label: "User subtree", type: "checkbox" },
+  { key: "userSubtree", label: "User subtree", type: "switch" },
   { key: "userObjectClass", label: "User object class", type: "text" },
   { key: "userLdapFilter", label: "User LDAP filter", type: "text" },
   { key: "userIdAttribute", label: "User ID attribute", type: "text" },
@@ -42,10 +42,10 @@ const FIELDS: FieldDef[] = [
   { key: "userPasswordAttribute", label: "Password attribute", type: "text" },
   { key: "userMemberOfAttribute", label: "Member-of attribute", type: "text" },
 
-  { key: "ldapGroupsAsRoles", label: "LDAP groups as roles", type: "checkbox", group: "Group mapping" },
+  { key: "ldapGroupsAsRoles", label: "LDAP groups as roles", type: "switch", group: "Group mapping" },
   { key: "groupType", label: "Group type", type: "text" },
   { key: "groupBaseDn", label: "Group base DN", type: "text" },
-  { key: "groupSubtree", label: "Group subtree", type: "checkbox" },
+  { key: "groupSubtree", label: "Group subtree", type: "switch" },
   { key: "groupIdAttribute", label: "Group ID attribute", type: "text" },
   { key: "groupMemberAttribute", label: "Group member attribute", type: "text" },
   { key: "groupMemberFormat", label: "Group member format", type: "text" },

@@ -115,13 +115,12 @@ defineExpose({ close, signOutAndReload });
 <template>
   <dialog
     ref="dialog"
-    class="micl-dialog kk-dialog kk-dialog--login has-icon"
+    class="micl-dialog kk-dialog kk-dialog--login"
     aria-labelledby="kk-login-title"
     @click="onBackdropClick"
     @close="emit('close')"
   >
     <div class="micl-dialog__headline">
-      <span class="micl-dialog__icon material-symbols-outlined" aria-hidden="true">account_circle</span>
       <div class="kk-dialog__title-block">
         <h2 id="kk-login-title">{{ t("Sign in") }}</h2>
         <span class="micl-dialog__supporting-text">{{ t("Sign in to browse or manage this repository.") }}</span>

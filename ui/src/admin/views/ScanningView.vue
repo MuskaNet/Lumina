@@ -530,10 +530,10 @@ onMounted(() => load(true));
     </div>
     <label
       v-if="tab === 'findings'"
-      class="kk-checkbox-row kk-current-findings"
+      class="kk-switch-row kk-current-findings"
       :title="t('Only findings from scans applicable to current artifact content. Uncheck to include historical findings.')"
     >
-      <input class="micl-checkbox" type="checkbox" :checked="currentOnly" @change="onCurrentOnlyChange">
+      <input class="micl-switch" type="checkbox" role="switch" :checked="currentOnly" @change="onCurrentOnlyChange">
       <span>{{ t("Current findings") }}</span>
     </label>
     <button v-if="tab === 'policies'" type="button" class="micl-button-filled-s" @click="openPolicy()">
@@ -694,20 +694,20 @@ onMounted(() => load(true));
         <label for="policy-max-age">{{ t("Max result age (seconds)") }}</label>
         <input id="policy-max-age" v-model="policyDraft.maxResultAgeSeconds" type="number" min="0">
       </div>
-      <label class="kk-checkbox-row">
-        <input v-model="policyDraft.enabled" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="policyDraft.enabled" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Enabled") }}</span>
       </label>
-      <label class="kk-checkbox-row">
-        <input v-model="policyDraft.onlyFixable" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="policyDraft.onlyFixable" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Only block fixable findings") }}</span>
       </label>
-      <label class="kk-checkbox-row">
-        <input v-model="policyDraft.blockUnknownSeverity" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="policyDraft.blockUnknownSeverity" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Block unknown severity") }}</span>
       </label>
-      <label class="kk-checkbox-row">
-        <input v-model="policyDraft.requireCompleteInventory" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="policyDraft.requireCompleteInventory" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Require complete inventory") }}</span>
       </label>
     </div>
@@ -721,16 +721,16 @@ onMounted(() => load(true));
     @confirm="saveConfig"
   >
     <div class="kk-field-grid">
-      <label class="kk-checkbox-row">
-        <input v-model="configDraft.enabled" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="configDraft.enabled" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Scanning enabled") }}</span>
       </label>
-      <label class="kk-checkbox-row">
-        <input v-model="configDraft.scanHostedContent" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="configDraft.scanHostedContent" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Scan hosted content") }}</span>
       </label>
-      <label class="kk-checkbox-row">
-        <input v-model="configDraft.scanProxyContent" class="micl-checkbox" type="checkbox">
+      <label class="kk-switch-row">
+        <input v-model="configDraft.scanProxyContent" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Scan proxy content") }}</span>
       </label>
       <div class="micl-textfield-outlined">

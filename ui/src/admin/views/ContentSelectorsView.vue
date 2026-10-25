@@ -410,6 +410,7 @@ onMounted(load);
         </select>
       </div>
     </div>
+    <!-- A privilege grants any number of actions at once: a multi-select set, so checkboxes rather than switches. -->
     <div class="kk-actions-row">
       <label v-for="action in ACTION_OPTIONS" :key="action" class="kk-checkbox-row">
         <input

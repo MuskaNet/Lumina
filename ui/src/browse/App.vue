@@ -68,8 +68,12 @@ onMounted(async () => {
   if (!globalThis.location.hash.startsWith(BROWSE_PREFIX)) {
     navigate(`${BROWSE_PREFIX}welcome`);
   }
-  const params = new URLSearchParams(globalThis.location.search);
-  if (params.get("login") === "1" || !session.value?.userId) {
+  // Anonymous browsing is supported, so simply opening the browser must never
+  // show the sign-in form: only the "Sign in" button does. `?login=1` is the
+  // explicit challenge the server (and the 401 handler) redirects to, and it is
+  // pointless once a session exists — e.g. reloading the URL after signing in.
+  const loginRequired = new URLSearchParams(globalThis.location.search).get("login") === "1";
+  if (loginRequired && !session.value?.userId) {
     loginOpen.value = true;
   }
 });
@@ -128,45 +132,15 @@ async function onSignedIn() {
 
   <main class="micl-panes">
     <section class="micl-pane">
-      <header class="micl-appbar">
-        <div class="micl-appbar__headline">
-          <h1>kkRepo</h1>
-          <p class="micl-appbar__subtitle">
-            {{ t("Repository browser") }}
-            <template v-if="version">
-              · <a class="kk-product-version" :href="`${PRODUCT_URL}/releases`" target="_blank" rel="noopener noreferrer">v{{ version }}</a>
-            </template>
-          </p>
-        </div>
-        <form class="kk-appbar-search" role="search" @submit="submitSearch">
-          <div class="micl-textfield-outlined">
-            <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
-            <label for="browse-search">{{ t("Search components") }}</label>
-            <input id="browse-search" v-model="search" type="search" autocomplete="off">
-          </div>
-        </form>
-        <div class="kk-appbar-actions">
-          <button
-            v-if="session?.userId"
-            type="button"
-            class="micl-iconbutton-standard-s"
-            popovertarget="kk-browse-user-menu"
-            :aria-label="`Account menu for ${qualifiedUser()}`"
-            :title="`Account menu for ${qualifiedUser()}`"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
-          </button>
-          <button
-            v-else
-            type="button"
-            class="micl-button-filled-s"
-            @click="loginOpen = true"
-          >
-            <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">login</span>
-            {{ t("Sign in") }}
-          </button>
-        </div>
-      </header>
+      <div class="kk-page-header">
+        <h1 class="kk-page-title">kkRepo</h1>
+        <p class="kk-page-subtitle">
+          {{ t("Repository browser") }}
+          <template v-if="version">
+            · <a class="kk-product-version" :href="`${PRODUCT_URL}/releases`" target="_blank" rel="noopener noreferrer">v{{ version }}</a>
+          </template>
+        </p>
+      </div>
 
       <div class="kk-page">
         <WelcomeView
@@ -189,6 +163,46 @@ async function onSignedIn() {
         <UploadView v-else-if="route.view === 'upload'" :repositories="repositories" />
         <MyTokenView v-else-if="route.view === 'my-token'" />
       </div>
+
+      <!-- Floating bottom toolbar -->
+      <aside class="kk-bottom-toolbar" role="toolbar" :aria-label="t('Quick toolbar')">
+        <div class="kk-bottom-toolbar__inner">
+          <form class="kk-bottom-toolbar__search" role="search" @submit="submitSearch">
+            <span class="material-symbols-outlined kk-bottom-toolbar__search-icon" aria-hidden="true">search</span>
+            <input
+              id="browse-search"
+              v-model="search"
+              type="search"
+              :placeholder="t('Search components')"
+              :aria-label="t('Search components')"
+              autocomplete="off"
+            >
+          </form>
+
+          <div class="kk-bottom-toolbar__divider"></div>
+
+          <button
+            v-if="session?.userId"
+            type="button"
+            class="micl-iconbutton-standard-s kk-bottom-toolbar__account-btn"
+            popovertarget="kk-browse-user-menu"
+            :aria-label="`Account menu for ${qualifiedUser()}`"
+            :title="`Account menu for ${qualifiedUser()}`"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+          </button>
+          <button
+            v-else
+            type="button"
+            class="micl-iconbutton-filled-s kk-bottom-toolbar__login-btn"
+            :aria-label="t('Sign in')"
+            :title="t('Sign in')"
+            @click="loginOpen = true"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">login</span>
+          </button>
+        </div>
+      </aside>
     </section>
   </main>
 

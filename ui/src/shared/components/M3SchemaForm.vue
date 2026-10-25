@@ -72,10 +72,11 @@ function setSelect(field: FieldDef, event: Event) {
       <h3 v-if="section.group" class="kk-schema-form__group">{{ t(section.group) }}</h3>
       <div class="kk-field-grid">
         <template v-for="field in section.fields" :key="field.key">
-          <label v-if="field.type === 'checkbox'" class="kk-checkbox-row">
+          <label v-if="field.type === 'switch'" class="kk-switch-row">
             <input
-              class="micl-checkbox"
+              class="micl-switch"
               type="checkbox"
+              role="switch"
               :checked="Boolean(model[field.key])"
               :disabled="disabled || field.readOnly"
               @change="setBool(field, $event)"

@@ -72,18 +72,6 @@ body.micl-window {
   background-color: inherit !important;
 }
 
-.micl-appbar {
-  margin: 0 !important;
-  padding-inline: 24px 32px !important;
-  min-block-size: 64px !important;
-  border-block-end: 1px solid var(--md-sys-color-outline-variant) !important;
-  background-color: var(--md-sys-color-surface) !important;
-  flex-shrink: 0 !important;
-  position: sticky !important;
-  inset-block-start: 0 !important;
-  z-index: 5 !important;
-}
-
 /* Operational compact density for inputs */
 .micl-textfield-outlined,
 .micl-textfield-filled {
@@ -142,24 +130,8 @@ body.micl-window {
 
 /* ---- Shell ------------------------------------------------------------- */
 
-.kk-appbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--md-sys-padding-xs, 8px);
-  margin-inline-start: auto;
-  padding-inline-end: var(--md-sys-padding-s, 12px);
-}
-
 .kk-user-menu {
   min-inline-size: 240px;
-}
-
-/* ---- Browse ----------------------------------------------------------- */
-
-.kk-appbar-search {
-  flex: 1 1 20rem;
-  max-inline-size: 32rem;
-  margin-inline: auto;
 }
 
 .kk-repo-grid {
@@ -420,10 +392,188 @@ body.micl-window {
   display: flex;
   flex-direction: column;
   gap: var(--md-sys-padding-m, 20px);
-  padding: 24px 32px 48px;
-  max-inline-size: 1440px;
+  padding: 16px 32px 88px;
+  max-inline-size: 1450px;
   inline-size: 100%;
+  margin-inline: auto;
   box-sizing: border-box;
+}
+
+/* Page start title (replaces old micl-appbar) */
+.kk-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 24px 32px 8px;
+  max-inline-size: 1450px;
+  inline-size: 100%;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.kk-page-title {
+  margin: 0;
+  font-family: var(--md-ref-typeface-brand, var(--md-ref-typeface-plain));
+  font-size: var(--md-sys-typescale-headline-small-size, 1.5rem);
+  line-height: var(--md-sys-typescale-headline-small-line-height, 2rem);
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  letter-spacing: -0.015em;
+}
+
+.kk-page-subtitle {
+  margin: 0;
+  font-size: var(--md-sys-typescale-body-medium-size, 0.875rem);
+  line-height: var(--md-sys-typescale-body-medium-line-height, 1.25rem);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---- Floating Bottom Toolbar (M3 Expressive) --------------------------- */
+
+.kk-bottom-toolbar {
+  position: fixed;
+  inset-block-end: 20px;
+  inset-inline-start: calc(50% + 40px); /* accounts for 80px side rail */
+  transform: translateX(-50%);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* children re-enable pointer-events */
+}
+
+@media (max-width: 768px) {
+  .kk-bottom-toolbar {
+    inset-inline-start: 50%;
+  }
+}
+
+.kk-bottom-toolbar__inner {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background-color: var(--md-sys-color-surface-container-high, var(--md-sys-color-surface-container));
+  color: var(--md-sys-color-on-surface);
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition:
+    transform var(--md-sys-motion-expressive-default-effects-duration, 200ms) var(--md-sys-motion-expressive-default-spatial),
+    box-shadow var(--md-sys-motion-expressive-default-effects-duration, 200ms) ease;
+}
+
+.kk-bottom-toolbar__inner:hover {
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.24),
+    0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.kk-bottom-toolbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline-start: 8px;
+}
+
+.kk-bottom-toolbar__divider {
+  inline-size: 1px;
+  block-size: 24px;
+  background-color: var(--md-sys-color-outline-variant);
+}
+
+.kk-bottom-toolbar__account-btn,
+.kk-bottom-toolbar__login-btn {
+  margin: 0 !important;
+  inline-size: 40px !important;
+  min-inline-size: 40px !important;
+  block-size: 40px !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.kk-bottom-toolbar__account-btn {
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.kk-bottom-toolbar__account-btn .material-symbols-outlined {
+  font-size: 28px !important;
+  inline-size: 28px !important;
+  block-size: 28px !important;
+}
+
+.kk-bottom-toolbar__account-btn:hover {
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.kk-bottom-toolbar__login-btn {
+  background-color: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
+}
+
+.kk-bottom-toolbar__login-btn .material-symbols-outlined {
+  font-size: 22px !important;
+  inline-size: 22px !important;
+  block-size: 22px !important;
+}
+
+.kk-bottom-toolbar__search {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface));
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 9999px;
+  padding: 8px 18px 8px 14px;
+  inline-size: 280px;
+  transition:
+    border-color 300ms ease,
+    inline-size 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 300ms ease;
+  will-change: inline-size;
+}
+
+.kk-bottom-toolbar__search:hover {
+  border-color: var(--md-sys-color-outline);
+}
+
+.kk-bottom-toolbar__search:focus-within {
+  border-color: var(--md-sys-color-primary);
+  inline-size: 440px;
+  box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.kk-bottom-toolbar__search-icon {
+  font-size: 22px;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.kk-bottom-toolbar__search input {
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-ref-typeface-plain);
+  font-size: var(--md-sys-typescale-body-medium-size, 0.875rem);
+  outline: none;
+  inline-size: 100%;
+}
+
+.kk-bottom-toolbar__search input::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.8;
+}
+
+/* Offset snackbar so it does not collide with floating toolbar */
+.micl-snackbar.kk-snackbar {
+  inset-block-end: 80px !important;
 }
 
 /* ---- Toolbar / summary ------------------------------------------------- */
@@ -1002,6 +1152,7 @@ body.micl-window {
   letter-spacing: 0.06rem;
 }
 
+/* Checkboxes select any number of values from a set; an on/off setting is a switch. */
 .kk-checkbox-row {
   display: inline-flex;
   align-items: center;
@@ -1012,6 +1163,33 @@ body.micl-window {
   user-select: none;
   font-size: 0.875rem;
   color: var(--md-sys-color-on-surface);
+}
+
+/*
+ * Row wrapper for a single-setting MICL switch. The switch renders a 48px target
+ * around its 32px track, so this row is taller than a checkbox row; do not reuse
+ * it for multi-select checkbox groups.
+ */
+.kk-switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 48px;
+  max-inline-size: 100%;
+  padding-inline: 4px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* A pair of settings switches that share one dialog section. */
+.kk-form-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+  padding-block: 4px;
 }
 
 .kk-actions-row {

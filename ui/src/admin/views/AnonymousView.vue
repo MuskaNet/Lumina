@@ -66,8 +66,8 @@ onMounted(load);
   </p>
 
   <div class="kk-field-grid">
-    <label class="kk-checkbox-row">
-      <input v-model="settings.enabled" class="micl-checkbox" type="checkbox">
+    <label class="kk-switch-row">
+      <input v-model="settings.enabled" class="micl-switch" type="checkbox" role="switch">
       <span>{{ t("Allow anonymous access") }}</span>
     </label>
     <div class="micl-textfield-outlined">

@@ -69,6 +69,7 @@ describe("ScanningView findings filter", () => {
     const request = lastRequest();
     expect(request.get("currentOnly")).toBe("true");
     expect(request.get("after")).toBe("0");
+    expect(wrapper.find(".kk-current-findings input").attributes("role")).toBe("switch");
     expect(wrapper.find(".kk-current-findings input").element).toHaveProperty("checked", true);
 
     await selectTab(wrapper, "Tasks");

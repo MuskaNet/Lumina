@@ -32,6 +32,17 @@ async function openDialog() {
 }
 
 describe("login dialog", () => {
+  it("renders the heading without an icon or reserved icon space", async () => {
+    const wrapper = await openDialog();
+
+    expect(wrapper.find("dialog").classes()).not.toContain("has-icon");
+    expect(wrapper.find(".micl-dialog__icon").exists()).toBe(false);
+    expect(wrapper.find("#kk-login-title").text()).toBe("Sign in");
+    expect(wrapper.find(".micl-dialog__supporting-text").text()).toBe(
+      "Sign in to browse or manage this repository.",
+    );
+  });
+
   it("loads the server login options", async () => {
     const wrapper = await openDialog();
 

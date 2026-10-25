@@ -5,7 +5,8 @@ export type FieldType =
   | "url"
   | "email"
   | "textarea"
-  | "checkbox"
+  /** Single on/off setting, rendered as a MICL switch rather than a checkbox. */
+  | "switch"
   | "select"
   | "datetime-local"
   | "list";
