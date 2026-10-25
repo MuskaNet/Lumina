@@ -220,7 +220,7 @@ describe("repository dialog: group member transfer", () => {
     await clickButton(wrapper, "Create repository");
     await wrapper.find("#repo-name").setValue("group-repo");
     await chooseRecipe(wrapper, "maven2-group");
-    await selectTab(wrapper, "Type");
+    expect(wrapper.find(".kk-tabs").exists()).toBe(false);
 
     expect(wrapper.find(".kk-member-transfer").exists()).toBe(true);
     const panes = wrapper.findAll(".kk-member-pane");
@@ -348,5 +348,30 @@ describe("repository table icons", () => {
       expect(row, `${name} row`).toBeTruthy();
       expect(row!.find(`.format-cell .format-logo-${logo}`).exists(), `${logo} logo`).toBe(true);
     }
+  });
+});
+
+describe("repository usage", () => {
+  beforeEach(installApi);
+
+  it("reads ID-keyed counters and excludes groups from totals", async () => {
+    const repos = repositoriesFixture.slice(0, 3).map((repo, index) => ({ ...repo, id: index + 1 }));
+    mocks.get.mockImplementation(() => Promise.resolve(repos));
+    mocks.getOrNull.mockImplementation((path: string) => {
+      if (path.endsWith("statistics/usage")) return Promise.resolve({ usage: {
+        "1": { assetCount: "2", totalBytes: "1024", unknownSizeCount: "0" },
+        "2": { assetCount: "3", totalBytes: "2048", unknownSizeCount: "1" },
+        "3": { assetCount: "99", totalBytes: "999999", unknownSizeCount: "0" },
+      } });
+      return Promise.resolve(null);
+    });
+    const wrapper = await mountView();
+    const summary = wrapper.findAll(".kk-summary__value").map((node) => node.text());
+    expect(summary).toContain("5");
+    expect(summary).toContain("≥ 3 KiB");
+    const row = wrapper.findAll("tbody tr").find((node) => node.text().includes("maven-proxy"));
+    expect(row!.text()).toContain("≥ 2 KiB");
+    expect(row!.findAll("td").map((node) => node.text())).toContain("3");
+    wrapper.unmount();
   });
 });

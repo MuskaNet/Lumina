@@ -14,10 +14,11 @@ import org.junit.jupiter.api.Test;
 /**
  * Runs the UI unit suite (Vitest) from the Maven build so pure logic regressions fail here.
  *
- * <p>Skipped when Node.js or the {@code ui/node_modules} install is missing, matching the previous
- * {@code node --test} bridge. Run {@code npm install} in {@code ui/} to enable it.
+ * <p>Skipped when Node.js or the {@code ui/node_modules} install is missing. Run
+ * {@code npm install} in {@code ui/} to enable it. The class name must end with {@code Test}
+ * so Surefire's default includes pick it up.
  */
-class UiUnitTestBridge {
+class UiUnitTestBridgeTest {
 
   @Test
   void uiUnitTestsPass() throws Exception {

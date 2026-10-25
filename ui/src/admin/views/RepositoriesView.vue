@@ -117,11 +117,11 @@ const totals = computed(() => {
   const keys = ["assetCount", "totalBytes"] as const;
   const sums: Record<string, bigint | null> = {};
   for (const key of keys) {
-    const values = usageRows.value.map((repo) => inventoryValue(usage.value, repo.name, key));
+    const values = usageRows.value.map((repo) => inventoryValue(usage.value, repo.id ?? "", key));
     sums[key] = values.some((value) => value == null) ? null : values.reduce<bigint>((a, b) => a + (b ?? 0n), 0n);
   }
   const anyUnknown = usageRows.value.some(
-    (repo) => (inventoryValue(usage.value, repo.name, "unknownSizeCount") ?? 0n) > 0n,
+    (repo) => (inventoryValue(usage.value, repo.id ?? "", "unknownSizeCount") ?? 0n) > 0n,
   );
   sums.unknownSizeCount = anyUnknown ? 1n : 0n;
   return sums;
@@ -148,15 +148,16 @@ function metric(key: string, bytes = false): string {
   if (filteredRepositories.value.length > 0 && usageRows.value.length === 0) return "—";
   const value = inventoryValue(snapshot, "all", key);
   if (value == null) return "—";
-  return bytes ? formatInventoryBytes(value) : value.toLocaleString();
+  const unknownSize = bytes && key === "totalBytes" && (inventoryValue(snapshot, "all", "unknownSizeCount") ?? 0n) > 0n;
+  return bytes ? `${unknownSize ? "≥ " : ""}${formatInventoryBytes(value)}` : value.toLocaleString();
 }
 
 function repoMetric(repo: Repository, key: string, bytes = false): string {
   if (String(repo.type ?? "").toLowerCase() === "group") return "—";
   if (usage.value === undefined) return "…";
-  const value = inventoryValue(usage.value, repo.name, key);
+  const value = inventoryValue(usage.value, repo.id ?? "", key);
   if (value == null) return "—";
-  if (bytes && key === "totalBytes" && (inventoryValue(usage.value, repo.name, "unknownSizeCount") ?? 0n) > 0n) {
+  if (bytes && key === "totalBytes" && (inventoryValue(usage.value, repo.id ?? "", "unknownSizeCount") ?? 0n) > 0n) {
     return `≥ ${formatInventoryBytes(value)}`;
   }
   return bytes ? formatInventoryBytes(value) : value.toLocaleString();
@@ -759,7 +760,7 @@ onMounted(load);
     :error="error"
     @confirm="save"
   >
-    <M3Tabs v-if="visibleTabs.length > 1" :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
+    <M3Tabs v-if="editing && visibleTabs.length > 1" :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
 
     <!-- General -->
     <template v-if="!editing || activeTab === 'general'">
@@ -1297,3 +1298,4 @@ onMounted(load);
     </p>
   </M3Dialog>
 </template>
+

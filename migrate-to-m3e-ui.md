@@ -456,3 +456,22 @@ java -jar server/target/kkrepo-server-<version>.jar \
 3. **`app.css` 在两个入口各存一份**（约 46 KB gzip）：bundle 独立自包含，换取部署简单；若后续在意，可提取为共享静态文件。
 4. **扫描/迁移视图的数据形态**：CursorPage 与 job 状态按服务端现有 DTO 渲染，未额外定义强类型模型；字段改名会静默显示为 `—` 而不是报错。
 5. **新增界面文案暂无中文**：`zh-CN.json` 仍是 legacy 的 641 条，新文案回退英文。补齐需要一轮翻译，不影响功能。
+
+### 11.9 Vue 相关测试统一到 Vitest（2026-10-26）
+
+此前 §11.5 新增的 Java 契约测试里，仍有 8 个类通过 `Files.readString` 读取 `ui/src/**` 的 Vue/TS 源码并做字符串断言。这类测试本质上是 UI 测试，却写在 Java 里，既依赖 Maven 才能运行，也无法验证组件行为。现已统一改为 Vitest（`ui/src/**/*.test.ts`）：
+
+| 原 Java 测试 | 现在的 Vitest 测试 | 覆盖方式 |
+| --- | --- | --- |
+| `AdminUiEntryPointContractTest`（导航/别名/view 接线/hash 形态） | `ui/src/admin/nav.test.ts`、`ui/src/shared/router/legacy-hash-history.test.ts` | 直接 import `ADMIN_NAV` / `LEGACY_HASH_ROUTES` / router，真实执行别名重定向；`createHref` 验证 URL 形态 |
+| `AdminUiEntryPointContractTest`（入口文档/产物） | `ui/src/shared/entrypoints.test.ts` | 读取 `vite build` 提交的 `admin-ui`、`browse-ui` 入口文档与 assets，断言 bundle、CSP、字体与旧产物清理 |
+| `AdminThemeContractTest` | `ui/src/shared/theme/themes.test.ts` | 读取生成的 CSS 与生成脚本，校验 6 套主题 × light/dark、M3 role 完整性、系统配色回退 |
+| `AdminI18nContractTest` | `ui/src/shared/i18n/i18n.test.ts` | import 词典与 `t()`，验证条目数、代表词条、缺失回退 |
+| `AdminIconSystemContractTest` | `ui/src/shared/components/AppShell.test.ts` | 读取字体 CSS/子集脚本，并挂载 `AppShell` 断言 Material Symbols 渲染、无 Lucide |
+| `BrowseUiRouteContractTest` | `ui/src/browse/route.test.ts`、`ui/src/browse/App.test.ts` | `parseBrowseHash` 行为测试 + 挂载 `App` 切换路由，断言 5 个视图与真实请求 URL |
+| `BrowseUiLoginContractTest` | `ui/src/shared/components/LoginDialog.test.ts`、`ui/src/browse/App.test.ts` | 挂载对话框，验证 options/登录 POST/失败文案/OIDC 跳转，以及 `?login=1` 打开对话框 |
+| `WelcomeSupportedFormatsContractTest`（`server`） | `ui/src/admin/repositoryFormats.test.ts` | 读取 `core` 的 `RepositoryFormat` 枚举，断言 23 种格式与 `FORMAT_ICON_NAMES` 双向一致；挂载 `WelcomeView` 验证按服务端 format 分组与 `/repository/<repo>/` URL |
+
+Java 侧只保留 Node 无法覆盖的构建契约：`AdminUiEntryPointContractTest` / `BrowseUiEntryPointContractTest` 各剩一个用例，验证 `maven-resources-plugin` 过滤后 classpath 中的 `index.html` 已替换 `@project.version@`；`UiUnitTestBridgeTest` 在 Maven 构建里执行 Vitest（原类名 `UiUnitTestBridge` 不匹配 Surefire 默认的 `*Test` 命名，实际从未被执行，本次一并改名修复）。CI 增加 `npm ci && npm test` 步骤（`.github/workflows/ci.yml`），保证没有 Maven 桥接时 UI 测试也会执行。
+
+当前结果：`cd ui && npm test` → **30 个文件 / 172 个用例通过**；`npm run typecheck` 通过。

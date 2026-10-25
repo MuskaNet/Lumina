@@ -21,3 +21,23 @@ if (typeof HTMLElement !== "undefined") {
     };
   }
 }
+
+// Some happy-dom versions ship an incomplete <dialog> implementation. The login
+// dialog calls showModal()/close() when it opens, so keep the tests focused on
+// the login flow instead of failing on the platform gap.
+if (typeof HTMLDialogElement !== "undefined") {
+  const prototype = HTMLDialogElement.prototype as unknown as {
+    showModal?: () => void;
+    close?: () => void;
+  };
+  if (typeof prototype.showModal !== "function") {
+    prototype.showModal = function showModal(this: HTMLDialogElement) {
+      this.open = true;
+    };
+  }
+  if (typeof prototype.close !== "function") {
+    prototype.close = function close(this: HTMLDialogElement) {
+      this.open = false;
+    };
+  }
+}

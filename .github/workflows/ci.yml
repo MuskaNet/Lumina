@@ -34,6 +34,14 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Run UI unit tests
+        working-directory: ui
+        run: |
+          npm ci
+          npm test
 
       - name: Validate development compose file
         run: |

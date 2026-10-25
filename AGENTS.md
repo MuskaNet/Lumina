@@ -40,6 +40,7 @@
 - 跑 `server` 模块的编译或测试时，默认带上 `-am`，例如 `mvn -pl server -am test` 或 `mvn -pl server -am -Dtest=RepositorySecurityFilterTest -Dsurefire.failIfNoSpecifiedTests=false test`。不要单独跑 `mvn -pl server ...`，否则 Maven 可能命中本地仓库里过期或缺失的 `0.1.0` 模块缓存，误报类似 `kkrepo-storage-file` 缺失的依赖解析错误。
 - 指定单个 server 测试并使用 `-am` 时，加上 `-Dsurefire.failIfNoSpecifiedTests=false`，避免上游依赖模块因为没有匹配测试类而让 reactor 提前失败。
 - 覆盖本地 38090 运行容器的 `/app/kkrepo.jar` 前，必须先生成 Spring Boot 可执行 jar，例如 `mvn -pl server -am -DskipTests package spring-boot:repackage`。普通 `server` 模块 jar 没有可执行入口，复制进容器后会报 `no main manifest attribute, in /app/kkrepo.jar` 并导致服务启动失败。
+- UI（Vue/TypeScript）相关的测试统一使用 Vitest，放在 `ui/src/**/*.test.ts`，运行 `cd ui && npm test`（先 `npm install`）；Maven 构建里的 `UiUnitTestBridgeTest` 会在 Node 与 `ui/node_modules` 可用时自动执行同一套测试。不要再用 Java 测试对 `ui/src/**` 的 Vue/TS 源码做字符串断言；Java 侧只保留 Spring 静态资源打包、`maven-resources-plugin` 版本过滤等 Node 无法覆盖的构建契约。
 
 ## 模块职责
 

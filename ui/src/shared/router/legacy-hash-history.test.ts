@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHashPath } from "./legacy-hash-history";
+import { createLegacyHashHistory, normalizeHashPath } from "./legacy-hash-history";
 
 describe("normalizeHashPath", () => {
   it("keeps the legacy hash shape", () => {
@@ -14,5 +14,17 @@ describe("normalizeHashPath", () => {
   it("falls back to the root path for an empty hash", () => {
     expect(normalizeHashPath("")).toBe("/");
     expect(normalizeHashPath("#")).toBe("/");
+  });
+});
+
+describe("createLegacyHashHistory", () => {
+  it("writes hashes without a slash after the # so bookmarks stay stable", () => {
+    const history = createLegacyHashHistory();
+    try {
+      expect(history.createHref("/admin/repository/blobstores")).toBe("#admin/repository/blobstores");
+      expect(history.createHref("/admin")).toBe("#admin");
+    } finally {
+      history.destroy();
+    }
   });
 });

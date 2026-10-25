@@ -1479,11 +1479,59 @@ dialog.micl-dialog .micl-dialog__actions {
   color: var(--md-sys-color-on-surface);
 }
 
-.kk-upload-asset-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 12px;
-  align-items: start;
+.kk-upload-fields,
+.kk-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.kk-upload-container .kk-field-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.kk-upload-file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 0;
+  font-size: 0.875rem;
+}
+
+.kk-upload-file > label {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-upload-file > input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+}
+
+.kk-upload-file > input::file-selector-button {
+  margin-inline-end: 12px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font: inherit;
+  cursor: pointer;
+}
+
+.kk-upload-file > input:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
 }
 
 /* ---- Repository recipe combobox --------------------------------------- */
