@@ -10,6 +10,9 @@ on:
         required: true
         type: string
 
+env:
+  RELEASE_IMAGE: ghcr.io/muska-network/lumina
+
 permissions:
   contents: read
   packages: write
@@ -105,7 +108,7 @@ jobs:
         env:
           BUILD_ARGUMENT: ${{ matrix.build-argument }}
           KKREPO_KEEP_NATIVE_IMAGE: ${{ matrix.keep-native-image }}
-          KKREPO_NATIVE_IMAGE: ghcr.io/klboke/kkrepo:${{ inputs.version }}${{ matrix.image-suffix }}
+          KKREPO_NATIVE_IMAGE: ${{ env.RELEASE_IMAGE }}:${{ inputs.version }}${{ matrix.image-suffix }}
           MAVEN_OPTS: -Xmx3g
         run: scripts/build-dist.sh "$BUILD_ARGUMENT"
 
@@ -156,14 +159,14 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Push architecture-specific Native image
         if: matrix.image-architecture != ''
         env:
           EXPECTED_ARCHITECTURE: ${{ matrix.image-architecture }}
-          NATIVE_IMAGE: ghcr.io/klboke/kkrepo:${{ inputs.version }}${{ matrix.image-suffix }}
+          NATIVE_IMAGE: ${{ env.RELEASE_IMAGE }}:${{ inputs.version }}${{ matrix.image-suffix }}
         run: |
           actual_platform="$(docker image inspect "$NATIVE_IMAGE" --format '{{.Os}}/{{.Architecture}}')"
           expected_platform="linux/${EXPECTED_ARCHITECTURE}"
@@ -172,6 +175,49 @@ jobs:
             exit 1
           fi
           docker push "$NATIVE_IMAGE"
+
+      - name: Log in for JVM image publication
+        if: matrix.id == 'jvm'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Set up QEMU for JVM image
+        if: matrix.id == 'jvm'
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx for JVM image
+        if: matrix.id == 'jvm'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Publish multi-architecture JVM image
+        if: matrix.id == 'jvm'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          build-args: JAR_FILE=server/target/kkrepo-server-${{ inputs.version }}.jar
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.RELEASE_IMAGE }}:${{ inputs.version }}
+            ${{ env.RELEASE_IMAGE }}:latest
+          cache-from: type=gha,scope=jvm-release
+          cache-to: type=gha,mode=max,scope=jvm-release
+
+      - name: Verify JVM image manifests
+        if: matrix.id == 'jvm'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          for tag in "$RELEASE_VERSION" latest; do
+            manifest="$(docker buildx imagetools inspect "${RELEASE_IMAGE}:${tag}")"
+            grep -Eq 'Platform:[[:space:]]+linux/amd64' <<<"$manifest"
+            grep -Eq 'Platform:[[:space:]]+linux/arm64' <<<"$manifest"
+            printf '%s\n' "$manifest"
+          done
 
       - name: Upload package pair
         uses: actions/upload-artifact@v7
@@ -209,8 +255,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -225,13 +271,13 @@ jobs:
           file: scanner-adapter/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/klboke/kkrepo-scanner:${{ inputs.version }}
+          tags: ${{ env.RELEASE_IMAGE }}-scanner:${{ inputs.version }}
           cache-from: type=gha,scope=scanner-release
           cache-to: type=gha,mode=max,scope=scanner-release
 
       - name: Verify scanner image manifest
         env:
-          IMAGE: ghcr.io/klboke/kkrepo-scanner
+          IMAGE: ${{ env.RELEASE_IMAGE }}-scanner
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           manifest="$(docker buildx imagetools inspect "${IMAGE}:${RELEASE_VERSION}")"
@@ -308,15 +354,15 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Publish and verify Native image manifest
         env:
-          IMAGE: ghcr.io/klboke/kkrepo
+          IMAGE: ${{ env.RELEASE_IMAGE }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           docker buildx imagetools create \
