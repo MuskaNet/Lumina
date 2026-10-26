@@ -40,6 +40,7 @@ const expanded = reactive(new Set<string>());
 const loading = reactive(new Set<string>());
 const errors = reactive<Record<string, string>>({});
 const pending = new Map<string, Promise<BrowseEntry[]>>();
+let rootPending: Promise<void> | null = null;
 
 const repositoryKey = computed(() => `${props.repository}\u0000${props.source ?? ""}`);
 
@@ -66,21 +67,34 @@ const rows = computed<TreeRow[]>(() => {
 
 async function load(force = false): Promise<void> {
   const key = repositoryKey.value;
-  if (!force && loadedKey.value === key) return;
+  if (!force && loadedKey.value === key) {
+    if (rootPending) await rootPending;
+    return;
+  }
+  if (!force && rootPending && loadedKey.value === key) {
+    await rootPending;
+    return;
+  }
   loadedKey.value = key;
   rootLoading.value = true;
   rootError.value = "";
   emit("root-state", { loading: true, empty: false });
-  try {
-    rootEntries.value = await fetchBrowseChildren(props.repository, "", props.source ?? "");
-    emit("root-state", { loading: false, empty: rootEntries.value.length === 0 });
-  } catch (error) {
-    rootError.value = (error as Error)?.message || String(error);
-    rootEntries.value = [];
-    emit("root-state", { loading: false, empty: false });
-  } finally {
-    rootLoading.value = false;
-  }
+  const task = fetchBrowseChildren(props.repository, "", props.source ?? "")
+    .then((entries) => {
+      rootEntries.value = entries;
+      emit("root-state", { loading: false, empty: rootEntries.value.length === 0 });
+    })
+    .catch((error) => {
+      rootError.value = (error as Error)?.message || String(error);
+      rootEntries.value = [];
+      emit("root-state", { loading: false, empty: false });
+    })
+    .finally(() => {
+      rootLoading.value = false;
+      rootPending = null;
+    });
+  rootPending = task;
+  await task;
 }
 
 function loadChildren(path: string): Promise<BrowseEntry[]> {

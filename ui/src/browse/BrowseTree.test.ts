@@ -45,6 +45,24 @@ describe("BrowseTree", () => {
     mocks.fetchBrowseChildren.mockReset();
   });
 
+  it("shares an in-flight root load with concurrent callers", async () => {
+    let resolveRoot!: (entries: BrowseEntry[]) => void;
+    mocks.fetchBrowseChildren.mockImplementationOnce(
+      () => new Promise<BrowseEntry[]>((resolve) => { resolveRoot = resolve; }),
+    );
+    const wrapper = mount(BrowseTree, { props: { repository: "repo", format: "raw" } });
+    const tree = wrapper.vm as unknown as { load: () => Promise<void> };
+
+    const first = tree.load();
+    const second = tree.load();
+    expect(mocks.fetchBrowseChildren).toHaveBeenCalledTimes(1);
+
+    resolveRoot(ROOT);
+    await Promise.all([first, second]);
+    expect(wrapper.findAll(".kk-tree-row")).toHaveLength(2);
+  });
+
+
   it("renders the root level and expands folders lazily", async () => {
     const wrapper = await mountTree();
 
