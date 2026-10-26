@@ -11,7 +11,7 @@ on:
         type: string
 
 env:
-  RELEASE_IMAGE: ghcr.io/muska-network/lumina
+  RELEASE_IMAGE: ghcr.io/muskanet/lumina
 
 permissions:
   contents: read

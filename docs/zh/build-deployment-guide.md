@@ -276,7 +276,7 @@ server/target/kkrepo-<release-version>-native-linux-<architecture>.zip
 
 手动触发 GitHub 的 `Release Packages` 工作流后，它只接受已经合并到 `main` 的版本，并构建公开发行矩阵：一组平台无关的 JVM 压缩包、Native Linux `amd64` 和 `arm64` 压缩包，以及一份合并的 SHA-256 清单。同一批对应架构的 Native 构建会先推送 `<version>-native-amd64` 和 `<version>-native-arm64` 镜像，再合成为公开使用的版本化 `<version>-native` 和滚动更新的 `native-latest` 多架构 manifest。创建 GitHub Release 和上传压缩包资产仍是后续独立、显式的发行步骤。
 
-Lumina fork 的工作流将镜像发布到 `ghcr.io/muska-network/lumina`：JVM 使用 `<version>` 和 `latest`，Native 使用上述 Native 标签；scanner 发布到 `ghcr.io/muska-network/lumina-scanner:<version>`。三种运行时镜像均包含 Linux `amd64` 和 `arm64`。跨组织发布需要在运行工作流的仓库中配置 Actions secrets `GHCR_USERNAME`（PAT 所属账号）和 `GHCR_TOKEN`（具有 `write:packages` 的 classic PAT）；该账号必须具有目标组织的包发布权限，并按组织要求授权 SSO。不要把 token 提交到源码。此流程不执行完整测试套件；发行前应检查同一提交的 CI 结果。
+Lumina fork 的工作流将镜像发布到 `ghcr.io/muskanet/lumina`：JVM 使用 `<version>` 和 `latest`，Native 使用上述 Native 标签；scanner 发布到 `ghcr.io/muskanet/lumina-scanner:<version>`。三种运行时镜像均包含 Linux `amd64` 和 `arm64`。发布需要在运行工作流的仓库中配置 Actions secrets `GHCR_USERNAME`（PAT 所属账号）和 `GHCR_TOKEN`（具有 `write:packages` 的 classic PAT）；该账号必须具有 MuskaNet 组织的包发布权限，并按组织要求授权 SSO。不要把 token 提交到源码。此流程不执行完整测试套件；发行前应检查同一提交的 CI 结果。
 
 默认仍是 JVM 打包。JVM 压缩包包含 `lib/kkrepo.jar`，Native 压缩包包含可执行文件 `lib/kkrepo`。共用的 `bin/start.sh` 会自动选择包内运行时，因此服务命令和外部配置目录保持一致。Native 压缩包的目标机器不需要 Java，但操作系统和 CPU 架构必须与包名一致。
 
