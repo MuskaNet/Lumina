@@ -128,7 +128,7 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">vpn_key</span>
       {{ t("Create token") }}
     </button>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-outlined-s" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <p class="kk-muted">
@@ -147,7 +147,7 @@ onMounted(load);
     <template #cell-tokenPrefix="{ row }"><code class="kk-mono">{{ row.tokenPrefix }}…</code></template>
     <template #cell-status="{ row }">
       <span class="kk-badge" :class="row.status === 'active' ? 'kk-badge--ok' : 'kk-badge--warn'">
-        {{ row.status || "active" }}
+        {{ t(row.status || "active") }}
       </span>
     </template>
     <template #cell-expiresAt="{ row }">{{ dateLabel(row.expiresAt) }}</template>

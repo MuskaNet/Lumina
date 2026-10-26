@@ -33,7 +33,7 @@ describe("admin filled-surface layout", () => {
     expect(css).not.toMatch(/(?:^|[;{])\s*max-(?:width|inline-size)\s*:/);
     expect(css).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(/i);
     expect(declarations(".kk-settings-page")).toContain("inline-size: 100%");
-    expect(declarations(".kk-table-surface")).toContain("border-radius: 28px");
+    expect(declarations(".kk-table-surface")).toContain("border-radius: 24px");
     for (const match of css.matchAll(/(?:^|[;{])\s*border\s*:\s*([^;]+);/g)) {
       expect(["0", "none"]).toContain(match[1].trim());
     }

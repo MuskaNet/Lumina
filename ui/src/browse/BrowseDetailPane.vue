@@ -120,7 +120,7 @@ function describeDescriptor(row: {
         <dl class="kk-detail-rows">
           <div v-for="row in summary.rows" :key="row.label" class="kk-detail-row">
             <dt>{{ t(row.label) }}</dt>
-            <dd :class="{ 'kk-mono': row.code }">{{ row.value }}</dd>
+            <dd :class="{ 'kk-mono': row.code }">{{ row.label === 'Transport warning' ? t(row.value) : row.value }}</dd>
           </div>
         </dl>
       </section>
@@ -173,7 +173,7 @@ function describeDescriptor(row: {
                 :aria-label="t('Usage snippet')"
               >
                 <option v-for="option in snippets" :key="option.displayName" :value="option.displayName">
-                  {{ option.displayName }}
+                  {{ t(option.displayName) }}
                 </option>
               </select>
             </div>
@@ -190,7 +190,7 @@ function describeDescriptor(row: {
               <span>{{ t("Copy") }}</span>
             </button>
           </div>
-          <p v-if="snippet.description" class="kk-usage__hint">{{ snippet.description }}</p>
+          <p v-if="snippet.description" class="kk-usage__hint">{{ t(snippet.description) }}</p>
           <pre class="kk-usage__snippet"><code>{{ snippet.snippetText }}</code></pre>
         </div>
       </section>

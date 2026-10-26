@@ -524,19 +524,6 @@ onMounted(() => load(true));
 <template>
 <div class="kk-settings-page">
 <div class="kk-toolbar kk-action-bar">
-    <div class="micl-textfield-outlined kk-filter">
-      <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
-      <label for="scan-search">{{ t("Search") }}</label>
-      <input id="scan-search" v-model="search" type="search" autocomplete="off" @keyup.enter="load(true)">
-    </div>
-    <label
-      v-if="tab === 'findings'"
-      class="kk-switch-row kk-current-findings"
-      :title="t('Only findings from scans applicable to current artifact content. Uncheck to include historical findings.')"
-    >
-      <input class="micl-switch" type="checkbox" role="switch" :checked="currentOnly" @change="onCurrentOnlyChange">
-      <span>{{ t("Current findings") }}</span>
-    </label>
     <button v-if="tab === 'policies'" type="button" class="micl-button-filled-m kk-primary-action" @click="openPolicy()">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
@@ -545,9 +532,24 @@ onMounted(() => load(true));
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create waiver") }}
     </button>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load(true)">
+    <button type="button" class="micl-button-tonal-s" @click="load(true)">
       {{ t("Refresh") }}
     </button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
+      <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
+      <label for="scan-search">{{ t("Search") }}</label>
+      <input id="scan-search" v-model="search" type="search" autocomplete="off" @keyup.enter="load(true)">
+    </div>
+      <label
+      v-if="tab === 'findings'"
+      class="kk-switch-row kk-current-findings"
+      :title="t('Only findings from scans applicable to current artifact content. Uncheck to include historical findings.')"
+    >
+      <input class="micl-switch" type="checkbox" role="switch" :checked="currentOnly" @change="onCurrentOnlyChange">
+      <span>{{ t("Current findings") }}</span>
+    </label>
+    </div>
   </div>
 
   <div class="kk-section-navigation"><M3Tabs :tabs="TABS" :active="tab" @select="tab = $event as ScanTab" /></div>
@@ -592,16 +594,16 @@ onMounted(() => load(true));
       <template #cell-packageName="{ row }"><code class="kk-mono">{{ row.packageName || "—" }}</code></template>
       <template #cell-installedVersion="{ row }">{{ row.installedVersion || "—" }}</template>
       <template #cell-severity="{ row }">
-        <span class="kk-badge" :class="badgeTone(String(row.severity ?? ''))">{{ row.severity || "—" }}</span>
+        <span class="kk-badge" :class="badgeTone(String(row.severity ?? ''))">{{ t(String(row.severity || '—')) }}</span>
       </template>
       <template #cell-affectedArtifactCount="{ row }">{{ row.affectedArtifactCount ?? "—" }}</template>
       <template #cell-activeWaiverCount="{ row }">{{ row.activeWaiverCount ?? 0 }}</template>
       <template #cell-assetPath="{ row }">
         <code class="kk-mono" :title="String(row.assetPath ?? '')">{{ row.assetPath || "—" }}</code>
       </template>
-      <template #cell-stage="{ row }">{{ row.stage || "—" }}</template>
+      <template #cell-stage="{ row }">{{ t(String(row.stage || '—')) }}</template>
       <template #cell-status="{ row }">
-        <span class="kk-badge" :class="badgeTone(String(row.status ?? ''))">{{ row.status || "—" }}</span>
+        <span class="kk-badge" :class="badgeTone(String(row.status ?? ''))">{{ t(String(row.status || '—')) }}</span>
       </template>
       <template #cell-attempts="{ row }">{{ row.attempts ?? 0 }} / {{ row.maxAttempts ?? 0 }}</template>
       <template #cell-format="{ row }">{{ row.format || "—" }}</template>
@@ -619,11 +621,11 @@ onMounted(() => load(true));
         </span>
       </template>
       <template #cell-blockSeverity="{ row }">
-        <span class="kk-badge" :class="badgeTone(String(row.blockSeverity ?? ''))">{{ row.blockSeverity || "—" }}</span>
+        <span class="kk-badge" :class="badgeTone(String(row.blockSeverity ?? ''))">{{ t(String(row.blockSeverity || '—')) }}</span>
       </template>
       <template #cell-onlyFixable="{ row }">{{ row.onlyFixable ? t("Yes") : t("No") }}</template>
       <template #cell-revision="{ row }">{{ row.revision ?? "—" }}</template>
-      <template #cell-scopeType="{ row }">{{ row.scopeType || "—" }}</template>
+      <template #cell-scopeType="{ row }">{{ t(String(row.scopeType || '—')) }}</template>
       <template #cell-repository="{ row }">{{ row.repository || "—" }}</template>
       <template #cell-active="{ row }">
         <span class="kk-badge" :class="row.active ? 'kk-badge--ok' : 'kk-badge--warn'">
@@ -701,7 +703,7 @@ onMounted(() => load(true));
       <div class="micl-textfield-outlined">
         <label for="policy-severity">{{ t("Block severity") }}</label>
         <select id="policy-severity" v-model="policyDraft.blockSeverity">
-          <option v-for="value in SEVERITIES" :key="value" :value="value">{{ value }}</option>
+          <option v-for="value in SEVERITIES" :key="value" :value="value">{{ t(value) }}</option>
         </select>
       </div>
       <div class="micl-textfield-outlined">
@@ -756,25 +758,25 @@ onMounted(() => load(true));
       <div class="micl-textfield-outlined">
         <label for="config-mode">{{ t("Enforcement mode") }}</label>
         <select id="config-mode" v-model="configDraft.enforcementMode">
-          <option v-for="value in ENFORCEMENT_MODES" :key="value" :value="value">{{ value }}</option>
+          <option v-for="value in ENFORCEMENT_MODES" :key="value" :value="value">{{ t(value) }}</option>
         </select>
       </div>
       <div class="micl-textfield-outlined">
         <label for="config-pending">{{ t("Pending action") }}</label>
         <select id="config-pending" v-model="configDraft.pendingAction">
-          <option v-for="value in POLICY_ACTIONS" :key="value" :value="value">{{ value }}</option>
+                  <option v-for="value in POLICY_ACTIONS" :key="value" :value="value">{{ t(value) }}</option>
         </select>
       </div>
       <div class="micl-textfield-outlined">
         <label for="config-failure">{{ t("Failure action") }}</label>
         <select id="config-failure" v-model="configDraft.failureAction">
-          <option v-for="value in POLICY_ACTIONS" :key="value" :value="value">{{ value }}</option>
+                  <option v-for="value in POLICY_ACTIONS" :key="value" :value="value">{{ t(value) }}</option>
         </select>
       </div>
       <div class="micl-textfield-outlined">
         <label for="config-partial">{{ t("Partial action") }}</label>
         <select id="config-partial" v-model="configDraft.partialAction">
-          <option v-for="value in POLICY_ACTIONS" :key="value" :value="value">{{ value }}</option>
+                  <option v-for="value in POLICY_ACTIONS" :key="value" :value="value">{{ t(value) }}</option>
         </select>
       </div>
       <div class="micl-textfield-outlined">
@@ -802,9 +804,9 @@ onMounted(() => load(true));
       <div class="micl-textfield-outlined">
         <label for="waiver-scope">{{ t("Scope") }}</label>
         <select id="waiver-scope" v-model="waiverDraft.scopeType">
-          <option value="repository">repository</option>
-          <option value="asset">asset</option>
-          <option value="finding">finding</option>
+          <option value="repository">{{ t('repository') }}</option>
+          <option value="asset">{{ t('asset') }}</option>
+          <option value="finding">{{ t('finding') }}</option>
         </select>
       </div>
       <div v-if="repositories.length" class="micl-textfield-outlined">

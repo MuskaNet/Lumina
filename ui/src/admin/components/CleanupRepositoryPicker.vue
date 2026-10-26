@@ -284,7 +284,7 @@ onBeforeUnmount(unbindListeners);
               <strong>{{ repository.name }}</strong>
               <small>{{ formatLabel }} · {{ repository.online === false ? t("Offline") : t("Online") }}</small>
             </span>
-            <span class="kk-cleanup-repo-type">{{ t(recipeTypeLabel(repository.type)) }}</span>
+            <span class="kk-cleanup-repo-type">{{ recipeTypeLabel(repository.type) }}</span>
           </label>
         </li>
         <li v-if="!visible.length" class="kk-cleanup-repo-empty">{{ emptyMessage }}</li>

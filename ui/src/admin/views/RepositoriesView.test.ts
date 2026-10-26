@@ -179,13 +179,6 @@ async function clickButton(wrapper: VueWrapper, label: string): Promise<void> {
   await flushPromises();
 }
 
-async function selectTab(wrapper: VueWrapper, label: string): Promise<void> {
-  const tab = wrapper.findAll(".kk-tab").find((node) => node.text() === label);
-  expect(tab, `${label} tab`).toBeTruthy();
-  await tab!.trigger("click");
-  await flushPromises();
-}
-
 async function openEdit(wrapper: VueWrapper, name: string): Promise<void> {
   const row = wrapper.findAll("tr").find((node) => node.text().includes(name));
   expect(row, `${name} row`).toBeTruthy();
@@ -265,7 +258,6 @@ describe("repository dialog: group member transfer", () => {
   it("prefills the saved member order and supports removing members", async () => {
     const wrapper = await mountView();
     await openEdit(wrapper, "maven-group");
-    await selectTab(wrapper, "Type");
 
     const selectedPane = () => wrapper.findAll(".kk-member-pane")[1];
     expect(selectedPane().findAll(".micl-list-item-one")).toHaveLength(1);
@@ -280,13 +272,70 @@ describe("repository dialog: group member transfer", () => {
   });
 });
 
+describe("repository dialog: shared section layout", () => {
+  beforeEach(installApi);
+
+  it("saves general, type and format edits together without switching tabs", async () => {
+    const wrapper = await mountView();
+    await openEdit(wrapper, "alpine-proxy");
+    await wrapper.get("#repo-remote-url").setValue("https://mirror.example.com/alpine/");
+    await wrapper.get("#repo-alpine-channels").setValue("main, community");
+    await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+    await flushPromises();
+
+    expect(mocks.send).toHaveBeenCalledWith("/internal/repositories/alpine-proxy", "PUT", expect.objectContaining({
+      proxy: expect.objectContaining({ remoteUrl: "https://mirror.example.com/alpine/" }),
+      alpine: expect.objectContaining({ channels: ["main", "community"] }),
+    }));
+    wrapper.unmount();
+  });
+
+  it("does not request signing status for unrelated recipes", async () => {
+    const wrapper = await mountView();
+    await openEdit(wrapper, "maven-hosted");
+    expect(wrapper.find("[data-repository-section='signing']").exists()).toBe(false);
+    expect(mocks.get.mock.calls.some(([path]) => String(path).endsWith("/status"))).toBe(false);
+    wrapper.unmount();
+  });
+
+  it.each([
+    ["maven2-hosted", "maven-hosted"],
+    ["maven2-proxy", "maven-proxy"],
+    ["maven2-group", "maven-group"],
+    ["alpine-proxy", "alpine-proxy"],
+    ["apt-proxy", "apt-proxy"],
+  ])("uses the same parameter groups for %s create and edit", async (recipe, repository) => {
+    const wrapper = await mountView();
+    await clickButton(wrapper, "Create repository");
+    await chooseRecipe(wrapper, recipe);
+    const headings = () => wrapper.findAll("[data-repository-section]:not([data-repository-section='signing']) h2, [data-repository-section]:not([data-repository-section='signing']) h3").map((node) => node.text());
+    const creationGroups = headings();
+    expect(creationGroups).toContain("General");
+    expect(wrapper.find("[role='tablist']").exists()).toBe(false);
+    expect(wrapper.find("[data-repository-section='signing']").exists()).toBe(false);
+
+    await openEdit(wrapper, repository);
+    expect(headings()).toEqual(creationGroups);
+    expect(wrapper.find("[role='tablist']").exists()).toBe(false);
+    expect(wrapper.get("#repo-name").attributes("readonly")).toBeDefined();
+    expect(wrapper.get(".kk-recipe-trigger").attributes("disabled")).toBeDefined();
+    expect(wrapper.find("#repo-blobstore").exists()).toBe(false);
+    expect(wrapper.find("[data-repository-section='behavior']").exists()).toBe(true);
+    if (recipe.startsWith("alpine") || recipe.startsWith("apt")) {
+      expect(wrapper.find("[data-repository-section='format']").exists()).toBe(true);
+      expect(wrapper.find("[data-repository-section='signing']").exists()).toBe(true);
+      expect(mocks.get).toHaveBeenCalledWith(expect.stringContaining("/status"));
+    }
+    wrapper.unmount();
+  });
+});
+
 describe("repository dialog: status panels and signing", () => {
   beforeEach(installApi);
 
   it("loads and refreshes the Conan repository status on edit", async () => {
     const wrapper = await mountView();
     await openEdit(wrapper, "conan-proxy");
-    await selectTab(wrapper, "Format");
 
     expect(wrapper.text()).toContain("7 recipes");
     expect(wrapper.text()).toContain("2 cached proxy files");
@@ -301,7 +350,6 @@ describe("repository dialog: status panels and signing", () => {
     const wrapper = await mountView();
 
     await openEdit(wrapper, "apt-proxy");
-    await selectTab(wrapper, "Signing");
     expect(wrapper.text()).toContain("key FPR (revision 4)");
     await clickButton(wrapper, "Rebuild metadata");
     expect(sentPayload()).toMatchObject({ distribution: "stable" });
@@ -310,7 +358,6 @@ describe("repository dialog: status panels and signing", () => {
     await flushPromises();
 
     await openEdit(wrapper, "alpine-proxy");
-    await selectTab(wrapper, "Signing");
     expect(wrapper.text()).toContain("acme.rsa.pub");
     expect(wrapper.find("a[href$='/alpine/public-key']").exists()).toBe(true);
 

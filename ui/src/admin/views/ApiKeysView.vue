@@ -178,12 +178,14 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">vpn_key</span>
       {{ t("Create API key") }}
     </button>
-    <div class="micl-textfield-outlined kk-filter">
+    <button type="button" class="micl-button-tonal-s" @click="load">{{ t("Refresh") }}</button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
       <label for="apikey-filter">{{ t("Filter") }}</label>
       <input id="apikey-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    </div>
   </div>
 
   <section class="kk-table-surface">
@@ -205,7 +207,7 @@ onMounted(load);
     <template #cell-tokenPrefix="{ row }"><code class="kk-mono">{{ row.tokenPrefix }}…</code></template>
     <template #cell-status="{ row }">
       <span class="kk-badge" :class="row.status === 'active' ? 'kk-badge--ok' : 'kk-badge--warn'">
-        {{ row.status || "active" }}
+        {{ t(row.status || 'active') }}
       </span>
     </template>
     <template #cell-expiresAt="{ row }">{{ dateLabel(row.expiresAt) }}</template>

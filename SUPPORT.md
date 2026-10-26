@@ -22,9 +22,7 @@ Please include the kkrepo version or commit, deployment mode, repository format,
 
 Do not report exploitable security vulnerabilities in public issues, pull requests, or discussions.
 
-Follow [SECURITY.md](SECURITY.md) and report privately through GitHub Security Advisories:
-
-https://github.com/klboke/kkrepo/security/advisories/new
+Lumina changes only kkRepo's UI layer, not its backend logic. Follow [SECURITY.md](SECURITY.md): report vulnerabilities unrelated to the UI changes privately to [upstream kkRepo](https://github.com/klboke/kkRepo/security/advisories/new) first; report vulnerabilities introduced by Lumina's UI changes privately to [Lumina](https://github.com/MuskaNet/Lumina/security/advisories/new).
 
 Security-sensitive examples include authentication bypass, authorization bypass, token or credential disclosure, repository-content disclosure, privilege escalation, remote code execution, and vulnerabilities in migration flows that expose source Nexus data.
 

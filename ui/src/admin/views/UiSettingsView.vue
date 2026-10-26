@@ -116,7 +116,7 @@ onMounted(load);
       <label for="ui-theme">{{ t("Default theme") }}</label>
       <select id="ui-theme" v-model="theme">
         <option v-for="item in settings?.supportedDefaultThemes ?? ['default']" :key="item" :value="item">
-          {{ item }}
+          {{ item === 'default' ? t('Default') : item }}
         </option>
       </select>
     </div>

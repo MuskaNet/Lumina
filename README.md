@@ -221,29 +221,9 @@ Local development and testing are documented in the [Development Guide](docs/en/
 
 Join the [kkRepo Telegram group](https://t.me/+UbIsTKXTzxBhYjFl) for community support and usage discussion. See [SUPPORT.md](SUPPORT.md) for issue routing, support scope, and security-reporting boundaries.
 
-## Sponsors
-
-Thank you to everyone supporting the ongoing development and maintenance of kkRepo. You can support the project through [GitHub Sponsors](https://github.com/sponsors/klboke).
-
-You can also sponsor kkRepo through Alipay or WeChat Pay.
-
-<p>
-  <a href="docs/img/sponsors/alipay.jpg"><img src="docs/img/sponsors/alipay-card.svg" alt="Alipay sponsorship QR code" width="280"></a>
-  &nbsp;&nbsp;
-  <a href="docs/img/sponsors/wechat-pay.jpg"><img src="docs/img/sponsors/wechat-pay-card.svg" alt="WeChat Pay sponsorship QR code" width="280"></a>
-</p>
-
-### Organization Sponsors
-
-Active organization sponsors will be featured here with their logo and link.
-
-### Project Backers
-
-Active project backers will be recognized here with their name or logo and optional link.
-
 ## Security
 
-If you find a security issue, follow [SECURITY.md](SECURITY.md) and report it through GitHub Security Advisory first. Avoid disclosing exploitable details in public issues. Regular bugs, compatibility issues, and feature requests can be submitted as public issues.
+Lumina changes only the UI layer of kkRepo, not its backend logic. For security issues unrelated to the UI changes, please report privately to [upstream kkRepo](https://github.com/klboke/kkRepo/security/advisories/new) first. For issues introduced by the Lumina UI changes, follow [SECURITY.md](SECURITY.md) and report privately to [Lumina](https://github.com/MuskaNet/Lumina/security/advisories/new). Do not disclose exploitable details in public issues.
 
 ## License
 

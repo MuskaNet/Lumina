@@ -94,19 +94,21 @@ watch(
 
 <template>
   <form class="kk-toolbar" role="search" @submit.prevent="submit">
-    <div class="micl-textfield-outlined kk-filter">
+    <button type="submit" class="micl-button-filled-m">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
+      {{ t("Search") }}
+    </button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
       <label for="search-keyword">{{ t("Search components") }}</label>
       <input id="search-keyword" v-model="keyword" type="search" autocomplete="off">
     </div>
-    <div class="micl-textfield-outlined kk-filter">
+      <div class="micl-textfield-outlined kk-filter">
       <label for="search-format">{{ t("Format") }}</label>
       <input id="search-format" v-model="format" type="text" placeholder="maven2" autocomplete="off">
     </div>
-    <button type="submit" class="micl-button-filled-s kk-toolbar__spacer">
-      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
-      {{ t("Search") }}
-    </button>
+    </div>
   </form>
 
   <p v-if="error" class="kk-form-error" role="alert">{{ error }}</p>

@@ -45,8 +45,8 @@ describe("AnonymousView", () => {
     expect(mocks.get).toHaveBeenCalledWith("/internal/security/anonymous");
 
     // Action bar with pill buttons
-    const primaryBtn = wrapper.find(".kk-btn-pill-primary");
-    const secondaryBtn = wrapper.find(".kk-btn-pill-secondary");
+    const primaryBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
+    const secondaryBtn = wrapper.find(".micl-button-tonal-s");
     expect(primaryBtn.exists()).toBe(true);
     expect(secondaryBtn.exists()).toBe(true);
     expect(primaryBtn.text()).toContain("Save");
@@ -90,7 +90,7 @@ describe("AnonymousView", () => {
     const userInput = wrapper.find<HTMLInputElement>("#anon-user");
     await userInput.setValue("new-anon");
 
-    const saveBtn = wrapper.find(".kk-btn-pill-primary");
+    const saveBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
     await saveBtn.trigger("click");
     await flushPromises();
 
@@ -113,7 +113,7 @@ describe("AnonymousView", () => {
     const userInput = wrapper.find<HTMLInputElement>("#anon-user");
     await userInput.setValue("");
 
-    const saveBtn = wrapper.find(".kk-btn-pill-primary");
+    const saveBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
     await saveBtn.trigger("click");
     await flushPromises();
 

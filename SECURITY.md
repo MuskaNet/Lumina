@@ -2,9 +2,13 @@
 
 ## Reporting a Vulnerability
 
-Please report exploitable security vulnerabilities privately through GitHub Security Advisories:
+Lumina is a fork of [kkRepo](https://github.com/klboke/kkRepo) that changes only the UI layer, not the backend logic.
 
-https://github.com/klboke/kkrepo/security/advisories/new
+- For vulnerabilities unrelated to the UI changes, including backend issues inherited from kkRepo, please report privately to [upstream kkRepo](https://github.com/klboke/kkRepo/security/advisories/new) first.
+- For vulnerabilities introduced by Lumina's UI changes, please report privately to [Lumina](https://github.com/MuskaNet/Lumina/security/advisories/new).
+- If the cause is unclear, report privately to Lumina and mention the uncertainty so the issue can be coordinated with upstream.
+
+Lumina 是 kkRepo 的 fork 改版，仅修改 UI 层逻辑，不改变后端逻辑。与 UI 改动无关的安全问题（包括继承自 kkRepo 的后端问题）请优先向上游 kkRepo 私密报告；由 Lumina UI 改动引入的问题请向 Lumina 私密报告。无法确定来源时，可先向 Lumina 私密报告并注明，以便与上游协调。
 
 Do not disclose exploitable details in public issues, pull requests, or discussions before a fix is available.
 

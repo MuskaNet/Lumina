@@ -430,15 +430,17 @@ onMounted(() => {
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create blob store") }}
     </button>
-    <div class="micl-textfield-outlined kk-filter">
+    <button type="button" class="micl-button-tonal-s" @click="refresh({ autoCheck: false })">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
+      {{ t("Refresh") }}
+    </button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
       <label for="blobstore-filter">{{ t("Filter") }}</label>
       <input id="blobstore-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="refresh({ autoCheck: false })">
-      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
-      {{ t("Refresh") }}
-    </button>
+    </div>
   </div>
 
   <div class="kk-summary" aria-live="polite">
@@ -484,14 +486,14 @@ onMounted(() => {
     </template>
 
     <template #cell-engine="{ row }">
-      {{ engineLabel(row.engine) }}
+      {{ t(engineLabel(row.engine)) }}
       <small v-if="!isFileStore(row)" class="kk-secondary">{{ row.type }}</small>
     </template>
 
     <template #cell-health="{ row }">
       <span class="kk-badge" :class="`kk-badge--${storeHealth(row).tone}`">{{ t(storeHealth(row).status) }}</span>
-      <small v-if="storeHealth(row).message" class="kk-secondary" :title="storeHealth(row).message">
-        {{ storeHealth(row).message }}
+      <small v-if="storeHealth(row).message" class="kk-secondary" :title="t(storeHealth(row).message)">
+        {{ t(storeHealth(row).message) }}
       </small>
     </template>
 
@@ -554,7 +556,7 @@ onMounted(() => {
         <label for="blobstore-engine">{{ t("Engine") }}</label>
         <select id="blobstore-engine" v-model="form.engine">
           <option v-for="engine in ENGINES" :key="engine.value" :value="engine.value">
-            {{ engine.label }}
+            {{ t(engine.label) }}
           </option>
         </select>
       </div>

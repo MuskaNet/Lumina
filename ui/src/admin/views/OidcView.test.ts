@@ -54,8 +54,8 @@ describe("OidcView", () => {
     expect(mocks.get).toHaveBeenCalledWith("/internal/security/oidc");
 
     // Action bar with pill buttons
-    const primaryBtn = wrapper.find(".kk-btn-pill-primary");
-    const secondaryBtn = wrapper.find(".kk-btn-pill-secondary");
+    const primaryBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
+    const secondaryBtn = wrapper.find(".micl-button-tonal-s");
     expect(primaryBtn.exists()).toBe(true);
     expect(secondaryBtn.exists()).toBe(true);
     expect(primaryBtn.text()).toContain("Save OIDC settings");
@@ -104,7 +104,7 @@ describe("OidcView", () => {
     await wrapper.get("#field-rolesClaim").setValue("roles");
     await wrapper.get("#field-clockSkewSeconds").setValue("60");
     await wrapper.get("#field-jwksCacheSeconds").setValue("300");
-    await wrapper.get(".kk-btn-pill-primary").trigger("click");
+    await wrapper.get(".micl-button-filled-m.kk-primary-action").trigger("click");
     await flushPromises();
 
     expect(mocks.send).toHaveBeenCalledWith("/internal/security/oidc", "PUT", expect.objectContaining({
@@ -118,12 +118,12 @@ describe("OidcView", () => {
 
     await wrapper.find<HTMLInputElement>("#oidc-issuer").setValue("");
 
-    const saveBtn = wrapper.find(".kk-btn-pill-primary");
+    const saveBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
     await saveBtn.trigger("click");
     await flushPromises();
 
     expect(mocks.send).not.toHaveBeenCalled();
-    expect(toastMock).toHaveBeenCalledWith("Required fields are missing: issuer", "error");
+    expect(toastMock).toHaveBeenCalledWith("Required fields are missing: Issuer", "error");
   });
 
   it("saves updated OIDC configuration", async () => {
@@ -132,7 +132,7 @@ describe("OidcView", () => {
 
     await wrapper.find<HTMLInputElement>("#oidc-client-id").setValue("new-client");
 
-    const saveBtn = wrapper.find(".kk-btn-pill-primary");
+    const saveBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
     await saveBtn.trigger("click");
     await flushPromises();
 

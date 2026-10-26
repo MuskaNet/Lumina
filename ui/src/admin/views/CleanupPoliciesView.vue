@@ -441,7 +441,7 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
     </button>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-tonal-s" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <div class="kk-section-navigation"><M3Tabs :tabs="TABS" :active="tab" @select="tab = $event" /></div>
@@ -495,9 +495,10 @@ onMounted(load);
   >
     <template #cell-status="{ row }">
       <span class="kk-badge" :class="row.status === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
-        {{ row.status || "—" }}
+        {{ t(String(row.status || '—')) }}
       </span>
     </template>
+    <template #cell-mode="{ row }">{{ t(String(row.mode || '—')) }}</template>
     <template #cell-startedAt="{ row }">{{ timestamp(row.startedAt) }}</template>
     <template #cell-actions="{ row }">
       <div class="kk-row-actions">
@@ -663,11 +664,11 @@ onMounted(load);
       <div class="kk-summary">
         <div class="kk-summary__item">
           <span class="kk-summary__label">{{ t("Status") }}</span>
-          <strong class="kk-summary__value">{{ runDetail.run?.status ?? "—" }}</strong>
+          <strong class="kk-summary__value">{{ t(runDetail.run?.status ?? '—') }}</strong>
         </div>
         <div class="kk-summary__item">
           <span class="kk-summary__label">{{ t("Mode") }}</span>
-          <strong class="kk-summary__value">{{ runDetail.run?.mode ?? "—" }}</strong>
+          <strong class="kk-summary__value">{{ t(runDetail.run?.mode ?? '—') }}</strong>
         </div>
         <div class="kk-summary__item">
           <span class="kk-summary__label">{{ t("Scanned") }}</span>
@@ -704,7 +705,7 @@ onMounted(load);
         <template #cell-name="{ row }">{{ row.repositoryName ?? row.name ?? "—" }}</template>
         <template #cell-state="{ row }">
           <span class="kk-badge" :class="row.state === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
-            {{ row.state || "—" }}
+            {{ t(String(row.state || '—')) }}
           </span>
         </template>
         <template #cell-scanned="{ row }">{{ row.scanned ?? 0 }}</template>

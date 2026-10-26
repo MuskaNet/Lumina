@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { progressBarState } from "../progress";
+import { t } from "../i18n";
 
 const isVisible = computed(() => progressBarState.visible);
 const progressPercent = computed(() => Math.min(100, Math.max(0, progressBarState.progress)));
@@ -17,7 +18,7 @@ const isError = computed(() => progressBarState.status === "error");
       'is-error': isError,
     }"
     role="progressbar"
-    aria-label="Loading"
+    :aria-label="t('Loading')"
     :aria-valuenow="Math.round(progressPercent)"
     aria-valuemin="0"
     aria-valuemax="100"

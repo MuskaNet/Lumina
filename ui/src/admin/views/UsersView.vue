@@ -205,12 +205,14 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">person_add</span>
       {{ t("Create user") }}
     </button>
-    <div class="micl-textfield-outlined kk-filter">
+    <button type="button" class="micl-button-tonal-s" @click="load">{{ t("Refresh") }}</button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
       <label for="user-filter">{{ t("Filter") }}</label>
       <input id="user-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    </div>
   </div>
 
   <section class="kk-table-surface">
@@ -230,7 +232,7 @@ onMounted(load);
     <template #cell-email="{ row }">{{ row.email || "—" }}</template>
     <template #cell-status="{ row }">
       <span class="kk-badge" :class="row.status === 'disabled' ? 'kk-badge--warn' : 'kk-badge--ok'">
-        {{ row.status || "active" }}
+        {{ t(row.status || 'active') }}
       </span>
     </template>
     <template #cell-roles="{ row }">{{ (row.roles ?? []).join(", ") || "—" }}</template>

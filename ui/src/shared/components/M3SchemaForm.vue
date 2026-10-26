@@ -112,7 +112,7 @@ function setSelect(field: FieldDef, event: Event) {
             <textarea
               :id="`field-${field.key}`"
               :value="textValue(field.key)"
-              :placeholder="field.placeholder"
+              :placeholder="field.placeholder ? t(field.placeholder) : undefined"
               :disabled="disabled || field.readOnly"
               rows="3"
               @input="setText(field, $event)"
@@ -131,7 +131,7 @@ function setSelect(field: FieldDef, event: Event) {
               :value="textValue(field.key)"
               :min="field.min"
               :max="field.max"
-              :placeholder="field.placeholder"
+              :placeholder="field.placeholder ? t(field.placeholder) : undefined"
               :disabled="disabled || field.readOnly"
               @input="setNumber(field, $event)"
             >
@@ -146,7 +146,7 @@ function setSelect(field: FieldDef, event: Event) {
             <textarea
               :id="`field-${field.key}`"
               :value="textValue(field.key)"
-              :placeholder="field.placeholder"
+              :placeholder="field.placeholder ? t(field.placeholder) : undefined"
               :disabled="disabled || field.readOnly"
               rows="3"
               @input="setText(field, $event)"
@@ -163,7 +163,7 @@ function setSelect(field: FieldDef, event: Event) {
               :id="`field-${field.key}`"
               :type="field.type"
               :value="textValue(field.key)"
-              :placeholder="field.placeholder"
+              :placeholder="field.placeholder ? t(field.placeholder) : undefined"
               :disabled="disabled || field.readOnly"
               :autocomplete="field.type === 'password' ? 'new-password' : 'off'"
               @input="setText(field, $event)"

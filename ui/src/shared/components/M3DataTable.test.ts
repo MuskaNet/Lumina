@@ -14,6 +14,14 @@ describe("M3DataTable", () => {
     { id: "2", name: "Beta", type: "proxy" },
   ];
 
+  it("provides the shared filled card with exactly one inner scroll frame", () => {
+    const wrapper = mount(M3DataTable, { props: { columns, rows, rowKey: (row: any) => row.id } });
+    expect(wrapper.classes()).toContain("kk-table-card-container");
+    expect(wrapper.findAll(".kk-table-card-container")).toHaveLength(1);
+    expect(wrapper.findAll(".kk-table-frame")).toHaveLength(1);
+    expect(wrapper.get(".kk-table-frame").element.parentElement).toBe(wrapper.element);
+  });
+
   it("renders table rows and columns correctly", () => {
     const wrapper = mount(M3DataTable, {
       props: {

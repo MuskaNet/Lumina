@@ -276,15 +276,17 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create selector") }}
     </button>
-    <div class="micl-textfield-outlined kk-filter">
+    <button type="button" class="micl-button-tonal-s" @click="load">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
+      {{ t("Refresh") }}
+    </button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
       <label for="selector-filter">{{ t("Filter") }}</label>
       <input id="selector-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">
-      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
-      {{ t("Refresh") }}
-    </button>
+    </div>
   </div>
 
   <p v-if="error" class="kk-form-error" role="alert">{{ error }}</p>
@@ -440,7 +442,7 @@ onMounted(load);
           :checked="privilege.actions.includes(action)"
           @change="toggleAction(action)"
         >
-        <span>{{ action }}</span>
+        <span>{{ t(action) }}</span>
       </label>
     </div>
   </div></M3Dialog>

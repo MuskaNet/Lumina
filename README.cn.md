@@ -221,29 +221,9 @@ AI agent 和贡献者的开发说明见 [AGENTS.md](AGENTS.md)。
 
 加入 [kkRepo Telegram 群](https://t.me/+UbIsTKXTzxBhYjFl) 获取社区支持和使用交流。Issue 分类、支持范围和安全问题报告边界见 [SUPPORT.md](SUPPORT.md)。
 
-## 赞助者
-
-感谢所有支持 kkRepo 持续开发和维护的赞助者。你可以通过 [GitHub Sponsors](https://github.com/sponsors/klboke) 支持本项目。
-
-你也可以通过支付宝或微信支付赞助 kkRepo。
-
-<p>
-  <a href="docs/img/sponsors/alipay.jpg"><img src="docs/img/sponsors/alipay-card.svg" alt="支付宝赞助收款码" width="280"></a>
-  &nbsp;&nbsp;
-  <a href="docs/img/sponsors/wechat-pay.jpg"><img src="docs/img/sponsors/wechat-pay-card.svg" alt="微信支付赞助收款码" width="280"></a>
-</p>
-
-### 企业赞助者
-
-当前企业赞助者的 Logo 和链接将在此展示。
-
-### 项目支持者
-
-当前项目支持者的名称或 Logo 及可选链接将在此展示。
-
 ## 安全
 
-如果发现安全问题，请按 [SECURITY.md](SECURITY.md) 说明优先通过 GitHub Security Advisory 报告，避免在公开 issue 中直接披露可利用细节。普通 bug、兼容性问题和功能建议可以直接提交 issue。
+Lumina 仅修改 kkRepo 的 UI 层逻辑，不改变后端逻辑。如果发现与 UI 改动无关的安全问题，请优先通过 [上游 kkRepo 的私密安全报告渠道](https://github.com/klboke/kkRepo/security/advisories/new)反馈；如果问题由 Lumina 的 UI 改动引入，请按 [SECURITY.md](SECURITY.md) 说明向 [Lumina 私密报告](https://github.com/MuskaNet/Lumina/security/advisories/new)。请勿在公开 issue 中披露可利用细节。
 
 ## 许可证
 

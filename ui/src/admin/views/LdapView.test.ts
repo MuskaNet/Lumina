@@ -57,8 +57,8 @@ describe("LdapView", () => {
     expect(mocks.get).toHaveBeenCalledWith("/internal/security/ldap");
 
     // Action bar with pill buttons
-    const primaryBtn = wrapper.find(".kk-btn-pill-primary");
-    const secondaryBtn = wrapper.find(".kk-btn-pill-secondary");
+    const primaryBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
+    const secondaryBtn = wrapper.find(".micl-button-tonal-s");
     expect(primaryBtn.exists()).toBe(true);
     expect(secondaryBtn.exists()).toBe(true);
     expect(primaryBtn.text()).toContain("Save LDAP settings");
@@ -104,7 +104,7 @@ describe("LdapView", () => {
     await wrapper.get("#field-userEmailAddressAttribute").setValue("mail");
     await wrapper.get("#field-groupBaseDn").setValue("ou=groups,dc=example,dc=org");
     await wrapper.get("#field-groupMemberAttribute").setValue("member");
-    await wrapper.get(".kk-btn-pill-primary").trigger("click");
+    await wrapper.get(".micl-button-filled-m.kk-primary-action").trigger("click");
     await flushPromises();
 
     expect(mocks.send).toHaveBeenCalledWith("/internal/security/ldap", "PUT", expect.objectContaining({
@@ -120,7 +120,7 @@ describe("LdapView", () => {
 
     await wrapper.find<HTMLInputElement>("#ldap-url").setValue("");
 
-    const saveBtn = wrapper.find(".kk-btn-pill-primary");
+    const saveBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
     await saveBtn.trigger("click");
     await flushPromises();
 
@@ -134,7 +134,7 @@ describe("LdapView", () => {
 
     await wrapper.find<HTMLInputElement>("#ldap-host").setValue("ldap.example.com");
 
-    const saveBtn = wrapper.find(".kk-btn-pill-primary");
+    const saveBtn = wrapper.find(".micl-button-filled-m.kk-primary-action");
     await saveBtn.trigger("click");
     await flushPromises();
 

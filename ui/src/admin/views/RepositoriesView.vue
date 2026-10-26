@@ -8,7 +8,6 @@ import M3DataTable, { type DataTableColumn } from "../../shared/components/M3Dat
 import M3Dialog from "../../shared/components/M3Dialog.vue";
 import M3List from "../../shared/components/M3List.vue";
 import M3ListItem from "../../shared/components/M3ListItem.vue";
-import M3Tabs from "../../shared/components/M3Tabs.vue";
 import RepositoryRecipeCombobox from "../components/RepositoryRecipeCombobox.vue";
 import {
   ALPINE_METADATA_MODES,
@@ -195,16 +194,8 @@ const recipeOptions = computed<RecipeOption[]>(() => buildRecipeOptions(recipes.
 
 /* ---- Dialog state ------------------------------------------------------ */
 
-const DIALOG_TABS = [
-  { id: "general", label: "General" },
-  { id: "behavior", label: "Type" },
-  { id: "format", label: "Format" },
-  { id: "keys", label: "Signing" },
-];
-
 const dialog = ref<InstanceType<typeof M3Dialog> | null>(null);
 const editing = ref<Repository | null>(null);
-const activeTab = ref("general");
 
 const draft = reactive<RepositoryDraft>(createRepositoryDraft());
 
@@ -381,7 +372,7 @@ const alpinePublicKeyHref = computed(() =>
     : "",
 );
 
-const showFormatTab = computed(() => {
+const showFormatSettings = computed(() => {
   switch (draftFormat.value) {
     case "conan":
       return !isGroup.value;
@@ -395,18 +386,9 @@ const showFormatTab = computed(() => {
       return false;
   }
 });
-const showKeysTab = computed(
+const showSigningSettings = computed(
   () => Boolean(editing.value)
     && ((draftFormat.value === "apt" && !isGroup.value) || draftFormat.value === "alpine"),
-);
-
-const visibleTabs = computed(() =>
-  DIALOG_TABS.filter((tab) => {
-    if (tab.id === "format") return showFormatTab.value;
-    if (tab.id === "keys") return showKeysTab.value;
-    if (tab.id === "behavior") return draftType.value !== "";
-    return true;
-  }),
 );
 
 watch(
@@ -447,7 +429,6 @@ function listFromText(value: unknown): string[] {
 
 function openCreate() {
   editing.value = null;
-  activeTab.value = "general";
   const recipe = recipeOptions.value[0];
   Object.assign(draft, createRepositoryDraft(recipe, blobStores.value[0]?.name ?? ""));
   applyRecipeDefaults(draft, recipe?.format ?? "", recipe?.type ?? "");
@@ -460,12 +441,12 @@ function openCreate() {
 
 function openEdit(repo: Repository) {
   editing.value = repo;
-  activeTab.value = "general";
   Object.assign(draft, repositoryDraftFromView(repo));
   resetMemberTransfer();
   conanStatusText.value = "";
   statusText.value = "";
   if (String(repo.format ?? "") === "conan") void loadConanStatus();
+  if (showSigningSettings.value) void loadSigningStatus();
   error.value = "";
   dialog.value?.open();
 }
@@ -477,17 +458,14 @@ function buildPayload(creating: boolean): Record<string, unknown> {
 async function save() {
   if (!editing.value && !draft.name.trim()) {
     error.value = t("Repository name is required.");
-    activeTab.value = "general";
     return;
   }
   if (isProxy.value && !draft.remoteUrl.trim()) {
     error.value = t("Remote URL is required for proxy repositories.");
-    activeTab.value = "behavior";
     return;
   }
   if (aptHosted.value && !draft.aptDistribution.trim()) {
     error.value = t("APT distribution is required for hosted repositories.");
-    activeTab.value = "format";
     return;
   }
   if (
@@ -496,7 +474,6 @@ async function save() {
     && (draft.dockerConnectorPort === null || draft.dockerConnectorPort === "")
   ) {
     error.value = t("Connector port is required when the Docker connector is enabled.");
-    activeTab.value = "format";
     return;
   }
   if (
@@ -504,7 +481,6 @@ async function save() {
     && (!draft.alpineVerifyUpstreamSignatures || !draft.alpineUpstreamPublicKey.trim())
   ) {
     error.value = t("Alpine re-sign proxy requires signature verification and upstream public keys.");
-    activeTab.value = "format";
     return;
   }
   busy.value = true;
@@ -586,10 +562,6 @@ async function rebuildMetadata() {
   }
 }
 
-watch(activeTab, (tab) => {
-  if (tab === "keys") void loadSigningStatus();
-});
-
 async function rotateSigningKey(generate: boolean) {
   const repo = editing.value;
   if (!repo) return;
@@ -670,21 +642,23 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create repository") }}
     </button>
-    <div class="micl-textfield-outlined kk-filter">
-      <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
-      <label for="repo-filter">{{ t("Filter") }}</label>
-      <input id="repo-filter" v-model="filter" type="search" autocomplete="off">
-    </div>
     <button type="button" class="micl-button-tonal-s" @click="load">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh") }}
     </button>
-    <div class="micl-textfield-outlined kk-toolbar__spacer" style="min-inline-size: 14rem">
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
+      <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
+      <label for="repo-filter">{{ t("Filter") }}</label>
+      <input id="repo-filter" v-model="filter" type="search" autocomplete="off">
+    </div>
+      <div class="micl-textfield-outlined" style="min-inline-size: 14rem">
       <label for="repo-blobstore-filter">{{ t("Blob store") }}</label>
       <select id="repo-blobstore-filter" v-model="blobStoreFilter">
         <option value="">{{ t("All blob stores") }}</option>
         <option v-for="store in availableBlobStoreNames" :key="store" :value="store">{{ store }}</option>
       </select>
+    </div>
     </div>
   </div>
 
@@ -767,10 +741,14 @@ onMounted(load);
     :error="error"
     @confirm="save"
   >
-    <div class="kk-settings-page"><M3Tabs v-if="editing && visibleTabs.length > 1" :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
+    <div class="kk-settings-page">
 
     <!-- General -->
-    <section class="kk-surface-card" v-if="!editing || activeTab === 'general'">
+    <section class="kk-surface-card" data-repository-section="general">
+      <div class="kk-card-header">
+        <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+        <h2 class="kk-card-header__title">{{ t("General") }}</h2>
+      </div>
       <div class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-name">{{ t("Name") }}</label>
@@ -803,7 +781,7 @@ onMounted(load);
     </section>
 
     <!-- Hosted / proxy / group -->
-    <section class="kk-surface-card" v-if="!editing ? draftType !== '' : activeTab === 'behavior'">
+    <section class="kk-surface-card" v-if="draftType !== ''" data-repository-section="behavior">
       <div class="kk-card-header">
       <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
       <h2 class="kk-card-header__title">{{ isHosted ? t("Hosted settings") : isProxy ? t("Proxy settings") : t("Group settings") }}</h2>
@@ -857,6 +835,7 @@ onMounted(load);
             {{ t("PyPI proxy only. Use /simple for standard package indexes. Leave this empty when the upstream serves project indexes directly from its root, such as the PyTorch package indexes. Client URLs remain under /simple.") }}
           </small>
         </div>
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Upstream authentication") }}</h3>
         <div v-if="ntlmAvailable" class="micl-textfield-outlined">
           <label for="repo-remote-auth">{{ t("Upstream authentication") }}</label>
           <select id="repo-remote-auth" v-model="draft.remoteAuthenticationType">
@@ -894,6 +873,7 @@ onMounted(load);
           <input v-model="draft.remoteBearerTokenClear" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Clear saved bearer token") }}</span>
         </label>
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Caching") }}</h3>
         <div class="micl-textfield-outlined">
           <label for="repo-content-age">{{ t("Content max age (min)") }}</label>
           <input id="repo-content-age" v-model.number="draft.contentMaxAgeMinutes" type="number" min="-1">
@@ -909,6 +889,7 @@ onMounted(load);
         <p v-if="minimumReleaseAgeVisible" class="kk-hint kk-field--wide">
           {{ t("npm proxy only. A version is hidden from package metadata and its tarball is blocked until this many minutes have passed since publication. Use 0 to disable this policy and preserve existing behavior. This is independent of content and metadata cache max age. Versions with a missing or invalid publish time are blocked while enabled.") }}
         </p>
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Connection") }}</h3>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-redirect-hosts">{{ t("Allowed redirect hosts") }}</label>
           <textarea id="repo-redirect-hosts" :value="draft.allowedRedirectHosts" rows="2" @input="draft.allowedRedirectHosts = ($event.target as HTMLTextAreaElement).value"></textarea>
@@ -917,6 +898,7 @@ onMounted(load);
           <input v-model="draft.autoBlock" class="micl-switch" type="checkbox" role="switch">
           <span>{{ t("Auto-block remote") }}</span>
         </label>
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Outbound proxy") }}</h3>
         <p class="kk-hint kk-field--wide">
           {{ t("Route upstream fetches for this proxy repository through an HTTP or SOCKS proxy (e.g. a corporate Clash on the LAN). Useful when the remote registry (hub.docker.com, pypi.org, ...) is unreachable from the server.") }}
         </p>
@@ -1065,7 +1047,7 @@ onMounted(load);
     </section>
 
     <!-- Format-specific -->
-    <section class="kk-surface-card" v-if="!editing ? showFormatTab : activeTab === 'format'">
+    <section class="kk-surface-card" v-if="showFormatSettings" data-repository-section="format">
       <div class="kk-card-header">
       <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
       <h2 class="kk-card-header__title">{{ t("Format settings") }}</h2>
@@ -1106,6 +1088,7 @@ onMounted(load);
       </div>
 
       <div v-else-if="draftFormat === 'apt'" class="kk-field-grid">
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Repository layout") }}</h3>
         <div class="micl-textfield-outlined">
           <label for="repo-apt-dist">{{ t("Distribution") }}</label>
           <input id="repo-apt-dist" v-model="draft.aptDistribution" type="text" placeholder="stable" autocomplete="off">
@@ -1118,6 +1101,7 @@ onMounted(load);
           <label for="repo-apt-arch">{{ t("Architectures") }}</label>
           <input id="repo-apt-arch" v-model="draft.aptArchitectures" type="text" placeholder="amd64, arm64" autocomplete="off">
         </div>
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Signing") }}</h3>
         <div class="micl-textfield-outlined">
           <label for="repo-apt-mode">{{ t("Metadata mode") }}</label>
           <select id="repo-apt-mode" v-model="draft.aptMetadataMode" :disabled="aptHosted">
@@ -1157,6 +1141,7 @@ onMounted(load);
       </div>
 
       <div v-else-if="draftFormat === 'alpine'" class="kk-field-grid">
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Repository layout") }}</h3>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-alpine-dists">{{ t("Distributions") }}</label>
           <input id="repo-alpine-dists" v-model="draft.alpineDistributions" type="text" placeholder="v3.23, edge" autocomplete="off">
@@ -1169,6 +1154,7 @@ onMounted(load);
           <label for="repo-alpine-arch">{{ t("Architectures") }}</label>
           <input id="repo-alpine-arch" v-model="draft.alpineArchitectures" type="text" placeholder="x86_64, aarch64" autocomplete="off">
         </div>
+        <h3 class="kk-schema-form__group kk-field--wide">{{ t("Signing") }}</h3>
         <div class="micl-textfield-outlined">
           <label for="repo-alpine-mode">{{ t("Metadata mode") }}</label>
           <select id="repo-alpine-mode" v-model="draft.alpineMetadataMode" :disabled="!alpineProxy">
@@ -1220,11 +1206,11 @@ onMounted(load);
       <div v-else-if="draftFormat === 'conan'" class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-conan-entries">{{ t("Manifest entry limit") }}</label>
-          <input id="repo-conan-entries" v-model.number="draft.conanManifestMaxEntries" type="number" min="1" max="2147483647" step="1" placeholder="Inherit server default">
+          <input id="repo-conan-entries" v-model.number="draft.conanManifestMaxEntries" type="number" min="1" max="2147483647" step="1" :placeholder="t('Inherit server default')">
         </div>
         <div class="micl-textfield-outlined">
           <label for="repo-conan-bytes">{{ t("Manifest size limit (bytes)") }}</label>
-          <input id="repo-conan-bytes" v-model.number="draft.conanManifestMaxBytes" type="number" min="1" max="2147483646" step="1" placeholder="Inherit server default">
+          <input id="repo-conan-bytes" v-model.number="draft.conanManifestMaxBytes" type="number" min="1" max="2147483646" step="1" :placeholder="t('Inherit server default')">
         </div>
         <p v-if="editing" class="kk-hint kk-field--wide">{{ conanStatusText }}</p>
         <div v-if="editing" class="kk-toolbar kk-field--wide kk-action-bar">
@@ -1241,7 +1227,11 @@ onMounted(load);
     </section>
 
     <!-- Signing keys and index operations (existing apt/alpine repositories) -->
-    <section class="kk-surface-card" v-if="editing && activeTab === 'keys'">
+    <section class="kk-surface-card" v-if="showSigningSettings" data-repository-section="signing">
+      <div class="kk-card-header">
+        <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">key</span></span>
+        <h2 class="kk-card-header__title">{{ t("Signing") }}</h2>
+      </div>
       <p class="kk-muted">
         {{ t("Signed metadata needs a key. Generating a new key republishes every index that uses it.") }}
       </p>

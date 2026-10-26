@@ -110,6 +110,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div class="kk-table-card-container">
   <div
     class="kk-table-frame"
     :class="[
@@ -117,7 +118,7 @@ onUnmounted(() => {
       variant !== 'default' ? `kk-table-frame--${variant}` : undefined,
     ]"
   >
-    <div v-if="loading && linearProgress" class="kk-table-progress" role="progressbar" aria-label="Loading">
+    <div v-if="loading && linearProgress" class="kk-table-progress" role="progressbar" :aria-label="t('Loading')">
       <div class="kk-table-progress__bar"></div>
     </div>
     <table class="kk-table" :aria-label="ariaLabel">
@@ -190,4 +191,5 @@ onUnmounted(() => {
       </tbody>
     </table>
   </div>
-</template>
+  </div>
+</template>  

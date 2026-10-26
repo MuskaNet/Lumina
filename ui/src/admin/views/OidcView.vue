@@ -35,9 +35,10 @@ async function load() {
 
 async function save() {
   const required = ["issuer", "clientId", "redirectUri"];
+  const requiredLabels: Record<string, string> = { issuer: "Issuer", clientId: "Client ID", redirectUri: "Redirect URI" };
   const missing = required.filter((key) => !String(draft[key] ?? "").trim());
   if (missing.length) {
-    showToast(`${t("Required fields are missing")}: ${missing.join(", ")}`, "error");
+    showToast(`${t("Required fields are missing")}: ${missing.map((key) => t(requiredLabels[key] ?? key)).join(", ")}`, "error");
     return;
   }
   busy.value = true;
@@ -60,13 +61,13 @@ onMounted(load);
 
 <template>
   <div class="kk-settings-page">
-  <div class="kk-action-bar">
-    <button type="button" class="kk-btn-pill-primary" :disabled="busy || loading" @click="save">
-      <span class="material-symbols-outlined" aria-hidden="true">save</span>
+  <div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="busy || loading" @click="save">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">save</span>
       {{ busy ? t("Saving…") : t("Save OIDC settings") }}
     </button>
-    <button type="button" class="kk-btn-pill-secondary" :disabled="loading" @click="load">
-      <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+    <button type="button" class="micl-button-tonal-s" :disabled="loading" @click="load">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Reload") }}
     </button>
   </div>

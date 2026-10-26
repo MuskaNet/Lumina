@@ -106,14 +106,14 @@ onMounted(load);
       {{ t("Refresh connectors") }}
     </button>
     <button type="button" class="micl-button-outlined-s" @click="clearCache">{{ t("Clear Docker cache") }}</button>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Reload") }}</button>
+    <button type="button" class="micl-button-tonal-s" @click="load">{{ t("Reload") }}</button>
   </div>
 
   <p v-if="status" class="kk-form-error" role="alert">{{ status }}</p>
 
   <div class="kk-summary">
     <div v-for="entry in summaryEntries" :key="entry.key" class="kk-summary__item">
-      <span class="kk-summary__label">{{ entry.key }}</span>
+      <span class="kk-summary__label">{{ t(entry.key) }}</span>
       <strong class="kk-summary__value">{{ entry.value }}</strong>
     </div>
     <div v-if="!summaryEntries.length" class="kk-summary__item">
@@ -137,7 +137,7 @@ onMounted(load);
   >
     <template #cell-state="{ row }">
       <span class="kk-badge" :class="row.state === 'running' ? 'kk-badge--ok' : 'kk-badge--warn'">
-        {{ row.state || "—" }}
+        {{ t(String(row.state || '—')) }}
       </span>
     </template>
     <template #cell-active="{ row }">{{ row.active ? t("Yes") : t("No") }}</template>
@@ -146,7 +146,7 @@ onMounted(load);
 
   <div v-if="transferEntries.length" class="kk-summary">
     <div v-for="entry in transferEntries" :key="entry.key" class="kk-summary__item">
-      <span class="kk-summary__label">{{ entry.key }}</span>
+      <span class="kk-summary__label">{{ t(entry.key) }}</span>
       <strong class="kk-summary__value">{{ entry.value }}</strong>
     </div>
   </div>

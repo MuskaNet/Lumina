@@ -163,12 +163,14 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create role") }}
     </button>
-    <div class="micl-textfield-outlined kk-filter">
+    <button type="button" class="micl-button-tonal-s" @click="load">{{ t("Refresh") }}</button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">filter_list</span>
       <label for="role-filter">{{ t("Filter") }}</label>
       <input id="role-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    </div>
   </div>
 
   <section class="kk-table-surface">

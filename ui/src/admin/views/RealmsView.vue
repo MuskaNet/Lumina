@@ -159,7 +159,7 @@ onMounted(load);
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create realm") }}
     </button>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-tonal-s" @click="load">{{ t("Refresh") }}</button>
   </div>
 
   <section class="kk-table-surface">

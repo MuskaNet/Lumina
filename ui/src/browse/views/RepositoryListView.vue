@@ -139,57 +139,55 @@ onUnmounted(() => {
     </span>
   </div>
 
-  <div class="kk-table-card-container">
-    <M3DataTable
-      v-model:sort="sort"
-      :columns="columns"
-      :rows="rows"
-      :row-key="(row: RepositoryRow) => row.name"
-      :empty-text="t('No repositories found.')"
-      :aria-label="t('Repositories')"
-      clickable
-      @row-click="openRow"
-    >
-      <template #cell-icon="{ row }">
-        <span class="material-symbols-outlined kk-format-icon" aria-hidden="true">{{ row.typeIcon }}</span>
-      </template>
-      <template #cell-name="{ row }">
-        <span class="kk-repo-name">{{ row.name }}</span>
-      </template>
-      <template #cell-type="{ row }">{{ row.type || "—" }}</template>
-      <template #cell-format="{ row }">
-        <span class="format-cell">
-          <span :class="row.formatClass" aria-hidden="true"></span>
-          <span class="format-cell-label">{{ row.format || "—" }}</span>
-        </span>
-      </template>
-      <template #cell-status="{ row }">
-        <span class="kk-badge kk-status-chip" :class="row.repository.online ? 'kk-badge--ok' : 'kk-badge--bad'">
-          {{ row.status }}
-        </span>
-      </template>
-      <template #cell-url="{ row }">
-        <span class="kk-repo-url">
-          <a
-            class="kk-repo-url__link"
-            :href="row.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            @click.stop
-          >{{ row.url }}</a>
-          <button
-            type="button"
-            class="micl-iconbutton-standard-s kk-repo-url__copy"
-            :title="copied === row.name ? t('Copied') : t('Copy repository URL')"
-            :aria-label="copied === row.name ? t('Copied') : t('Copy repository URL')"
-            @click.stop="copyUrl(row)"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">
-              {{ copied === row.name ? "check" : "content_copy" }}
-            </span>
-          </button>
-        </span>
-      </template>
-    </M3DataTable>
-  </div>
+  <M3DataTable
+    v-model:sort="sort"
+    :columns="columns"
+    :rows="rows"
+    :row-key="(row: RepositoryRow) => row.name"
+    :empty-text="t('No repositories found.')"
+    :aria-label="t('Repositories')"
+    clickable
+    @row-click="openRow"
+  >
+    <template #cell-icon="{ row }">
+      <span class="material-symbols-outlined kk-format-icon" aria-hidden="true">{{ row.typeIcon }}</span>
+    </template>
+    <template #cell-name="{ row }">
+      <span class="kk-repo-name">{{ row.name }}</span>
+    </template>
+    <template #cell-type="{ row }">{{ row.type || "—" }}</template>
+    <template #cell-format="{ row }">
+      <span class="format-cell">
+        <span :class="row.formatClass" aria-hidden="true"></span>
+        <span class="format-cell-label">{{ row.format || "—" }}</span>
+      </span>
+    </template>
+    <template #cell-status="{ row }">
+      <span class="kk-badge kk-status-chip" :class="row.repository.online ? 'kk-badge--ok' : 'kk-badge--bad'">
+        {{ row.status }}
+      </span>
+    </template>
+    <template #cell-url="{ row }">
+      <span class="kk-repo-url">
+        <a
+          class="kk-repo-url__link"
+          :href="row.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          @click.stop
+        >{{ row.url }}</a>
+        <button
+          type="button"
+          class="micl-iconbutton-standard-s kk-repo-url__copy"
+          :title="copied === row.name ? t('Copied') : t('Copy repository URL')"
+          :aria-label="copied === row.name ? t('Copied') : t('Copy repository URL')"
+          @click.stop="copyUrl(row)"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">
+            {{ copied === row.name ? "check" : "content_copy" }}
+          </span>
+        </button>
+      </span>
+    </template>
+  </M3DataTable>
 </template>

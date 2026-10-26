@@ -49,7 +49,7 @@ function openMyToken() {
       <button type="button" @click="signOut()"><span class="material-symbols-outlined" aria-hidden="true">logout</span>{{ t('Sign out') }}</button>
     </template>
   </MobileNavigation>
-  <nav class="micl-navigationrail kk-rail" aria-label="Administration">
+  <nav class="micl-navigationrail kk-rail" :aria-label="t('Administration')">
     <div class="kk-rail-action">
       <a
         class="kk-rail-fab"
@@ -111,8 +111,8 @@ function openMyToken() {
             type="button"
             class="micl-iconbutton-standard-s kk-bottom-toolbar__account-btn"
             popovertarget="kk-user-menu"
-            :aria-label="`Account menu for ${accountLabel}`"
-            :title="`Account menu for ${accountLabel}`"
+            :aria-label="`${t('Account menu for')} ${accountLabel}`"
+            :title="`${t('Account menu for')} ${accountLabel}`"
           >
             <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
           </button>

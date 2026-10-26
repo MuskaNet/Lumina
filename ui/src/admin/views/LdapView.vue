@@ -64,13 +64,13 @@ onMounted(load);
 
 <template>
   <div class="kk-settings-page">
-  <div class="kk-action-bar">
-    <button type="button" class="kk-btn-pill-primary" :disabled="busy || loading" @click="save">
-      <span class="material-symbols-outlined" aria-hidden="true">save</span>
+  <div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="busy || loading" @click="save">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">save</span>
       {{ busy ? t("Saving…") : t("Save LDAP settings") }}
     </button>
-    <button type="button" class="kk-btn-pill-secondary" :disabled="loading" @click="load">
-      <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+    <button type="button" class="micl-button-tonal-s" :disabled="loading" @click="load">
+      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Reload") }}
     </button>
   </div>

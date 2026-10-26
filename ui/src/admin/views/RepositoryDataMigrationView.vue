@@ -87,7 +87,7 @@ const summaryEntries = computed(() => {
   const job = selected.value;
   if (!job) return [];
   return [
-    { label: t("Status"), value: job.status ?? "—" },
+    { label: t("Status"), value: t(job.status ?? "—") },
     { label: t("Source"), value: job.sourceBaseUrl ?? "—" },
     { label: t("Nexus version"), value: job.sourceNexusVersion ?? "—" },
     { label: t("Repositories"), value: String(job.repositories ?? 0) },
@@ -199,7 +199,7 @@ onMounted(loadJobs);
     <button type="button" class="micl-button-tonal-s" :disabled="selected == null" @click="refreshJob()">
       {{ t("Refresh job") }}
     </button>
-    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="loadJobs">
+    <button type="button" class="micl-button-tonal-s" @click="loadJobs">
       {{ t("Reload jobs") }}
     </button>
   </div>
@@ -270,7 +270,7 @@ onMounted(loadJobs);
     :aria-label="t('Migration jobs')"
   >
     <template #cell-status="{ row }">
-      <span class="kk-badge" :class="row.active ? 'kk-badge--warn' : 'kk-badge--ok'">{{ row.status || "—" }}</span>
+      <span class="kk-badge" :class="row.active ? 'kk-badge--warn' : 'kk-badge--ok'">{{ t(String(row.status || '—')) }}</span>
     </template>
     <template #cell-startedAt="{ row }">{{ timestamp(row.startedAt) }}</template>
     <template #cell-actions="{ row }">
@@ -339,7 +339,7 @@ onMounted(loadJobs);
       <template #cell-format="{ row }">{{ row.format || "—" }}</template>
       <template #cell-status="{ row }">
         <span class="kk-badge" :class="row.status === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
-          {{ row.status || "—" }}
+          {{ t(String(row.status || '—')) }}
         </span>
         <small v-if="row.lastError" class="kk-secondary" :title="row.lastError">{{ row.lastError }}</small>
       </template>

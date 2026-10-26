@@ -95,31 +95,33 @@ onMounted(() => load(0));
       <h2 class="kk-card-header__title">{{ t("Filters") }}</h2>
     </div>
 <div class="kk-toolbar kk-action-bar">
-    <div class="micl-textfield-outlined kk-filter">
-      <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
-      <label for="audit-q">{{ t("Search") }}</label>
-      <input id="audit-q" v-model="filters.q" type="search" autocomplete="off">
-    </div>
-    <div class="micl-textfield-outlined kk-filter">
-      <label for="audit-actor">{{ t("Actor") }}</label>
-      <input id="audit-actor" v-model="filters.actorUserId" type="search" autocomplete="off">
-    </div>
-    <div class="micl-textfield-outlined kk-filter">
-      <label for="audit-outcome">{{ t("Outcome") }}</label>
-      <input id="audit-outcome" v-model="filters.outcome" type="search" autocomplete="off">
-    </div>
-    <div class="micl-textfield-outlined kk-filter">
-      <label for="audit-from">{{ t("From") }}</label>
-      <input id="audit-from" v-model="filters.from" type="datetime-local">
-    </div>
-    <div class="micl-textfield-outlined kk-filter">
-      <label for="audit-to">{{ t("To") }}</label>
-      <input id="audit-to" v-model="filters.to" type="datetime-local">
-    </div>
     <button type="button" class="micl-button-filled-m kk-primary-action" @click="load(0)">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
       {{ t("Apply") }}
     </button>
+    <div class="kk-toolbar__filters">
+      <div class="micl-textfield-outlined kk-filter">
+      <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
+      <label for="audit-q">{{ t("Search") }}</label>
+      <input id="audit-q" v-model="filters.q" type="search" autocomplete="off">
+    </div>
+      <div class="micl-textfield-outlined kk-filter">
+      <label for="audit-actor">{{ t("Actor") }}</label>
+      <input id="audit-actor" v-model="filters.actorUserId" type="search" autocomplete="off">
+    </div>
+      <div class="micl-textfield-outlined kk-filter">
+      <label for="audit-outcome">{{ t("Outcome") }}</label>
+      <input id="audit-outcome" v-model="filters.outcome" type="search" autocomplete="off">
+    </div>
+      <div class="micl-textfield-outlined kk-filter">
+      <label for="audit-from">{{ t("From") }}</label>
+      <input id="audit-from" v-model="filters.from" type="datetime-local">
+    </div>
+      <div class="micl-textfield-outlined kk-filter">
+      <label for="audit-to">{{ t("To") }}</label>
+      <input id="audit-to" v-model="filters.to" type="datetime-local">
+    </div>
+    </div>
   </div>
 </section>
 
@@ -161,7 +163,7 @@ onMounted(() => load(0));
     <template #cell-status="{ row }">{{ row.status ?? "—" }}</template>
     <template #cell-outcome="{ row }">
       <span class="kk-badge" :class="row.outcome === 'allow' ? 'kk-badge--ok' : 'kk-badge--bad'">
-        {{ row.outcome || "—" }}
+        {{ t(String(row.outcome || '—')) }}
       </span>
     </template>
   </M3DataTable>
