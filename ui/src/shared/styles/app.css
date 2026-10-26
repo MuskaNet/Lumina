@@ -3071,6 +3071,7 @@ dialog.micl-dialog .micl-dialog__actions {
   .kk-browse-detail-wrap {
     flex: 1 1 auto;
     inline-size: 100%;
+    min-block-size: 0;
     max-block-size: none;
     padding: 16px;
   }
@@ -3206,7 +3207,8 @@ dialog.micl-dialog .micl-dialog__actions {
 }
 
 .kk-detail-pane {
-  min-block-size: 0;
+  flex: 0 0 auto;
+  min-block-size: max-content;
   display: flex;
   flex-direction: column;
   gap: 16px;
