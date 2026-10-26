@@ -270,8 +270,9 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" :disabled="!options.permissions.create" @click="openCreate">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="!options.permissions.create" @click="openCreate">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create selector") }}
     </button>
@@ -280,7 +281,7 @@ onMounted(load);
       <label for="selector-filter">{{ t("Filter") }}</label>
       <input id="selector-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh") }}
     </button>
@@ -288,7 +289,12 @@ onMounted(load);
 
   <p v-if="error" class="kk-form-error" role="alert">{{ error }}</p>
 
-  <M3DataTable
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">filter_list</span></span>
+      <h2 class="kk-card-header__title">{{ t("Content selectors") }}</h2>
+    </div>
+<M3DataTable
     :columns="columns"
     :rows="rows"
     :row-key="(row: Selector) => row.name"
@@ -324,6 +330,7 @@ onMounted(load);
       </div>
     </template>
   </M3DataTable>
+</section>
 
   <M3Dialog
     ref="selectorDialog"
@@ -334,7 +341,12 @@ onMounted(load);
     :error="error"
     @confirm="save"
   >
-    <div class="kk-field-grid">
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="selector-name">{{ t("Name") }}</label>
         <input id="selector-name" v-model="draft.name" type="text" :readonly="Boolean(editingName)" autocomplete="off">
@@ -360,8 +372,9 @@ onMounted(load);
         </select>
       </div>
     </div>
+</section>
 
-    <div class="kk-toolbar">
+    <div class="kk-toolbar kk-action-bar">
       <button type="button" class="micl-button-outlined-s" :disabled="!editable" @click="preview">
         <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
         {{ t("Preview") }}
@@ -369,8 +382,9 @@ onMounted(load);
       <span class="kk-muted">{{ previewStatus }}</span>
     </div>
 
-    <M3DataTable
-      v-if="previewRows.length"
+    <section v-if="previewRows.length" class="kk-table-surface">
+<M3DataTable
+
       :columns="[
         { key: 'repositoryName', label: 'Repository' },
         { key: 'format', label: 'Format' },
@@ -380,7 +394,8 @@ onMounted(load);
       :row-key="(row: PreviewAsset) => `${row.repositoryName}/${row.name}`"
       :aria-label="t('Preview matches')"
     />
-  </M3Dialog>
+</section>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="privilegeDialog"
@@ -390,7 +405,12 @@ onMounted(load);
     :error="error"
     @confirm="savePrivilege"
   >
-    <div class="kk-field-grid">
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="priv-name">{{ t("Name") }}</label>
         <input id="priv-name" v-model="privilege.name" type="text" autocomplete="off">
@@ -410,6 +430,7 @@ onMounted(load);
         </select>
       </div>
     </div>
+</section>
     <!-- A privilege grants any number of actions at once: a multi-select set, so checkboxes rather than switches. -->
     <div class="kk-actions-row">
       <label v-for="action in ACTION_OPTIONS" :key="action" class="kk-checkbox-row">
@@ -422,7 +443,7 @@ onMounted(load);
         <span>{{ action }}</span>
       </label>
     </div>
-  </M3Dialog>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="deleteDialog"
@@ -434,8 +455,9 @@ onMounted(load);
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <p class="kk-dialog-message">
+    <div class="kk-settings-page"><p class="kk-dialog-message">
       {{ t("Are you sure you want to delete content selector") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
     </p>
-  </M3Dialog>
+  </div></M3Dialog>
+</div>
 </template>

@@ -117,8 +117,11 @@ async function onSignedIn() {
     </div>
   </nav>
 
-  <main class="micl-panes">
-    <section class="micl-pane">
+  <main
+    class="micl-panes kk-browser-shell"
+    :class="{ 'kk-browser-shell--detail': route.view === 'browse' && !!route.repo }"
+  >
+    <section class="micl-pane kk-browser-content">
       <div class="kk-page-header">
         <h1 class="kk-page-title">Lumina</h1>
         <p class="kk-page-subtitle">

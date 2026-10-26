@@ -124,6 +124,34 @@ beforeEach(() => {
 });
 
 describe("BrowseView", () => {
+  it.each([
+    [null, 68],
+    ["58", 65],
+    ["90", 70],
+    ["67", 67],
+  ])("constrains stored tree width %s to %s percent", async (stored, expected) => {
+    const key = "kkrepo.browse.treePaneWidthPct";
+    const previous = localStorage.getItem(key);
+    try {
+      if (stored === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, stored);
+      const view = await mountView();
+      expect(view.get(".kk-browse-split").attributes("style")).toContain(`--kk-browse-tree-width: ${expected}%`);
+      const resizer = view.get('[role="separator"]');
+      expect(resizer.attributes("aria-valuemin")).toBe("65");
+      expect(resizer.attributes("aria-valuemax")).toBe("70");
+      for (let step = 0; step < 5; step++) await resizer.trigger("keydown", { key: "ArrowRight" });
+      expect(resizer.attributes("aria-valuenow")).toBe("70");
+      for (let step = 0; step < 5; step++) await resizer.trigger("keydown", { key: "ArrowLeft" });
+      expect(resizer.attributes("aria-valuenow")).toBe("65");
+      await resizer.trigger("keydown", { key: "Home" });
+      expect(resizer.attributes("aria-valuenow")).toBe("68");
+    } finally {
+      if (previous === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, previous);
+    }
+  });
+
   it("renders the breadcrumb, tree and detail for a deep-linked file", async () => {
     const view = await mountView("org/app.jar");
 

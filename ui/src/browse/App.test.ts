@@ -80,6 +80,18 @@ afterEach(() => {
 });
 
 describe("browse application", () => {
+  it("uses the viewport-constrained shell only for repository detail routes", async () => {
+    await renderApp();
+    expect(wrapper!.get("main").classes()).not.toContain("kk-browser-shell--detail");
+    setView({ view: "browse", repo: "maven-hosted" });
+    await nextTick();
+    await flushPromises();
+    expect(wrapper!.get("main").classes()).toContain("kk-browser-shell--detail");
+    setView({ view: "browse", repo: "" });
+    await nextTick();
+    expect(wrapper!.get("main").classes()).not.toContain("kk-browser-shell--detail");
+  });
+
   it("renders the welcome view from the server repository catalog", async () => {
     const urls = await renderApp();
 

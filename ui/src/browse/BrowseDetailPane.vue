@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { t } from "../shared/i18n";
 import { writeClipboard } from "../shared/clipboard";
+import { showToast } from "../shared/snackbar";
 import { formatBytes, shortDigest } from "./formatters";
 import {
   attributeGroups,
@@ -30,14 +31,11 @@ const props = defineProps<{
 const emit = defineEmits<{ delete: [] }>();
 
 const usageSelection = ref("");
-const copiedSnippet = ref(false);
-let copiedTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
   () => props.usage,
   (usage) => {
     usageSelection.value = usage?.snippets[0]?.displayName ?? "";
-    copiedSnippet.value = false;
   },
   { immediate: true },
 );
@@ -74,15 +72,10 @@ async function copySnippet(): Promise<void> {
   if (!snippet.value) return;
   try {
     await writeClipboard(snippet.value.snippetText);
+    showToast(t("Copied"), "ok");
   } catch {
-    return;
+    showToast(t("Unable to copy usage snippet"), "error");
   }
-  copiedSnippet.value = true;
-  if (copiedTimer) clearTimeout(copiedTimer);
-  copiedTimer = setTimeout(() => {
-    copiedSnippet.value = false;
-    copiedTimer = null;
-  }, 1200);
 }
 
 function describeDescriptor(row: {
@@ -93,9 +86,6 @@ function describeDescriptor(row: {
   return row.artifactType || row.mediaType || row.imageName || "-";
 }
 
-onUnmounted(() => {
-  if (copiedTimer) clearTimeout(copiedTimer);
-});
 </script>
 
 <template>
@@ -108,7 +98,7 @@ onUnmounted(() => {
       <button
         v-if="props.canDelete"
         type="button"
-        class="micl-button-outlined-s kk-detail-head__delete"
+        class="micl-button-outlined-s kk-detail-head__delete kk-destructive-outlined-btn"
         @click="emit('delete')"
       >
         <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">delete</span>
@@ -123,7 +113,10 @@ onUnmounted(() => {
 
     <template v-else>
       <section class="kk-detail-panel">
-        <header class="kk-detail-panel__head">{{ t(summary.title) }}</header>
+        <header class="kk-detail-panel__head">
+          <span class="material-symbols-outlined kk-detail-panel__icon" aria-hidden="true">info</span>
+          {{ t(summary.title) }}
+        </header>
         <dl class="kk-detail-rows">
           <div v-for="row in summary.rows" :key="row.label" class="kk-detail-row">
             <dt>{{ t(row.label) }}</dt>
@@ -133,7 +126,10 @@ onUnmounted(() => {
       </section>
 
       <section v-if="dockerPanel" class="kk-detail-panel">
-        <header class="kk-detail-panel__head">{{ t(dockerPanel.title) }}</header>
+        <header class="kk-detail-panel__head">
+          <span class="material-symbols-outlined kk-detail-panel__icon" aria-hidden="true">layers</span>
+          {{ t(dockerPanel.title) }}
+        </header>
         <dl v-if="dockerPanel.rows.length" class="kk-detail-rows">
           <div v-for="row in dockerPanel.rows" :key="row.label" class="kk-detail-row">
             <dt>{{ t(row.label) }}</dt>
@@ -164,28 +160,34 @@ onUnmounted(() => {
       </section>
 
       <section v-if="snippets.length && snippet" class="kk-detail-panel">
-        <header class="kk-detail-panel__head">{{ t("Usage") }}</header>
+        <header class="kk-detail-panel__head">
+          <span class="material-symbols-outlined kk-detail-panel__icon" aria-hidden="true">terminal</span>
+          {{ t("Usage") }}
+        </header>
         <div class="kk-usage">
           <div class="kk-usage__row">
-            <select
-              v-model="usageSelection"
-              class="kk-usage__pick"
-              :aria-label="t('Usage snippet')"
-            >
-              <option v-for="option in snippets" :key="option.displayName" :value="option.displayName">
-                {{ option.displayName }}
-              </option>
-            </select>
+            <div class="micl-textfield-outlined kk-usage__selector">
+              <select
+                v-model="usageSelection"
+                class="kk-usage__pick"
+                :aria-label="t('Usage snippet')"
+              >
+                <option v-for="option in snippets" :key="option.displayName" :value="option.displayName">
+                  {{ option.displayName }}
+                </option>
+              </select>
+            </div>
             <button
               type="button"
-              class="micl-iconbutton-standard-s kk-usage__copy"
-              :aria-label="copiedSnippet ? t('Copied') : t('Copy usage snippet')"
-              :title="copiedSnippet ? t('Copied') : t('Copy usage snippet')"
+              class="kk-usage__copy kk-pill-btn"
+              :aria-label="t('Copy usage snippet')"
+              :title="t('Copy usage snippet')"
               @click="copySnippet"
             >
-              <span class="material-symbols-outlined" aria-hidden="true">
-                {{ copiedSnippet ? "check" : "content_copy" }}
+              <span class="material-symbols-outlined kk-pill-btn__icon" aria-hidden="true">
+                content_copy
               </span>
+              <span>{{ t("Copy") }}</span>
             </button>
           </div>
           <p v-if="snippet.description" class="kk-usage__hint">{{ snippet.description }}</p>
@@ -194,7 +196,10 @@ onUnmounted(() => {
       </section>
 
       <section v-if="attributes.length" class="kk-detail-panel">
-        <header class="kk-detail-panel__head">{{ t("Attributes") }}</header>
+        <header class="kk-detail-panel__head">
+          <span class="material-symbols-outlined kk-detail-panel__icon" aria-hidden="true">tune</span>
+          {{ t("Attributes") }}
+        </header>
         <div class="kk-attribute-groups">
           <div v-for="group in attributes" :key="group.title" class="kk-attribute-group">
             <h4 class="kk-attribute-group__title">{{ t(group.title) }}</h4>
@@ -210,7 +215,7 @@ onUnmounted(() => {
 
       <div v-if="downloadUrl" class="kk-detail-download">
         <a
-          class="micl-button-outlined-s"
+          class="kk-primary-pill-btn kk-detail-download__btn"
           :href="downloadUrl"
           target="_blank"
           rel="noopener noreferrer"

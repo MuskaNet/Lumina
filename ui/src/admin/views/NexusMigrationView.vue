@@ -53,12 +53,13 @@ async function run(path: "preflight" | "run") {
 </script>
 
 <template>
-  <div class="kk-toolbar">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
     <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="run('preflight')">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">fact_check</span>
       {{ t("Run preflight") }}
     </button>
-    <button type="button" class="micl-button-filled-s" :disabled="busy" @click="run('run')">
+    <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="busy" @click="run('run')">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">play_arrow</span>
       {{ busy ? t("Running…") : t("Run migration") }}
     </button>
@@ -68,7 +69,12 @@ async function run(path: "preflight" | "run") {
     {{ t("Migrates Nexus metadata, repositories and security into this instance. Credentials are used for this request only.") }}
   </p>
 
-  <div class="kk-field-grid">
+  <section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Source") }}</h2>
+    </div>
+<div class="kk-field-grid">
     <div class="micl-textfield-outlined kk-field--wide">
       <label for="migration-url">{{ t("Source URL") }}</label>
       <input id="migration-url" v-model="draft.sourceBaseUrl" type="url" placeholder="https://nexus.example.com" autocomplete="off">
@@ -86,14 +92,22 @@ async function run(path: "preflight" | "run") {
       <input id="migration-blobstore" v-model="draft.targetBlobStore" type="text" autocomplete="off">
     </div>
   </div>
+</section>
 
-  <template v-if="preflight">
-    <h3 class="kk-schema-form__group">{{ t("Preflight") }}</h3>
+  <section class="kk-surface-card" v-if="preflight">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Preflight") }}</h2>
+    </div>
     <pre class="kk-code">{{ preflight }}</pre>
-  </template>
+  </section>
 
-  <template v-if="result">
-    <h3 class="kk-schema-form__group">{{ t("Migration result") }}</h3>
+  <section class="kk-surface-card" v-if="result">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Migration result") }}</h2>
+    </div>
     <pre class="kk-code">{{ result }}</pre>
-  </template>
+  </section>
+</div>
 </template>

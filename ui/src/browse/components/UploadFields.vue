@@ -18,13 +18,13 @@ function selectFile(event: Event, field: UploadField) {
 </script>
 
 <template>
-  <div class="kk-field-grid">
+  <div class="kk-field-grid kk-upload-fields-grid">
     <template v-for="field in fields" :key="field.name">
-      <label v-if="field.type === 'BOOLEAN'" class="kk-checkbox-row">
+      <label v-if="field.type === 'BOOLEAN'" class="kk-checkbox-row kk-field--span-3">
         <input v-model="draft.values[field.name]" type="checkbox" class="micl-checkbox">
         <span>{{ t(field.description || field.name) }}</span>
       </label>
-      <div v-else-if="field.type === 'FILE'" class="kk-upload-file kk-field--wide">
+      <div v-else-if="field.type === 'FILE'" class="kk-upload-file kk-field--wide kk-field--span-3">
         <label :for="`${prefix}-${field.name}`">
           {{ t(field.description || field.name) }}<span v-if="!field.optional" aria-hidden="true"> *</span>
         </label>

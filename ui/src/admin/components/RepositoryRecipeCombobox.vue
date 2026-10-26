@@ -214,7 +214,7 @@ onBeforeUnmount(unbindListeners);
       <span v-if="selected" class="kk-recipe-selection">
         <span :class="formatLogoClass(selected.format)" aria-hidden="true"></span>
         <span class="kk-recipe-name">{{ selected.displayName }}</span>
-        <span class="kk-recipe-type">{{ t(selected.typeLabel) }}</span>
+        <span class="kk-recipe-type">{{ selected.typeLabel }}</span>
       </span>
       <span v-else class="kk-recipe-placeholder">
         {{ options.length ? t("Select a recipe") : t("No recipes available") }}
@@ -265,8 +265,7 @@ onBeforeUnmount(unbindListeners);
           </template>
           <template #headline>{{ option.displayName }}</template>
           <template #trailing>
-            <span class="kk-recipe-type">{{ t(option.typeLabel) }}</span>
-            <span class="material-symbols-outlined kk-recipe-option__check" aria-hidden="true">{{ option.value === modelValue ? "check" : "" }}</span>
+            <span class="kk-recipe-type">{{ option.typeLabel }}</span>
           </template>
         </M3ListItem>
         <li v-if="!filtered.length" class="kk-recipe-empty">{{ t("No matching recipes") }}</li>

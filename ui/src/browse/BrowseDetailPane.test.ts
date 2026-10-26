@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const clipboard = vi.hoisted(() => ({ writeClipboard: vi.fn(async () => undefined) }));
 vi.mock("../shared/clipboard", () => ({ writeClipboard: clipboard.writeClipboard }));
+const notifications = vi.hoisted(() => ({ showToast: vi.fn() }));
+vi.mock("../shared/snackbar", () => notifications);
 
 import BrowseDetailPane from "./BrowseDetailPane.vue";
 import type { BrowseAssetDetail, BrowseEntry, UsageDetail } from "./browseModel";
@@ -98,7 +100,23 @@ describe("BrowseDetailPane", () => {
     await wrapper.find(".kk-usage__copy").trigger("click");
     await Promise.resolve();
     expect(clipboard.writeClipboard).toHaveBeenCalledWith("implementation 'org.example:app:1.0'");
-    expect(wrapper.find(".kk-usage__copy").attributes("aria-label")).toBe("Copied");
+    expect(wrapper.find(".kk-usage__copy").attributes("aria-label")).toBe("Copy usage snippet");
+    expect(wrapper.find(".kk-usage__copy").text()).toContain("Copy");
+    expect(notifications.showToast).toHaveBeenCalledWith("Copied", "ok");
+  });
+
+  it("uses the MICL outlined select wrapper without custom control styling", () => {
+    const wrapper = mountPane();
+    expect(wrapper.get(".micl-textfield-outlined > select.kk-usage__pick").attributes("aria-label")).toBe("Usage snippet");
+  });
+
+  it("reports clipboard failures through the snackbar", async () => {
+    clipboard.writeClipboard.mockRejectedValueOnce(new Error("Clipboard denied"));
+    const wrapper = mountPane();
+    await wrapper.get(".kk-usage__copy").trigger("click");
+    await Promise.resolve();
+    expect(notifications.showToast).toHaveBeenCalledWith("Unable to copy usage snippet", "error");
+    expect(notifications.showToast).not.toHaveBeenCalledWith("Copied", "ok");
   });
 
   it("renders Docker metadata rows and descriptor groups", () => {

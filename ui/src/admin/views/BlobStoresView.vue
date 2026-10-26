@@ -424,8 +424,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" @click="openCreate">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" @click="openCreate">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create blob store") }}
     </button>
@@ -434,7 +435,7 @@ onMounted(() => {
       <label for="blobstore-filter">{{ t("Filter") }}</label>
       <input id="blobstore-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="refresh({ autoCheck: false })">
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="refresh({ autoCheck: false })">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh") }}
     </button>
@@ -463,7 +464,12 @@ onMounted(() => {
     </div>
   </div>
 
-  <M3DataTable
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">database</span></span>
+      <h2 class="kk-card-header__title">{{ t("Blob stores") }}</h2>
+    </div>
+<M3DataTable
     :columns="columns"
     :rows="rows"
     :row-key="(row: BlobStore) => String(row.id ?? row.name)"
@@ -519,6 +525,7 @@ onMounted(() => {
       <span v-else class="kk-muted">—</span>
     </template>
   </M3DataTable>
+</section>
 
   <!-- Create / edit -->
   <M3Dialog
@@ -532,7 +539,12 @@ onMounted(() => {
     @confirm="save"
     @cancel="closeForm"
   >
-    <div class="kk-field-grid">
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="blobstore-name">{{ t("Name") }}</label>
         <input id="blobstore-name" v-model="form.name" type="text" autocomplete="off" required>
@@ -589,11 +601,12 @@ onMounted(() => {
         </div>
       </template>
     </div>
+</section>
 
     <label v-if="isS3Engine" class="kk-switch-row">
       <input v-model="form.pathStyleAccess" class="micl-switch" type="checkbox" role="switch">
       <span>{{ t("Path style access") }}</span>
-    </label>
+    </label></div>
   </M3Dialog>
 
   <!-- Delete confirmation -->
@@ -608,9 +621,10 @@ onMounted(() => {
     @confirm="confirmDelete"
     @cancel="cancelDelete"
   >
-    <p class="kk-dialog-message">
+    <div class="kk-settings-page"><p class="kk-dialog-message">
       {{ t("Are you sure you want to delete") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
-    </p>
+    </p></div>
   </M3Dialog>
+</div>
 </template>
 

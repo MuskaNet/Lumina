@@ -6,45 +6,16 @@ import { showToast } from "../../shared/snackbar";
 import M3SchemaForm from "../../shared/components/M3SchemaForm.vue";
 import type { FieldDef } from "../../shared/components/schema";
 
-const draft = reactive<Record<string, unknown>>({});
-const busy = ref(false);
-const loading = ref(true);
-const passwordDirty = computed(() => String(draft.authPassword ?? "") !== "");
-
-const FIELDS: FieldDef[] = [
-  { key: "enabled", label: "Enabled", type: "switch" },
-  { key: "priority", label: "Priority", type: "number" },
-  { key: "name", label: "Realm name", type: "text" },
-  { key: "source", label: "Source", type: "text" },
-
-  { key: "url", label: "URL", type: "text", group: "Connection", placeholder: "ldap://ldap.example.com:389" },
-  { key: "protocol", label: "Protocol", type: "text" },
-  { key: "host", label: "Host", type: "text" },
-  { key: "port", label: "Port", type: "number" },
-  { key: "useTrustStore", label: "Use trust store", type: "switch" },
-  { key: "searchBase", label: "Search base", type: "text" },
-  { key: "connectionTimeout", label: "Connection timeout (s)", type: "number" },
-  { key: "connectionRetryDelay", label: "Retry delay (s)", type: "number" },
-  { key: "maxIncidentsCount", label: "Max incidents", type: "number" },
-
-  { key: "authScheme", label: "Auth scheme", type: "text", group: "Authentication" },
-  { key: "authRealm", label: "Auth realm", type: "text" },
-  { key: "authUsername", label: "Auth username", type: "text" },
-  { key: "authPassword", label: "Auth password", type: "password" },
-
-  { key: "userBaseDn", label: "User base DN", type: "text", group: "User mapping" },
-  { key: "userSubtree", label: "User subtree", type: "switch" },
-  { key: "userObjectClass", label: "User object class", type: "text" },
-  { key: "userLdapFilter", label: "User LDAP filter", type: "text" },
-  { key: "userIdAttribute", label: "User ID attribute", type: "text" },
+const advancedUserFields: FieldDef[] = [
   { key: "userRealNameAttribute", label: "Real name attribute", type: "text" },
   { key: "userEmailAddressAttribute", label: "Email attribute", type: "text" },
   { key: "userPasswordAttribute", label: "Password attribute", type: "text" },
   { key: "userMemberOfAttribute", label: "Member-of attribute", type: "text" },
-
-  { key: "ldapGroupsAsRoles", label: "LDAP groups as roles", type: "switch", group: "Group mapping" },
+];
+const groupFields: FieldDef[] = [
+  { key: "ldapGroupsAsRoles", label: "LDAP groups as roles", type: "switch" },
   { key: "groupType", label: "Group type", type: "text" },
-  { key: "groupBaseDn", label: "Group base DN", type: "text" },
+  { key: "groupBaseDn", label: "Group base DN", type: "text", wide: true },
   { key: "groupSubtree", label: "Group subtree", type: "switch" },
   { key: "groupIdAttribute", label: "Group ID attribute", type: "text" },
   { key: "groupMemberAttribute", label: "Group member attribute", type: "text" },
@@ -52,8 +23,10 @@ const FIELDS: FieldDef[] = [
   { key: "groupObjectClass", label: "Group object class", type: "text" },
 ];
 
-const fields = computed(() => FIELDS);
-const passwordField = computed(() => fields.value.find((field) => field.key === "authPassword"));
+const draft = reactive<Record<string, unknown>>({});
+const busy = ref(false);
+const loading = ref(true);
+const passwordDirty = computed(() => String(draft.authPassword ?? "") !== "");
 
 async function load() {
   loading.value = true;
@@ -90,22 +63,192 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" :disabled="busy || loading" @click="save">
-      <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">save</span>
+  <div class="kk-settings-page">
+  <div class="kk-action-bar">
+    <button type="button" class="kk-btn-pill-primary" :disabled="busy || loading" @click="save">
+      <span class="material-symbols-outlined" aria-hidden="true">save</span>
       {{ busy ? t("Saving…") : t("Save LDAP settings") }}
     </button>
-    <button type="button" class="micl-button-outlined-s" @click="load">{{ t("Reload") }}</button>
+    <button type="button" class="kk-btn-pill-secondary" :disabled="loading" @click="load">
+      <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+      {{ t("Reload") }}
+    </button>
   </div>
 
   <p class="kk-muted">
     {{ t("LDAP realms authenticate users against a directory. Leave the password blank to keep the stored value.") }}
   </p>
 
-  <M3SchemaForm :fields="fields" :model="draft" :disabled="loading" />
+  <div class="kk-settings-layout">
+    <!-- 1. 基本设置 -->
+    <div class="kk-surface-card">
+      <div class="kk-card-header">
+        <div class="kk-card-header__icon-box">
+          <span class="material-symbols-outlined">tune</span>
+        </div>
+        <div class="kk-card-header__content">
+          <h3 class="kk-card-header__title">{{ t("Basic settings") }}</h3>
+          <p class="kk-card-header__subtitle">{{ t("Enable LDAP authentication and basic attributes") }}</p>
+        </div>
+      </div>
 
-  <p v-if="passwordField && !passwordDirty" class="kk-muted">
-    {{ t("Password unchanged: the stored secret is kept.") }}
-  </p>
+      <label class="kk-switch-row">
+        <input v-model="draft.enabled" class="micl-switch" type="checkbox" role="switch" :disabled="loading">
+        <span>{{ t("Enabled") }}</span>
+      </label>
+
+      <div class="kk-grid-3">
+        <div class="micl-textfield-outlined">
+          <label for="ldap-priority">{{ t("Priority") }}</label>
+          <input id="ldap-priority" v-model.number="draft.priority" type="number" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-name">{{ t("Realm name") }}</label>
+          <input id="ldap-name" v-model="draft.name" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-source">{{ t("Source") }}</label>
+          <input id="ldap-source" v-model="draft.source" type="text" autocomplete="off" :disabled="loading">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CONNECTION 连接配置 -->
+    <div class="kk-surface-card">
+      <div class="kk-card-header">
+        <div class="kk-card-header__icon-box">
+          <span class="material-symbols-outlined">lan</span>
+        </div>
+        <div class="kk-card-header__content">
+          <h3 class="kk-card-header__title">{{ t("Connection settings") }}</h3>
+          <p class="kk-card-header__subtitle">{{ t("Directory host, port and connection timeout") }}</p>
+        </div>
+      </div>
+
+      <div class="micl-textfield-outlined kk-field--wide">
+        <label for="ldap-url">{{ t("URL") }}</label>
+        <input id="ldap-url" v-model="draft.url" type="text" placeholder="ldap://ldap.example.com:389" :disabled="loading">
+      </div>
+
+      <div class="kk-grid-3">
+        <div class="micl-textfield-outlined">
+          <label for="ldap-protocol">{{ t("Protocol") }}</label>
+          <input id="ldap-protocol" v-model="draft.protocol" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-host">{{ t("Host") }}</label>
+          <input id="ldap-host" v-model="draft.host" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-port">{{ t("Port") }}</label>
+          <input id="ldap-port" v-model.number="draft.port" type="number" :disabled="loading">
+        </div>
+      </div>
+
+      <div class="micl-textfield-outlined kk-field--wide">
+        <label for="ldap-search-base">{{ t("Search base") }}</label>
+        <input id="ldap-search-base" v-model="draft.searchBase" type="text" autocomplete="off" :disabled="loading">
+      </div>
+
+      <label class="kk-switch-row">
+        <input v-model="draft.useTrustStore" class="micl-switch" type="checkbox" role="switch" :disabled="loading">
+        <span>{{ t("Use trust store") }}</span>
+      </label>
+
+      <div class="kk-grid-3">
+        <div class="micl-textfield-outlined">
+          <label for="ldap-timeout">{{ t("Connection timeout (s)") }}</label>
+          <input id="ldap-timeout" v-model.number="draft.connectionTimeout" type="number" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-retry">{{ t("Retry delay (s)") }}</label>
+          <input id="ldap-retry" v-model.number="draft.connectionRetryDelay" type="number" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-max-incidents">{{ t("Max incidents") }}</label>
+          <input id="ldap-max-incidents" v-model.number="draft.maxIncidentsCount" type="number" :disabled="loading">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. AUTHENTICATION 认证配置 -->
+    <div class="kk-surface-card">
+      <div class="kk-card-header">
+        <div class="kk-card-header__icon-box">
+          <span class="material-symbols-outlined">lock</span>
+        </div>
+        <div class="kk-card-header__content">
+          <h3 class="kk-card-header__title">{{ t("Authentication settings") }}</h3>
+          <p class="kk-card-header__subtitle">{{ t("Directory binding credentials") }}</p>
+        </div>
+      </div>
+
+      <div class="micl-textfield-outlined kk-field--wide">
+        <label for="ldap-auth-scheme">{{ t("Auth scheme") }}</label>
+        <input id="ldap-auth-scheme" v-model="draft.authScheme" type="text" autocomplete="off" :disabled="loading">
+      </div>
+
+      <div class="kk-grid-3">
+        <div class="micl-textfield-outlined">
+          <label for="ldap-auth-realm">{{ t("Auth realm") }}</label>
+          <input id="ldap-auth-realm" v-model="draft.authRealm" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-auth-username">{{ t("Auth username") }}</label>
+          <input id="ldap-auth-username" v-model="draft.authUsername" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-auth-password">{{ t("Auth password") }}</label>
+          <input id="ldap-auth-password" v-model="draft.authPassword" type="password" autocomplete="new-password" :disabled="loading">
+        </div>
+      </div>
+
+      <p v-if="!passwordDirty" class="kk-muted" style="margin: 0; font-size: 0.8125rem;">
+        {{ t("Password unchanged: the stored secret is kept.") }}
+      </p>
+    </div>
+
+    <!-- 4. USER MAPPING 用户映射 -->
+    <div class="kk-surface-card">
+      <div class="kk-card-header">
+        <div class="kk-card-header__icon-box">
+          <span class="material-symbols-outlined">badge</span>
+        </div>
+        <div class="kk-card-header__content">
+          <h3 class="kk-card-header__title">{{ t("User mapping") }}</h3>
+          <p class="kk-card-header__subtitle">{{ t("User Base DN, search filters and attributes") }}</p>
+        </div>
+      </div>
+
+      <div class="micl-textfield-outlined kk-field--wide">
+        <label for="ldap-user-base-dn">{{ t("User base DN") }}</label>
+        <input id="ldap-user-base-dn" v-model="draft.userBaseDn" type="text" autocomplete="off" :disabled="loading">
+      </div>
+
+      <label class="kk-switch-row">
+        <input v-model="draft.userSubtree" class="micl-switch" type="checkbox" role="switch" :disabled="loading">
+        <span>{{ t("User subtree") }}</span>
+      </label>
+
+      <div class="kk-grid-3">
+        <div class="micl-textfield-outlined">
+          <label for="ldap-user-object-class">{{ t("User object class") }}</label>
+          <input id="ldap-user-object-class" v-model="draft.userObjectClass" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-user-ldap-filter">{{ t("User LDAP filter") }}</label>
+          <input id="ldap-user-ldap-filter" v-model="draft.userLdapFilter" type="text" autocomplete="off" :disabled="loading">
+        </div>
+        <div class="micl-textfield-outlined">
+          <label for="ldap-user-id-attr">{{ t("User ID attribute") }}</label>
+          <input id="ldap-user-id-attr" v-model="draft.userIdAttribute" type="text" autocomplete="off" :disabled="loading">
+        </div>
+      </div>
+      <M3SchemaForm :fields="advancedUserFields" :model="draft" :disabled="loading" />
+      <h3 class="kk-schema-form__group">{{ t("Group mapping") }}</h3>
+      <M3SchemaForm :fields="groupFields" :model="draft" :disabled="loading" />
+    </div>
+  </div>
+  </div>
 </template>
 

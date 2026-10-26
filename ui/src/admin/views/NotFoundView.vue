@@ -8,10 +8,12 @@ const path = computed(() => route.fullPath);
 </script>
 
 <template>
-  <NotFoundView
+<div class="kk-settings-page">
+<section class="kk-surface-card"><NotFoundView
     title="Unknown administration page"
     :path="path"
     action-label="Go to repositories"
     action-href="#admin/repository/repositories"
-  />
+  /></section>
+</div>
 </template>

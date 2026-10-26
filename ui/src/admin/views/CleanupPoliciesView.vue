@@ -435,20 +435,26 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" @click="openCreate">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" @click="openCreate">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
     </button>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
-  <M3Tabs :tabs="TABS" :active="tab" @select="tab = $event" />
+  <div class="kk-section-navigation"><M3Tabs :tabs="TABS" :active="tab" @select="tab = $event" /></div>
 
   <p v-if="error" class="kk-form-error" role="alert">{{ error }}</p>
 
-  <M3DataTable
-    v-if="tab === 'policies'"
+  <section v-if="tab === 'policies'" class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">auto_delete</span></span>
+      <h2 class="kk-card-header__title">{{ t("Cleanup policies") }}</h2>
+    </div>
+<M3DataTable
+
     :columns="policyColumns"
     :rows="policyRows"
     :row-key="(row: PolicyView, index?: number) => String(policyOf(row).id ?? index)"
@@ -471,9 +477,15 @@ onMounted(load);
       </div>
     </template>
   </M3DataTable>
+</section>
 
-  <M3DataTable
-    v-else
+  <section v-else class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">auto_delete</span></span>
+      <h2 class="kk-card-header__title">{{ t("Cleanup policies") }}</h2>
+    </div>
+<M3DataTable
+
     :columns="runColumns"
     :rows="runs"
     :row-key="(row: RunView, index?: number) => `${row.id ?? index}`"
@@ -501,6 +513,7 @@ onMounted(load);
       </div>
     </template>
   </M3DataTable>
+</section>
 
   <M3Dialog
     ref="dialog"
@@ -510,7 +523,11 @@ onMounted(load);
     :error="error"
     @confirm="save"
   >
-    <h3 class="kk-schema-form__group">{{ t("Policy details") }}</h3>
+    <div class="kk-settings-page"><section class="kk-surface-card">
+<div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Policy details") }}</h2>
+    </div>
     <div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="cleanup-name">{{ t("Name") }}</label>
@@ -540,8 +557,13 @@ onMounted(load);
     <p v-if="repositoryError" class="kk-form-error" role="alert">
       {{ t("Select at least one target repository.") }}
     </p>
+</section>
 
-    <h3 class="kk-schema-form__group">{{ t("Cleanup rules") }}</h3>
+    <section class="kk-surface-card">
+<div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Cleanup rules") }}</h2>
+    </div>
     <div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="cleanup-pattern-type">{{ t("Pattern type") }}</label>
@@ -570,8 +592,13 @@ onMounted(load);
     <p class="kk-hint">
       {{ t("A pattern only narrows the scope; at least one age or retain rule is required and every configured rule must match.") }}
     </p>
+</section>
 
-    <h3 class="kk-schema-form__group">{{ t("Schedule") }}</h3>
+    <section class="kk-surface-card">
+<div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Schedule") }}</h2>
+    </div>
     <div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="cleanup-cron">{{ t("Run schedule (cron)") }}</label>
@@ -594,13 +621,19 @@ onMounted(load);
     </div>
     <p class="kk-hint" aria-live="polite">{{ previewTitle }}</p>
     <p v-if="executeHelp" class="kk-hint">{{ executeHelp }}</p>
+</section>
 
-    <h3 class="kk-schema-form__group">{{ t("Notes") }}</h3>
+    <section class="kk-surface-card">
+<div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Notes") }}</h2>
+    </div>
     <div class="micl-textfield-outlined kk-field--wide">
       <label for="cleanup-notes">{{ t("Notes") }}</label>
       <textarea id="cleanup-notes" v-model="draft.notes" rows="3" :placeholder="t('Why this policy exists, ownership, or rollback notes')"></textarea>
     </div>
-  </M3Dialog>
+</section>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="deleteDialog"
@@ -611,10 +644,10 @@ onMounted(load);
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <p class="kk-dialog-message">
+    <div class="kk-settings-page"><p class="kk-dialog-message">
       {{ t("Are you sure you want to delete policy") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
     </p>
-  </M3Dialog>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="detailDialog"
@@ -625,8 +658,8 @@ onMounted(load);
     :confirm-label="t('Close')"
     @confirm="detailDialog?.close()"
   >
-    <p v-if="detailLoading" class="kk-muted">{{ t("Loading…") }}</p>
-    <template v-else-if="runDetail">
+    <div class="kk-settings-page"><p v-if="detailLoading" class="kk-muted">{{ t("Loading…") }}</p>
+    <section class="kk-surface-card" v-else-if="runDetail">
       <div class="kk-summary">
         <div class="kk-summary__item">
           <span class="kk-summary__label">{{ t("Status") }}</span>
@@ -654,7 +687,8 @@ onMounted(load);
         </div>
       </div>
 
-      <M3DataTable
+      <section class="kk-table-region">
+<M3DataTable
         :columns="[
           { key: 'name', label: 'Repository' },
           { key: 'state', label: 'State' },
@@ -677,6 +711,8 @@ onMounted(load);
         <template #cell-matched="{ row }">{{ row.matched ?? 0 }}</template>
         <template #cell-deleted="{ row }">{{ row.deleted ?? 0 }}</template>
       </M3DataTable>
-    </template>
-  </M3Dialog>
+</section>
+    </section>
+  </div></M3Dialog>
+</div>
 </template>

@@ -522,7 +522,8 @@ onMounted(() => load(true));
 </script>
 
 <template>
-  <div class="kk-toolbar">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
     <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
       <label for="scan-search">{{ t("Search") }}</label>
@@ -536,34 +537,41 @@ onMounted(() => load(true));
       <input class="micl-switch" type="checkbox" role="switch" :checked="currentOnly" @change="onCurrentOnlyChange">
       <span>{{ t("Current findings") }}</span>
     </label>
-    <button v-if="tab === 'policies'" type="button" class="micl-button-filled-s" @click="openPolicy()">
+    <button v-if="tab === 'policies'" type="button" class="micl-button-filled-m kk-primary-action" @click="openPolicy()">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
     </button>
-    <button v-if="tab === 'waivers'" type="button" class="micl-button-filled-s" @click="openWaiver">
+    <button v-if="tab === 'waivers'" type="button" class="micl-button-filled-m kk-primary-action" @click="openWaiver">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create waiver") }}
     </button>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load(true)">
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load(true)">
       {{ t("Refresh") }}
     </button>
   </div>
 
-  <M3Tabs :tabs="TABS" :active="tab" @select="tab = $event as ScanTab" />
+  <div class="kk-section-navigation"><M3Tabs :tabs="TABS" :active="tab" @select="tab = $event as ScanTab" /></div>
 
   <p v-if="error && !policyDialog && !waiverDialog && !configDialog" class="kk-form-error" role="alert">
     {{ error }}
   </p>
 
-  <div v-if="tab === 'overview'" class="kk-summary">
-    <div v-for="entry in overviewEntries" :key="entry.label" class="kk-summary__item">
-      <span class="kk-summary__label">{{ entry.label }}</span>
-      <strong class="kk-summary__value">{{ loading ? "…" : entry.value }}</strong>
+  <section v-if="tab === 'overview'" class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">security</span></span>
+      <h2 class="kk-card-header__title">{{ t("Overview") }}</h2>
     </div>
-  </div>
+    <div class="kk-summary">
+      <div v-for="entry in overviewEntries" :key="entry.label" class="kk-summary__item">
+        <span class="kk-summary__label">{{ entry.label }}</span>
+        <strong class="kk-summary__value">{{ loading ? "…" : entry.value }}</strong>
+      </div>
+    </div>
+  </section>
 
-  <template v-else>
-    <M3DataTable
+  <section class="kk-surface-card" v-else>
+    <section class="kk-table-region">
+<M3DataTable
       :columns="columns"
       :rows="filtered"
       :row-key="(row: Row, index?: number) => `${row.id ?? 'row'}-${index}`"
@@ -654,23 +662,24 @@ onMounted(() => load(true));
         </div>
       </template>
     </M3DataTable>
+</section>
 
-    <div class="kk-toolbar">
+    <div class="kk-toolbar kk-action-bar">
       <span class="kk-muted">{{ t("Page") }} {{ page + 1 }}</span>
       <div class="kk-toolbar__spacer"></div>
-      <button type="button" class="micl-button-outlined-s" :disabled="page === 0 || loading" @click="previousPage">
+      <button type="button" class="micl-button-tonal-s" :disabled="page === 0 || loading" @click="previousPage">
         {{ t("Previous") }}
       </button>
       <button
         type="button"
-        class="micl-button-outlined-s"
+        class="micl-button-tonal-s"
         :disabled="nextAfter == null || loading"
         @click="nextPage"
       >
         {{ t("Next") }}
       </button>
     </div>
-  </template>
+  </section>
 
   <M3Dialog
     ref="policyDialog"
@@ -679,7 +688,12 @@ onMounted(() => load(true));
     :error="error"
     @confirm="savePolicy"
   >
-    <div class="kk-field-grid">
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="policy-name">{{ t("Name") }}</label>
         <input id="policy-name" v-model="policyDraft.name" type="text" autocomplete="off">
@@ -711,7 +725,8 @@ onMounted(() => load(true));
         <span>{{ t("Require complete inventory") }}</span>
       </label>
     </div>
-  </M3Dialog>
+</section>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="configDialog"
@@ -720,7 +735,12 @@ onMounted(() => load(true));
     :error="error"
     @confirm="saveConfig"
   >
-    <div class="kk-field-grid">
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<div class="kk-field-grid">
       <label class="kk-switch-row">
         <input v-model="configDraft.enabled" class="micl-switch" type="checkbox" role="switch">
         <span>{{ t("Scanning enabled") }}</span>
@@ -762,7 +782,8 @@ onMounted(() => load(true));
         <input id="config-max-age" v-model="configDraft.maxResultAgeSeconds" type="number" min="0">
       </div>
     </div>
-  </M3Dialog>
+</section>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="waiverDialog"
@@ -772,7 +793,12 @@ onMounted(() => load(true));
     :error="error"
     @confirm="saveWaiver"
   >
-    <div class="kk-field-grid">
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<div class="kk-field-grid">
       <div class="micl-textfield-outlined">
         <label for="waiver-scope">{{ t("Scope") }}</label>
         <select id="waiver-scope" v-model="waiverDraft.scopeType">
@@ -817,7 +843,8 @@ onMounted(() => load(true));
         <input id="waiver-reason" v-model="waiverDraft.reason" type="text" autocomplete="off">
       </div>
     </div>
-  </M3Dialog>
+</section>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="deleteDialog"
@@ -828,8 +855,9 @@ onMounted(() => load(true));
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <p class="kk-dialog-message">
+    <div class="kk-settings-page"><p class="kk-dialog-message">
       {{ t("Are you sure you want to delete this scan record") }}?
     </p>
-  </M3Dialog>
+  </div></M3Dialog>
+</div>
 </template>

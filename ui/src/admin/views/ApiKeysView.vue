@@ -172,8 +172,9 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" @click="openCreate">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" @click="openCreate">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">vpn_key</span>
       {{ t("Create API key") }}
     </button>
@@ -182,10 +183,15 @@ onMounted(load);
       <label for="apikey-filter">{{ t("Filter") }}</label>
       <input id="apikey-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Refresh") }}</button>
   </div>
 
-  <M3DataTable
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">vpn_key</span></span>
+      <h2 class="kk-card-header__title">{{ t("API Keys") }}</h2>
+    </div>
+<M3DataTable
     :columns="columns"
     :rows="rows"
     :row-key="(row: ApiKeyView) => String(row.id)"
@@ -209,10 +215,17 @@ onMounted(load);
       </div>
     </template>
   </M3DataTable>
+</section>
 
   <M3Dialog ref="dialog" :title="t('Create API key')" :busy="busy" :error="error" @confirm="save">
-    <M3SchemaForm :fields="fields" :model="draft" />
-  </M3Dialog>
+    <div class="kk-settings-page"><section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Settings") }}</h2>
+    </div>
+<M3SchemaForm :fields="fields" :model="draft" />
+</section>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="tokenDialog"
@@ -221,8 +234,8 @@ onMounted(load);
     :confirm-label="t('Copy token')"
     @confirm="copyToken"
   >
-    <code class="kk-code">{{ createdToken }}</code>
-  </M3Dialog>
+    <div class="kk-settings-page"><code class="kk-code">{{ createdToken }}</code>
+  </div></M3Dialog>
 
   <M3Dialog
     ref="deleteDialog"
@@ -234,8 +247,9 @@ onMounted(load);
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <p class="kk-dialog-message">
+    <div class="kk-settings-page"><p class="kk-dialog-message">
       {{ t("Are you sure you want to delete API key") }} <strong class="kk-mono">{{ deleteTarget?.displayName }}</strong>?
     </p>
-  </M3Dialog>
+  </div></M3Dialog>
+</div>
 </template>

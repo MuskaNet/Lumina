@@ -99,13 +99,14 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" @click="refreshConnectors">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" @click="refreshConnectors">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh connectors") }}
     </button>
     <button type="button" class="micl-button-outlined-s" @click="clearCache">{{ t("Clear Docker cache") }}</button>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="load">{{ t("Reload") }}</button>
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="load">{{ t("Reload") }}</button>
   </div>
 
   <p v-if="status" class="kk-form-error" role="alert">{{ status }}</p>
@@ -121,7 +122,12 @@ onMounted(load);
     </div>
   </div>
 
-  <M3DataTable
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">deployed_code</span></span>
+      <h2 class="kk-card-header__title">{{ t("Docker Registry") }}</h2>
+    </div>
+<M3DataTable
     :columns="columns"
     :rows="rows"
     :row-key="(row: DockerConnector) => String(row.repository)"
@@ -136,6 +142,7 @@ onMounted(load);
     </template>
     <template #cell-active="{ row }">{{ row.active ? t("Yes") : t("No") }}</template>
   </M3DataTable>
+</section>
 
   <div v-if="transferEntries.length" class="kk-summary">
     <div v-for="entry in transferEntries" :key="entry.key" class="kk-summary__item">
@@ -143,4 +150,5 @@ onMounted(load);
       <strong class="kk-summary__value">{{ entry.value }}</strong>
     </div>
   </div>
+</div>
 </template>

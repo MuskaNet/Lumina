@@ -190,15 +190,16 @@ onMounted(loadJobs);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" :disabled="busy" @click="start">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="busy" @click="start">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">play_arrow</span>
       {{ busy ? t("Starting…") : t("Start repository data migration") }}
     </button>
-    <button type="button" class="micl-button-outlined-s" :disabled="selected == null" @click="refreshJob()">
+    <button type="button" class="micl-button-tonal-s" :disabled="selected == null" @click="refreshJob()">
       {{ t("Refresh job") }}
     </button>
-    <button type="button" class="micl-button-outlined-s kk-toolbar__spacer" @click="loadJobs">
+    <button type="button" class="micl-button-tonal-s kk-toolbar__spacer" @click="loadJobs">
       {{ t("Reload jobs") }}
     </button>
   </div>
@@ -207,7 +208,12 @@ onMounted(loadJobs);
     {{ t("Copies repository blobs from a Nexus instance. Metadata and packages run as separate stages so each can be resumed.") }}
   </p>
 
-  <div class="kk-field-grid">
+  <section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Source") }}</h2>
+    </div>
+<div class="kk-field-grid">
     <div class="micl-textfield-outlined kk-field--wide">
       <label for="rdm-url">{{ t("Source URL") }}</label>
       <input id="rdm-url" v-model="draft.sourceBaseUrl" type="url" placeholder="https://nexus.example.com" autocomplete="off">
@@ -246,10 +252,16 @@ onMounted(loadJobs);
       ></textarea>
     </div>
   </div>
+</section>
 
-  <h3 class="kk-schema-form__group">{{ t("Migration jobs") }}</h3>
 
-  <M3DataTable
+
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">compare_arrows</span></span>
+      <h2 class="kk-card-header__title">{{ t("Migration jobs") }}</h2>
+    </div>
+<M3DataTable
     :columns="jobColumns"
     :rows="jobs"
     :row-key="(row: MigrationStatus) => String(row.jobId)"
@@ -267,9 +279,13 @@ onMounted(loadJobs);
       </div>
     </template>
   </M3DataTable>
+</section>
 
-  <template v-if="selected">
-    <h3 class="kk-schema-form__group">{{ t("Job") }} {{ selected.jobId }}</h3>
+  <section class="kk-surface-card" v-if="selected">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Job") }} {{ selected.jobId }}</h2>
+    </div>
 
     <div class="kk-summary">
       <div v-for="entry in summaryEntries" :key="entry.label" class="kk-summary__item">
@@ -283,7 +299,7 @@ onMounted(loadJobs);
     </div>
     <span class="kk-muted">{{ progress }}% {{ t("migrated") }}</span>
 
-    <div class="kk-toolbar">
+    <div class="kk-toolbar kk-action-bar">
       <button
         type="button"
         class="micl-button-outlined-s"
@@ -310,7 +326,8 @@ onMounted(loadJobs);
       </button>
     </div>
 
-    <M3DataTable
+    <section class="kk-table-region">
+<M3DataTable
       :columns="repoColumns"
       :rows="selected.repositoryJobs ?? []"
       :row-key="(row: RepositoryStatus, index?: number) => `${row.id ?? row.sourceRepositoryName ?? index}`"
@@ -331,5 +348,7 @@ onMounted(loadJobs);
       <template #cell-failedAssets="{ row }">{{ row.failedAssets ?? 0 }}</template>
       <template #cell-pendingAssets="{ row }">{{ row.pendingAssets ?? 0 }}</template>
     </M3DataTable>
-  </template>
+</section>
+  </section>
+</div>
 </template>

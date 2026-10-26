@@ -664,8 +664,9 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" @click="openCreate">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" @click="openCreate">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create repository") }}
     </button>
@@ -674,7 +675,7 @@ onMounted(load);
       <label for="repo-filter">{{ t("Filter") }}</label>
       <input id="repo-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <button type="button" class="micl-button-outlined-s" @click="load">
+    <button type="button" class="micl-button-tonal-s" @click="load">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Refresh") }}
     </button>
@@ -706,7 +707,12 @@ onMounted(load);
     </div>
   </div>
 
-  <M3DataTable
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">inventory_2</span></span>
+      <h2 class="kk-card-header__title">{{ t("Repositories") }}</h2>
+    </div>
+<M3DataTable
     :columns="columns"
     :rows="rows"
     :row-key="(row: Repository) => row.name"
@@ -751,6 +757,7 @@ onMounted(load);
       </div>
     </template>
   </M3DataTable>
+</section>
 
   <M3Dialog
     ref="dialog"
@@ -760,10 +767,10 @@ onMounted(load);
     :error="error"
     @confirm="save"
   >
-    <M3Tabs v-if="editing && visibleTabs.length > 1" :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
+    <div class="kk-settings-page"><M3Tabs v-if="editing && visibleTabs.length > 1" :tabs="visibleTabs" :active="activeTab" @select="activeTab = $event" />
 
     <!-- General -->
-    <template v-if="!editing || activeTab === 'general'">
+    <section class="kk-surface-card" v-if="!editing || activeTab === 'general'">
       <div class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-name">{{ t("Name") }}</label>
@@ -793,13 +800,14 @@ onMounted(load);
           <span>{{ t("Strict content type validation") }}</span>
         </label>
       </div>
-    </template>
+    </section>
 
     <!-- Hosted / proxy / group -->
-    <template v-if="!editing ? draftType !== '' : activeTab === 'behavior'">
-      <h3 v-if="!editing" class="kk-form-section-title">
-        {{ isHosted ? t("Hosted settings") : isProxy ? t("Proxy settings") : t("Group settings") }}
-      </h3>
+    <section class="kk-surface-card" v-if="!editing ? draftType !== '' : activeTab === 'behavior'">
+      <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ isHosted ? t("Hosted settings") : isProxy ? t("Proxy settings") : t("Group settings") }}</h2>
+    </div>
       <div v-if="isHosted" class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-write-policy">{{ t("Write policy") }}</label>
@@ -1054,11 +1062,14 @@ onMounted(load);
           </M3List>
         </section>
       </div>
-    </template>
+    </section>
 
     <!-- Format-specific -->
-    <template v-if="!editing ? showFormatTab : activeTab === 'format'">
-      <h3 v-if="!editing" class="kk-form-section-title">{{ t("Format settings") }}</h3>
+    <section class="kk-surface-card" v-if="!editing ? showFormatTab : activeTab === 'format'">
+      <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Format settings") }}</h2>
+    </div>
       <div v-if="draftFormat === 'raw'" class="kk-field-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-disposition">{{ t("Content disposition") }}</label>
@@ -1216,10 +1227,10 @@ onMounted(load);
           <input id="repo-conan-bytes" v-model.number="draft.conanManifestMaxBytes" type="number" min="1" max="2147483646" step="1" placeholder="Inherit server default">
         </div>
         <p v-if="editing" class="kk-hint kk-field--wide">{{ conanStatusText }}</p>
-        <div v-if="editing" class="kk-toolbar kk-field--wide">
+        <div v-if="editing" class="kk-toolbar kk-field--wide kk-action-bar">
           <button
             type="button"
-            class="micl-button-outlined-s"
+            class="micl-button-tonal-s"
             :disabled="busy || conanStatusBusy"
             @click="loadConanStatus"
           >
@@ -1227,15 +1238,15 @@ onMounted(load);
           </button>
         </div>
       </div>
-    </template>
+    </section>
 
     <!-- Signing keys and index operations (existing apt/alpine repositories) -->
-    <template v-if="editing && activeTab === 'keys'">
+    <section class="kk-surface-card" v-if="editing && activeTab === 'keys'">
       <p class="kk-muted">
         {{ t("Signed metadata needs a key. Generating a new key republishes every index that uses it.") }}
       </p>
-      <div class="kk-toolbar">
-        <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="loadSigningStatus">
+      <div class="kk-toolbar kk-action-bar">
+        <button type="button" class="micl-button-tonal-s" :disabled="busy" @click="loadSigningStatus">
           {{ t("Refresh status") }}
         </button>
         <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="rebuildMetadata">
@@ -1250,7 +1261,7 @@ onMounted(load);
         >
           {{ t("Download public key") }}
         </a>
-        <button type="button" class="micl-button-filled-s" :disabled="busy" @click="rotateSigningKey(true)">
+        <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="busy" @click="rotateSigningKey(true)">
           {{ t("Generate new key") }}
         </button>
       </div>
@@ -1273,14 +1284,14 @@ onMounted(load);
         </div>
       </div>
 
-      <div class="kk-toolbar">
+      <div class="kk-toolbar kk-action-bar">
         <button type="button" class="micl-button-outlined-s" :disabled="busy" @click="rotateSigningKey(false)">
           {{ t("Import key") }}
         </button>
       </div>
 
       <p v-if="statusText" class="kk-hint" role="status">{{ statusText }}</p>
-    </template>
+    </section></div>
   </M3Dialog>
 
   <M3Dialog
@@ -1293,8 +1304,9 @@ onMounted(load);
     :busy="busy"
     @confirm="confirmDelete"
   >
-    <p class="kk-dialog-message">
+    <div class="kk-settings-page"><p class="kk-dialog-message">
       {{ t("Are you sure you want to delete repository") }} <strong class="kk-mono">{{ deleteTarget?.name }}</strong>?
-    </p>
+    </p></div>
   </M3Dialog>
+</div>
 </template>

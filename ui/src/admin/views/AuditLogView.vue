@@ -88,7 +88,13 @@ onMounted(() => load(0));
 </script>
 
 <template>
-  <div class="kk-toolbar">
+<div class="kk-settings-page">
+<section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">filter_list</span></span>
+      <h2 class="kk-card-header__title">{{ t("Filters") }}</h2>
+    </div>
+<div class="kk-toolbar kk-action-bar">
     <div class="micl-textfield-outlined kk-filter">
       <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
       <label for="audit-q">{{ t("Search") }}</label>
@@ -110,21 +116,22 @@ onMounted(() => load(0));
       <label for="audit-to">{{ t("To") }}</label>
       <input id="audit-to" v-model="filters.to" type="datetime-local">
     </div>
-    <button type="button" class="micl-button-filled-s" @click="load(0)">
+    <button type="button" class="micl-button-filled-m kk-primary-action" @click="load(0)">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">search</span>
       {{ t("Apply") }}
     </button>
   </div>
+</section>
 
-  <div class="kk-toolbar">
+  <div class="kk-toolbar kk-action-bar">
     <span class="kk-muted">{{ summary() }}</span>
     <span class="kk-muted kk-toolbar__spacer">{{ t("Page") }} {{ page.page + 1 }} / {{ totalPages() }}</span>
-    <button type="button" class="micl-button-outlined-s" :disabled="page.page <= 0" @click="load(page.page - 1)">
+    <button type="button" class="micl-button-tonal-s" :disabled="page.page <= 0" @click="load(page.page - 1)">
       {{ t("Previous") }}
     </button>
     <button
       type="button"
-      class="micl-button-outlined-s"
+      class="micl-button-tonal-s"
       :disabled="page.page >= totalPages() - 1"
       @click="load(page.page + 1)"
     >
@@ -132,7 +139,12 @@ onMounted(() => load(0));
     </button>
   </div>
 
-  <M3DataTable
+  <section class="kk-table-surface">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">receipt_long</span></span>
+      <h2 class="kk-card-header__title">{{ t("Audit Log") }}</h2>
+    </div>
+<M3DataTable
     :columns="columns"
     :rows="page.items"
     :row-key="(row: AuditEntry, index?: number) => `${row.occurredAt}-${row.path}-${index}`"
@@ -153,5 +165,7 @@ onMounted(() => load(0));
       </span>
     </template>
   </M3DataTable>
+</section>
+</div>
 </template>
 

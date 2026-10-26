@@ -92,44 +92,84 @@ onMounted(load);
 <template>
   <form class="kk-upload-container" @submit.prevent="upload">
     <header class="kk-upload-heading">
-      <h2 class="kk-empty-state__title">{{ t("Upload a component") }}</h2>
+      <h2 class="kk-empty-state__title kk-upload-heading__title">{{ t("Upload a component") }}</h2>
+      <p class="kk-upload-heading__subtitle">
+        {{ t("Upload assets to a hosted repository using format-specific component specifications.") }}
+      </p>
     </header>
+
     <fieldset class="kk-upload-fields" :disabled="loading || busy">
-      <div class="kk-field-grid">
-        <div class="micl-textfield-outlined kk-field--wide">
-          <label for="upload-repository">{{ t("Repository") }}</label>
-          <select id="upload-repository" v-model="selected" :disabled="!uploadable.length" required>
-            <option v-if="!uploadable.length" value="">{{ t("No uploadable repositories") }}</option>
-            <option v-for="repo in uploadable" :key="repo.name" :value="repo.name">{{ repo.name }} ({{ repo.format }})</option>
-          </select>
-        </div>
-      </div>
-      <template v-if="spec">
-        <section v-for="group in groups" :key="group.name" class="kk-upload-section">
-          <h3 class="kk-form-section-title">{{ t(group.name) }}</h3>
-          <UploadFields :fields="group.fields" :draft="component" prefix="upload-component" />
-        </section>
-        <section class="kk-upload-section">
-          <h3 class="kk-form-section-title">{{ t("Assets") }}</h3>
-          <div v-for="(asset, index) in assets" :key="asset.id" class="kk-upload-asset-card">
-            <div v-if="spec.multipleUpload" class="kk-upload-asset-header">
-              <span class="kk-upload-asset-title">{{ t("Asset #") }}{{ index + 1 }}</span>
-              <button v-if="assets.length > 1" type="button" class="micl-button-text-s" @click="assets.splice(index, 1)">{{ t("Remove asset") }}</button>
-            </div>
-            <UploadFields :fields="spec.assetFields" :draft="asset.draft" :prefix="`upload-asset-${asset.id}`" />
+      <!-- 步骤 1：仓库选择 -->
+      <section class="kk-upload-step-card">
+        <header class="kk-upload-step-card__head">
+          <span class="kk-upload-step-badge">1</span>
+          <div class="kk-upload-step-card__title-group">
+            <h3 class="kk-upload-step-title">{{ t("Select target repository") }}</h3>
+            <p class="kk-upload-step-desc">{{ t("Choose the hosted repository to publish components to.") }}</p>
           </div>
-          <div v-if="spec.multipleUpload">
-            <button type="button" class="micl-button-tonal-s" @click="addAsset">
-              <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>{{ t("Add another asset") }}
-            </button>
+        </header>
+        <div class="kk-upload-step-body">
+          <div class="micl-textfield-outlined kk-field--wide">
+            <label for="upload-repository">{{ t("Repository") }}</label>
+            <select id="upload-repository" v-model="selected" :disabled="!uploadable.length" required>
+              <option v-if="!uploadable.length" value="">{{ t("No uploadable repositories") }}</option>
+              <option v-for="repo in uploadable" :key="repo.name" :value="repo.name">{{ repo.name }} ({{ repo.format }})</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <template v-if="spec">
+        <!-- 步骤 2：命名空间与组件属性配置 -->
+        <section v-for="(group, gIdx) in groups" :key="group.name" class="kk-upload-step-card kk-upload-step-card--namespace">
+          <header class="kk-upload-step-card__head">
+            <span class="kk-upload-step-badge">{{ 2 + gIdx }}</span>
+            <div class="kk-upload-step-card__title-group">
+              <h3 class="kk-upload-step-title">{{ t(group.name) }}</h3>
+              <p class="kk-upload-step-desc">{{ t("Specify the namespace coordinates and release attributes.") }}</p>
+            </div>
+          </header>
+          <div class="kk-upload-step-body">
+            <UploadFields :fields="group.fields" :draft="component" prefix="upload-component" />
+          </div>
+        </section>
+
+        <!-- 步骤 3：资产文件上传 -->
+        <section class="kk-upload-step-card">
+          <header class="kk-upload-step-card__head">
+            <span class="kk-upload-step-badge">{{ 2 + groups.length }}</span>
+            <div class="kk-upload-step-card__title-group">
+              <h3 class="kk-upload-step-title">{{ t("Assets") }}</h3>
+              <p class="kk-upload-step-desc">{{ t("Attach binary assets, signatures or package files.") }}</p>
+            </div>
+          </header>
+          <div class="kk-upload-step-body">
+            <div v-for="(asset, index) in assets" :key="asset.id" class="kk-upload-asset-card">
+              <div v-if="spec.multipleUpload" class="kk-upload-asset-header">
+                <span class="kk-upload-asset-title">{{ t("Asset #") }}{{ index + 1 }}</span>
+                <button v-if="assets.length > 1" type="button" class="micl-button-text-s" @click="assets.splice(index, 1)">{{ t("Remove asset") }}</button>
+              </div>
+              <UploadFields :fields="spec.assetFields" :draft="asset.draft" :prefix="`upload-asset-${asset.id}`" />
+            </div>
+            <div v-if="spec.multipleUpload" class="kk-upload-add-action">
+              <button type="button" class="micl-button-tonal-s kk-pill-btn" @click="addAsset">
+                <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>{{ t("Add another asset") }}
+              </button>
+            </div>
           </div>
         </section>
       </template>
-      <div class="kk-toolbar">
-        <button type="submit" class="micl-button-filled-s" :disabled="!spec || !selected">
-          <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">upload</span>{{ busy ? t("Uploading…") : t("Upload") }}
+
+      <!-- 核心操作按钮 -->
+      <div class="kk-upload-actions">
+        <button type="submit" class="micl-button-filled-s kk-primary-pill-btn" :disabled="!spec || !selected">
+          <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">upload</span>
+          <span>{{ busy ? t("Uploading…") : t("Upload") }}</span>
         </button>
-        <span v-if="target" class="kk-muted">{{ target.format }}</span>
+        <span v-if="target" class="kk-tonal-chip">
+          <span class="material-symbols-outlined kk-tonal-chip__icon" aria-hidden="true">category</span>
+          {{ target.format }}
+        </span>
       </div>
     </fieldset>
     <p v-if="status" class="kk-form-error" role="alert">{{ status }}</p>

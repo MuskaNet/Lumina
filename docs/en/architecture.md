@@ -64,6 +64,10 @@ Admin UI and Browse UI are Vue 3 applications built from `ui/` and served by the
 - User browser: `/browse/`
 - Health and metrics: management port, usually `8081`
 
+The repository browser also uses borderless filled surfaces for its welcome, catalog, upload, and detail cards. Cards and upload forms fill the outer content container without internal width caps. The desktop tree/detail split defaults to 68%/32%, with resizing constrained to 65–70% for the tree; viewports of 860px or less stack the panes. Long filenames stay on one line and scroll horizontally inside the tree, and wide catalog tables scroll without squeezing their columns. Desktop detail panes fill the remaining shell height and scroll internally only when their content overflows; other pages and the mobile stacked layout retain normal content scrolling. Keyboard focus indicators and MICL control borders remain intact. The usage selector uses the standard MICL outlined select, usage-copy results use the global Snackbar, and download buttons have no glow in either idle or hover states.
+
+The admin console groups configuration and results into theme-driven, borderless filled surfaces. Inner form containers inherit the content area's width without additional width caps; grids stack into a single column at viewport widths of 768px or less. MICL retains ownership of input and selector rendering and behavior. Shared layout rules live in `ui/src/shared/styles/app.css` and are available to both admin and browse entrypoints.
+
 ## Module Boundaries
 
 | Module | Responsibility |

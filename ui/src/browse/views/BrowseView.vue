@@ -33,7 +33,7 @@ const props = defineProps<{
 }>();
 
 const TREE_WIDTH_KEY = "kkrepo.browse.treePaneWidthPct";
-const TREE_WIDTH_DEFAULT = 58;
+const TREE_WIDTH_DEFAULT = 68;
 
 const splitEl = ref<HTMLElement | null>(null);
 const tree = ref<InstanceType<typeof BrowseTree> | null>(null);
@@ -71,7 +71,7 @@ function readTreeWidth(): number {
 }
 
 function clampTreeWidth(value: number): number {
-  return Math.max(25, Math.min(75, value));
+  return Math.max(65, Math.min(70, value));
 }
 
 function persistTreeWidth(): void {
@@ -322,6 +322,8 @@ watch(
       class="kk-browse-resizer"
       role="separator"
       aria-orientation="vertical"
+      aria-valuemin="65"
+      aria-valuemax="70"
       :aria-valuenow="Math.round(treeWidth)"
       :aria-label="t('Resize tree and detail panes')"
       tabindex="0"

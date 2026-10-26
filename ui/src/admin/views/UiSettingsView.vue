@@ -79,12 +79,13 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="kk-toolbar">
-    <button type="button" class="micl-button-filled-s" :disabled="busy || loading" @click="save">
+<div class="kk-settings-page">
+<div class="kk-toolbar kk-action-bar">
+    <button type="button" class="micl-button-filled-m kk-primary-action" :disabled="busy || loading" @click="save">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">save</span>
       {{ busy ? t("Saving…") : t("Save settings") }}
     </button>
-    <button type="button" class="micl-button-outlined-s" @click="load">
+    <button type="button" class="micl-button-tonal-s" @click="load">
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">refresh</span>
       {{ t("Reload") }}
     </button>
@@ -97,7 +98,12 @@ onMounted(load);
     </div>
   </div>
 
-  <div class="kk-field-grid">
+  <section class="kk-surface-card">
+    <div class="kk-card-header">
+      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
+      <h2 class="kk-card-header__title">{{ t("Preferences") }}</h2>
+    </div>
+<div class="kk-field-grid">
     <div class="micl-textfield-outlined">
       <label for="ui-language">{{ t("Default language") }}</label>
       <select id="ui-language" v-model="language">
@@ -115,4 +121,6 @@ onMounted(load);
       </select>
     </div>
   </div>
+</section>
+</div>
 </template>
