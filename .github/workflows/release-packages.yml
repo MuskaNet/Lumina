@@ -52,13 +52,12 @@ jobs:
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Require merged main
+      - name: Require merged main for manual dispatch
         env:
-          RELEASE_VERSION: ${{ steps.version.outputs.version }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           if [[ -z "$RELEASE_TAG" && "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Release packages must be built from the merged main branch, got $GITHUB_REF" >&2
+            echo "Manually dispatched release packages must be built from the merged main branch, got $GITHUB_REF" >&2
             exit 1
           fi
 
