@@ -396,7 +396,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$RELEASE_TAG" release-assets/* --clobber --repo "$GH_REPO"
 
   publish-native-image:
     name: Publish multi-architecture Native image
