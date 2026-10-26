@@ -44,6 +44,9 @@ async function copyUrl(repo: Repository) {
     <p class="kk-empty-state__body">
       {{ t("Select a repository to browse its stored components, or search across every repository.") }}
     </p>
+    <p class="kk-empty-state__body kk-hint">
+      {{ t("Lumina is a fork of kkRepo designed to provide a more aesthetically pleasing Material Design 3 Expressive user interface, built with the MICL component library.") }}
+    </p>
   </section>
 
   <div v-for="group in grouped" :key="group.format" class="kk-format-group">

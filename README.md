@@ -1,15 +1,16 @@
-# kkRepo
+# Lumina
 
-[![CI](https://github.com/klboke/kkrepo/actions/workflows/ci.yml/badge.svg)](https://github.com/klboke/kkrepo/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/klboke/kkRepo/branch/main/graph/badge.svg)](https://codecov.io/gh/klboke/kkRepo)
-[![Release](https://img.shields.io/github/v/release/klboke/kkrepo)](https://github.com/klboke/kkrepo/releases)
-[![License](https://img.shields.io/github/license/klboke/kkrepo)](LICENSE)
-[![Container](https://img.shields.io/badge/ghcr.io-kkrepo-blue)](https://github.com/klboke/kkrepo/pkgs/container/kkrepo)
+[![CI](https://github.com/MuskaNet/Lumina/actions/workflows/ci.yml/badge.svg)](https://github.com/MuskaNet/Lumina/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/MuskaNet/Lumina/branch/main/graph/badge.svg)](https://codecov.io/gh/MuskaNet/Lumina)
+[![Release](https://img.shields.io/github/v/release/MuskaNet/Lumina)](https://github.com/MuskaNet/Lumina/releases)
+[![License](https://img.shields.io/github/license/MuskaNet/Lumina)](LICENSE)
 [![Security Policy](https://img.shields.io/badge/security-policy-green)](SECURITY.md)
 
 **English** | [中文](README.cn.md)
 
-kkRepo is a community-driven, fully open-source, self-hosted artifact repository designed to address the limitations and pain points of Sonatype Nexus Community Edition and provide the community with an open, reliable, and sustainably evolving artifact management solution. It currently supports Maven, npm, PyPI, Go, Helm, Cargo/Rust, Dart/Pub, Composer/PHP, Terraform, Swift Package Registry, Ansible Galaxy, Conda, APT/Debian, Conan 2, Alpine/APK, R/CRAN, Docker/OCI, NuGet, RubyGems, Yum, Raw, and other artifact formats.
+Lumina is a fork of [kkRepo](https://github.com/klboke/kkRepo) designed to provide a more aesthetically pleasing Material Design 3 Expressive user interface, built with the [MICL](https://github.com/MuskaNet/material-inspired-component-library) component library.
+
+Lumina inherits kkRepo's capabilities as a community-driven, fully open-source, self-hosted artifact repository designed to address the limitations and pain points of Sonatype Nexus Community Edition and provide the community with an open, reliable, and sustainably evolving artifact management solution. It currently supports Maven, npm, PyPI, Go, Helm, Cargo/Rust, Dart/Pub, Composer/PHP, Terraform, Swift Package Registry, Ansible Galaxy, Conda, APT/Debian, Conan 2, Alpine/APK, R/CRAN, Docker/OCI, NuGet, RubyGems, Yum, Raw, and other artifact formats.
 
 ## Features
 
@@ -19,7 +20,7 @@ kkRepo is a community-driven, fully open-source, self-hosted artifact repository
 - Artifact security scanning with CycloneDX SBOM generation, known-vulnerability matching, policy and waiver management, and optional download enforcement.
 - Rich artifact cleanup policies for enterprise-grade artifact lifecycle management.
 - Compatibility with Sonatype Nexus APIs, user permission model, and the `/repository/<repo>/...` URL layout.
-- Use kkRepo as a drop-in replacement for Sonatype Nexus, with one-click migration of existing data while preserving repository domains and URLs, so client configurations and CI workflows continue unchanged.
+- Use Lumina as a drop-in replacement for Sonatype Nexus, with one-click migration of existing data while preserving repository domains and URLs, so client configurations and CI workflows continue unchanged.
 - Comprehensive identity and access control with Local, LDAP, and OIDC authentication, configurable anonymous access policies, and fine-grained permissions.
 - Comprehensive observability with Prometheus metrics export and Grafana dashboards.
 - MySQL or PostgreSQL-backed metadata and shared runtime state; MySQL remains the default.
@@ -28,7 +29,7 @@ kkRepo is a community-driven, fully open-source, self-hosted artifact repository
 
 ## Trademark Notice
 
-Sonatype, Nexus, and Nexus Repository are trademarks of Sonatype, Inc. kkRepo is an independent open source project and is not affiliated with, endorsed by, sponsored by, or connected to Sonatype, Inc. References to Sonatype Nexus Repository are used only to describe compatibility, migration, or interoperability.
+Sonatype, Nexus, and Nexus Repository are trademarks of Sonatype, Inc. Lumina is an independent open source project and is not affiliated with, endorsed by, sponsored by, or connected to Sonatype, Inc. References to Sonatype Nexus Repository are used only to describe compatibility, migration, or interoperability.
 
 ## Quick Start
 
@@ -107,13 +108,13 @@ Migration is available in the `/admin/` console:
 2. On the `Nexus Metadata` page, run `Run preflight` first, then run `Run migration` after blocking issues are resolved.
 3. On the `Nexus Repository Data` page, run `Sync metadata` to migrate repository metadata, then run `Sync packages` to migrate the real blob data.
 4. For the first repository data migration, leave `Metadata since` empty to scan all data. Later runs can set `Metadata since` for incremental migration.
-5. After migration is complete, point the original repository domain to kkRepo. Non-Docker clients can keep the same `/repository/<repo>/...` URLs; Docker clients should keep the same `/v2/...` registry entrypoint, repository names, and connector/path-based routing shape.
+5. After migration is complete, point the original repository domain to Lumina. Non-Docker clients can keep the same `/repository/<repo>/...` URLs; Docker clients should keep the same `/v2/...` registry entrypoint, repository names, and connector/path-based routing shape.
 
 Migration supports interruption and resume. Completed data is skipped on later runs. See the [Nexus Migration Guide](docs/en/nexus-migration-guide.md) for the full process.
 
 ## Compatibility And Migration Context
 
-| Dimension | Sonatype Nexus Repository OSS / Community Edition | kkRepo |
+| Dimension | Sonatype Nexus Repository OSS / Community Edition | Lumina |
 | --- | --- | --- |
 | Product positioning | A general-purpose artifact repository management platform with broad format and management coverage | Provides migration-oriented client behavior, permission model, and `/repository/<repo>/...` URL compatibility while using a relational-database, OSS/S3-first, multi-replica-friendly architecture |
 | Supported formats | Officially supports more formats; exact capabilities vary by version and distribution | Focuses on common artifact formats. Currently supports Maven, npm, PyPI, Go, Helm, Cargo/Rust, Dart/Pub, Composer/PHP, Terraform, Swift Package Registry, Ansible Galaxy, Conda, APT/Debian, Conan 2, Alpine/APK, R/CRAN, Docker/OCI, NuGet, RubyGems, Yum, and Raw. Each format is implemented as an independent protocol module for prioritized extension and validation |
@@ -123,13 +124,13 @@ Migration supports interruption and resume. Completed data is skipped on later r
 | Metadata storage | Historical versions moved across OrientDB, H2, PostgreSQL, and related migration paths. Older instances must handle database migration constraints during upgrade | Repositories, components, assets, permissions, tokens, audit logs, migration state, and rebuildable indexes use explicit MySQL or PostgreSQL table structures for easier troubleshooting, governance, and horizontal scaling |
 | Blob storage | Common deployments use local file blob store; object storage availability depends on version and configuration | OSS/S3-first, with File blob store retained for development and testing. The relational database stores only metadata, state, indexes, and references, not large blobs |
 | Search and indexing | Before 3.88.0, Nexus search and indexing were based on embedded Elasticsearch, with index files and database state separated. Index corruption or inconsistency requires Nexus repair/rebuild tasks | Uses relational-database denormalized indexes and protocol-derived metadata. browse/search/index data is designed to be rebuildable, and node-local cache loss does not affect correctness |
-| Architecture complexity | Nexus Repository is feature-rich and carries many general management capabilities and historical architecture mechanisms | kkRepo keeps the architecture simple and focuses on repository management and client protocol implementation |
+| Architecture complexity | Nexus Repository is feature-rich and carries many general management capabilities and historical architecture mechanisms | Lumina keeps the architecture simple and focuses on repository management and client protocol implementation |
 
 ## Selection Guidance
 
 - If your business scale is very small, package count and traffic are within Community Edition limits, and occasional maintenance downtime is acceptable, the open source Sonatype Nexus Repository edition may be sufficient.
-- If stability, scalability, and multi-replica deployment matter, or if you manage a large number of packages, kkRepo is designed for that deployment shape.
-- If an existing Sonatype Nexus Repository instance runs into component-count or daily-request limits after upgrading to a newer Community Edition version, kkRepo provides a one-click migration flow designed for zero-downtime migration.
+- If stability, scalability, and multi-replica deployment matter, or if you manage a large number of packages, Lumina is designed for that deployment shape.
+- If an existing Sonatype Nexus Repository instance runs into component-count or daily-request limits after upgrading to a newer Community Edition version, Lumina provides a one-click migration flow designed for zero-downtime migration.
 
 ## UI Overview
 
@@ -246,7 +247,7 @@ If you find a security issue, follow [SECURITY.md](SECURITY.md) and report it th
 
 ## License
 
-kkRepo is open sourced under the [Apache License 2.0](LICENSE).
+Lumina is open sourced under the [Apache License 2.0](LICENSE).
 
 ## Documentation
 

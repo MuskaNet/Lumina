@@ -836,7 +836,7 @@ onMounted(load);
 
       <div v-else-if="isProxy" class="kk-field-grid">
         <p v-if="swiftProxyNote" class="kk-hint kk-field--wide">
-          {{ t("Swift proxy follows the Nexus-compatible GitHub source mode. The remote is fixed to https://github.com/; use the username/token fields for private GitHub repositories. Production SwiftPM clients should always connect to kkrepo over HTTPS.") }}
+          {{ t("Swift proxy follows the Nexus-compatible GitHub source mode. The remote is fixed to https://github.com/; use the username/token fields for private GitHub repositories. Production SwiftPM clients should always connect to Lumina over HTTPS.") }}
         </p>
         <div class="micl-textfield-outlined kk-field--wide">
           <label for="repo-remote-url">{{ t("Remote URL") }}</label>

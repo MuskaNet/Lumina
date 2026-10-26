@@ -1,15 +1,16 @@
-# kkRepo
+# Lumina
 
-[![CI](https://github.com/klboke/kkrepo/actions/workflows/ci.yml/badge.svg)](https://github.com/klboke/kkrepo/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/klboke/kkRepo/branch/main/graph/badge.svg)](https://codecov.io/gh/klboke/kkRepo)
-[![Release](https://img.shields.io/github/v/release/klboke/kkrepo)](https://github.com/klboke/kkrepo/releases)
-[![License](https://img.shields.io/github/license/klboke/kkrepo)](LICENSE)
-[![Container](https://img.shields.io/badge/ghcr.io-kkrepo-blue)](https://github.com/klboke/kkrepo/pkgs/container/kkrepo)
+[![CI](https://github.com/MuskaNet/Lumina/actions/workflows/ci.yml/badge.svg)](https://github.com/MuskaNet/Lumina/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/MuskaNet/Lumina/branch/main/graph/badge.svg)](https://codecov.io/gh/MuskaNet/Lumina)
+[![Release](https://img.shields.io/github/v/release/MuskaNet/Lumina)](https://github.com/MuskaNet/Lumina/releases)
+[![License](https://img.shields.io/github/license/MuskaNet/Lumina)](LICENSE)
 [![Security Policy](https://img.shields.io/badge/security-policy-green)](SECURITY.md)
 
 [English](README.md) | **中文**
 
-kkRepo 是一款社区驱动、完全开源的自托管制品仓库，旨在解决 Sonatype Nexus 社区版的各类限制与痛点，为社区提供开放、可靠且可持续演进的制品管理方案。目前已支持 Maven、npm、PyPI、Go、Helm、Cargo/Rust、Dart/Pub、Composer/PHP、Terraform、Swift Package Registry、Ansible Galaxy、Conda、APT/Debian、Conan 2、Alpine/APK、R/CRAN、Docker/OCI、NuGet、RubyGems、Yum 和 Raw 等制品格式。
+Lumina 是 [kkRepo](https://github.com/klboke/kkRepo) 的 fork 改版，旨在实现一套更好看的 Material Design 3 Expressive 用户界面，基于 [MICL](https://github.com/MuskaNet/material-inspired-component-library) 组件库制作。
+
+Lumina 继承了 kkRepo 的完整制品管理能力，是一款社区驱动、完全开源的自托管制品仓库，旨在解决 Sonatype Nexus 社区版的各类限制与痛点，为社区提供开放、可靠且可持续演进的制品管理方案。目前已支持 Maven、npm、PyPI、Go、Helm、Cargo/Rust、Dart/Pub、Composer/PHP、Terraform、Swift Package Registry、Ansible Galaxy、Conda、APT/Debian、Conan 2、Alpine/APK、R/CRAN、Docker/OCI、NuGet、RubyGems、Yum 和 Raw 等制品格式。
 
 ## 功能特性
 
@@ -19,7 +20,7 @@ kkRepo 是一款社区驱动、完全开源的自托管制品仓库，旨在解�
 - 支持制品安全扫描，包括 CycloneDX SBOM 生成、已知漏洞匹配、策略与豁免管理，以及可选的下载阻断。
 - 支持丰富的制品清理策略，提供企业级制品生命周期管理。
 - 兼容 Sonatype Nexus API 协议、用户权限模型、和 `/repository/<repo>/...` URL 布局。
-- 可使用 kkRepo 平替 Sonatype Nexus，支持存量数据一键迁移并沿用原仓库域名和 URL，原有客户端配置与 CI 工作流无需改动。
+- 可使用 Lumina 平替 Sonatype Nexus，支持存量数据一键迁移并沿用原仓库域名和 URL，原有客户端配置与 CI 工作流无需改动。
 - 支持完整的身份与访问控制，覆盖 Local、LDAP、OIDC 认证、匿名访问策略和细粒度权限管理。
 - 支持完整的可观测性，包括 Prometheus 指标导出、提供 Grafana 面板。
 - 使用 MySQL 或 PostgreSQL 存储元数据和共享运行状态；默认仍为 MySQL。
@@ -28,7 +29,7 @@ kkRepo 是一款社区驱动、完全开源的自托管制品仓库，旨在解�
 
 ## 商标声明
 
-Sonatype、Nexus 和 Nexus Repository 是 Sonatype, Inc. 的商标。kkRepo 是独立开源项目，不隶属于 Sonatype, Inc.，也未获得其认可、赞助或背书。文档中对 Sonatype Nexus Repository 的引用仅用于准确说明兼容性、迁移或互操作性。
+Sonatype、Nexus 和 Nexus Repository 是 Sonatype, Inc. 的商标。Lumina 是独立开源项目，不隶属于 Sonatype, Inc.，也未获得其认可、赞助或背书。文档中对 Sonatype Nexus Repository 的引用仅用于准确说明兼容性、迁移或互操作性。
 
 ## 快速开始
 
@@ -107,14 +108,14 @@ curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quicksta
 2. 在 `Nexus Metadata` 页面先执行 `Run preflight`，确认无阻塞问题后执行 `Run migration`。
 3. 在 `Nexus Repository Data` 页面先执行 `Sync metadata` 迁移仓库元数据，再执行 `Sync packages` 迁移 blob 真实数据。
 4. 首次仓库数据迁移时 `Metadata since` 保持为空，扫描全量数据；后续迁移可以指定 `Metadata since` 做增量。
-5. 迁移完成后，把原制品仓库域名指向 kkRepo。非 Docker 客户端可以继续使用相同 `/repository/<repo>/...` URL；Docker 客户端应保持相同 `/v2/...` registry 入口、仓库名和 connector/path-based routing 形态。
+5. 迁移完成后，把原制品仓库域名指向 Lumina。非 Docker 客户端可以继续使用相同 `/repository/<repo>/...` URL；Docker 客户端应保持相同 `/v2/...` registry 入口、仓库名和 connector/path-based routing 形态。
 
 迁移支持中断后继续，已迁移完成的数据会跳过。完整流程见 [Nexus 迁移说明](docs/zh/nexus-migration-guide.md)。
 
 ## 兼容与迁移背景
 
-| 维度 | Sonatype Nexus Repository OSS / Community Edition | kkRepo                                                                                                        |
-| --- | --- |-------------------------------------------------------------------------------------------------------------------|
+| 维度 | Sonatype Nexus Repository OSS / Community Edition | Lumina |
+| --- | --- | --- |
 | 产品定位 | 通用制品仓库管理平台，功能完整，覆盖大量官方格式和管理能力 | 提供面向迁移的客户端行为、权限模型和 `/repository/<repo>/...` URL 布局兼容，同时采用共享关系数据库、OSS/S3-first、适合多副本部署的架构 |
 | 支持格式 | 官方支持格式更多，具体能力随版本和发行形态变化 | 聚焦常用制品格式，当前支持 Maven、npm、PyPI、Go、Helm、Cargo/Rust、Dart/Pub、Composer/PHP、Terraform、Swift Package Registry、Ansible Galaxy、Conda、APT/Debian、Conan 2、Alpine/APK、R/CRAN、Docker/OCI、NuGet、RubyGems、Yum 和 Raw；每个格式以独立 protocol 模块实现，便于按优先级扩展和验证                       |
 | 使用限制 | Community Edition 面向个人和小团队，官方限制为最多 40,000 components、100,000 requests/day；超过阈值后会暂停新增 component，直到用量回到限制以下 | 不内置 Community Edition 这类版本授权用量限制；容量边界由所选关系数据库、OSS/S3、运行副本数和部署规格决定，适合按实际业务规模扩容 |
@@ -123,13 +124,13 @@ curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quicksta
 | 元数据存储 | 版本演进中经历 OrientDB、H2、PostgreSQL 等存储迁移路径，历史实例升级需要处理数据库迁移约束 | repository、component、asset、权限、token、审计、迁移状态和可重建索引在 MySQL 或 PostgreSQL 中使用显式表结构，便于排查、治理和横向扩展 |
 | blob 存储 | 常见部署使用本地文件 blob store，也可按版本和配置使用对象存储能力 | OSS/S3-first，同时保留 File blob store 用于开发测试；关系数据库只保存元数据、状态、索引和引用，不把大 blob 放进数据库 |
 | 搜索和索引 | 3.88.0 之前的 Nexus 搜索和索引基于内嵌 Elasticsearch，索引文件和数据库状态分离；索引损坏或不一致时需要依赖 Nexus 修复/重建任务处理 | 使用关系数据库反范式索引和协议派生元数据，browse/search/index 都按可重建数据设计，节点丢缓存不影响正确性                                              |
-| 架构复杂度 | Nexus Repository 功能复杂，覆盖大量通用管理能力和历史架构机制 | kkRepo 架构简单，只聚焦仓库管理和客户端协议实现                                                                                   |
+| 架构复杂度 | Nexus Repository 功能复杂，覆盖大量通用管理能力和历史架构机制 | Lumina 架构简单，只聚焦仓库管理和客户端协议实现                                                                                   |
 
 ## 选型建议
 
 - 如果公司业务量非常小，仓库包数量和访问量都在 Community Edition 限制内，并且可以接受偶尔停机维护，Sonatype Nexus Repository 开源版本可能已经足够。
-- 如果对稳定性、扩展性和多副本部署要求较高，或者需要管理的包数量非常多，kkRepo 面向这类部署形态设计。
-- 如果存量 Sonatype Nexus Repository 实例在升级到新的 Community Edition 版本时遇到组件数量或日请求量限制问题，kkRepo 提供面向 0 停机迁移的一键迁移流程。
+- 如果对稳定性、扩展性和多副本部署要求较高，或者需要管理的包数量非常多，Lumina 面向这类部署形态设计。
+- 如果存量 Sonatype Nexus Repository 实例在升级到新的 Community Edition 版本时遇到组件数量或日请求量限制问题，Lumina 提供面向 0 停机迁移的一键迁移流程。
 
 ## UI 展示
 
@@ -246,7 +247,7 @@ AI agent 和贡献者的开发说明见 [AGENTS.md](AGENTS.md)。
 
 ## 许可证
 
-kkRepo 使用 [Apache License 2.0](LICENSE) 开源。
+Lumina 使用 [Apache License 2.0](LICENSE) 开源。
 
 ## 文档
 

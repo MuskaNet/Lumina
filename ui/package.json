@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "kkRepo admin and browse UI built with Vue 3 and MICL (Material Design 3 Expressive).",
+  "description": "Lumina admin and browse UI built with Vue 3 and MICL (Material Design 3 Expressive). A fork of kkRepo aimed at realizing a better-looking Material Design 3 Expressive user interface, based on the MICL component library.",
   "scripts": {
     "dev": "vite",
     "build": "npm run build:admin",

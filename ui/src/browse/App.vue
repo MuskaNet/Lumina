@@ -10,6 +10,7 @@ import M3TopProgressBar from "../shared/components/M3TopProgressBar.vue";
 import M3Snackbar from "../shared/components/M3Snackbar.vue";
 import M3List from "../shared/components/M3List.vue";
 import M3ListItem from "../shared/components/M3ListItem.vue";
+import MobileNavigation from "../shared/components/MobileNavigation.vue";
 import LoginDialog from "../shared/components/LoginDialog.vue";
 import { route, navigate, browseHash, BROWSE_PREFIX } from "./route";
 import BrowseView from "./views/BrowseView.vue";
@@ -70,6 +71,20 @@ async function onSignedIn() {
 
 <template>
   <M3TopProgressBar />
+  <MobileNavigation title="Lumina" :navigation-label="t('Repository browser')" :search-href="`${BROWSE_PREFIX}search`">
+    <a v-for="item in NAV" :key="item.id" :href="item.hash" :aria-current="item.id === activeId ? 'page' : undefined">
+      <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>{{ t(item.label) }}
+    </a>
+    <template #actions>
+      <template v-if="session?.userId">
+        <a href="/admin/#admin/repository/repositories" @click="beginTask()"><span class="material-symbols-outlined" aria-hidden="true">settings</span>{{ t('Admin') }}</a>
+        <div class="kk-mobile-drawer__account"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span>{{ qualifiedUser() }}</div>
+        <a :href="`${BROWSE_PREFIX}my-token`"><span class="material-symbols-outlined" aria-hidden="true">key</span>{{ t('My Token') }}</a>
+        <button type="button" @click="signOut()"><span class="material-symbols-outlined" aria-hidden="true">logout</span>{{ t('Sign out') }}</button>
+      </template>
+      <button v-else type="button" @click="loginOpen = true"><span class="material-symbols-outlined" aria-hidden="true">login</span>{{ t('Sign in') }}</button>
+    </template>
+  </MobileNavigation>
   <nav
     class="micl-navigationrail kk-rail"
     aria-label="Repository browser"
@@ -105,7 +120,7 @@ async function onSignedIn() {
   <main class="micl-panes">
     <section class="micl-pane">
       <div class="kk-page-header">
-        <h1 class="kk-page-title">kkRepo</h1>
+        <h1 class="kk-page-title">Lumina</h1>
         <p class="kk-page-subtitle">
           {{ t("Repository browser") }}
           <template v-if="version">

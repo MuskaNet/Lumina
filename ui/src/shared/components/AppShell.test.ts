@@ -35,7 +35,7 @@ describe("Material Symbols icon system", () => {
   it("renders Material Symbols ligatures instead of the Lucide sprite", () => {
     const wrapper = mount(AppShell, {
       props: {
-        title: "kkRepo",
+        title: "Lumina",
         nav: [
           {
             id: "repositories",

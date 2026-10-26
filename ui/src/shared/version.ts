@@ -11,4 +11,4 @@ export function appVersion(): string {
   return content;
 }
 
-export const PRODUCT_URL = "https://github.com/klboke/kkRepo";
+export const PRODUCT_URL = "https://github.com/MuskaNet/Lumina";

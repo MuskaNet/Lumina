@@ -7,6 +7,7 @@ import M3DataTable, {
   type DataTableSort,
 } from "../../shared/components/M3DataTable.vue";
 import { formatLogoClass, typeIconName } from "../../shared/formatIcons";
+import { writeClipboard } from "../../shared/clipboard";
 import { repositoryClientUrl, type Repository } from "../repositoryUrls";
 
 /**
@@ -117,34 +118,9 @@ async function copyUrl(row: RepositoryRow): Promise<void> {
 }
 
 /**
- * Clipboard write with the legacy `execCommand` fallback. The asynchronous
- * Clipboard API only exists in secure contexts, while the console is commonly
- * reached over plain HTTP (reverse proxies, intranet hosts).
+ * Clipboard writes live in `shared/clipboard.ts` so the repository catalog and
+ * the content detail pane share the secure-context fallback.
  */
-async function writeClipboard(text: string): Promise<void> {
-  const clipboard = globalThis.navigator?.clipboard;
-  if (clipboard?.writeText) {
-    try {
-      await clipboard.writeText(text);
-      return;
-    } catch {
-      // Fall through to the legacy path when permissions block the Clipboard API.
-    }
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  try {
-    textarea.select();
-    if (!document.execCommand?.("copy")) throw new Error("Copy command failed");
-  } finally {
-    textarea.remove();
-  }
-}
-
 onUnmounted(() => {
   if (copiedResetTimer) clearTimeout(copiedResetTimer);
 });

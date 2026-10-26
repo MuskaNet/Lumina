@@ -2,7 +2,7 @@ import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App.vue";
-import { route, type BrowseRoute } from "./route";
+import { browseHash, replaceBrowseRoute, route, searchHash, type BrowseRoute } from "./route";
 
 const REPOSITORIES = [{ name: "maven-hosted", format: "maven2", type: "hosted", online: true }];
 
@@ -57,7 +57,13 @@ async function renderApp(options: { search?: string; session?: unknown } = {}): 
 }
 
 function setView(patch: Partial<BrowseRoute>): void {
-  route.value = { view: "welcome", repo: "", path: "", query: new URLSearchParams(), ...patch };
+  const view = patch.view ?? "welcome";
+  const hash = view === "browse"
+    ? browseHash(patch.repo ?? "", patch.path ?? "")
+    : view === "search"
+      ? searchHash(patch.query?.get("format") ?? "", patch.query?.get("q") ?? "")
+      : `#browse/${view}`;
+  replaceBrowseRoute(hash);
 }
 
 /** The dialog is always mounted; only its native `open` state tells whether it is showing. */
@@ -157,14 +163,16 @@ describe("browse application", () => {
     expect(loginDialogOpen()).toBe(true);
   });
 
-  it("renders the browse view for the legacy repository route", async () => {
+  it("renders the tree and detail layout for the legacy repository route", async () => {
     const urls = await renderApp();
 
     setView({ view: "browse", repo: "maven-hosted" });
     await nextTick();
     await flushPromises();
 
-    expect(wrapper!.text()).toContain("/repository/maven-hosted/");
+    expect(wrapper!.text()).toContain("maven-hosted");
+    expect(wrapper!.text()).toContain("This repository is empty.");
+    expect((wrapper!.find(".kk-browse-split").element as HTMLElement).style.display).toBe("none");
     expect(urls.some((url) => url.startsWith("/internal/browse/maven-hosted"))).toBe(true);
   });
 

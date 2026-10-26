@@ -17,14 +17,12 @@ export interface DockerConnectorSettings {
   connectorPublicUrl?: string | null;
 }
 
-export interface Repository {
-  name: string;
-  type?: string | null;
-  format?: string | null;
-  online?: boolean;
-  url?: string | null;
-  docker?: DockerConnectorSettings | null;
-}
+/**
+ * The browse console's repository shape; shared with the tree, usage and detail
+ * modules so every browse surface agrees on one type.
+ */
+import type { BrowseRepository } from "./browseModel";
+export type Repository = BrowseRepository;
 
 export interface LocationLike {
   origin?: string;

@@ -7,6 +7,7 @@ import { beginTask } from "../progress";
 import M3SnackbarHost from "./M3Snackbar.vue";
 import M3List from "./M3List.vue";
 import M3ListItem from "./M3ListItem.vue";
+import MobileNavigation from "./MobileNavigation.vue";
 import M3TopProgressBar from "./M3TopProgressBar.vue";
 
 export interface ShellNavItem {
@@ -35,6 +36,19 @@ function openMyToken() {
 
 <template>
   <M3TopProgressBar />
+  <MobileNavigation :title="t(activeItem?.label ?? title)" :navigation-label="t('Administration')" search-href="/browse/#browse/search">
+    <a href="/browse/#browse/welcome" @click="beginTask()"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>{{ t('Back to browse') }}</a>
+    <a v-for="item in nav" :key="item.id" :href="item.href" :aria-current="item.id === activeId ? 'page' : undefined">
+      <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>{{ t(item.label) }}
+    </a>
+    <template #actions>
+      <a :href="PRODUCT_URL" target="_blank" rel="noopener noreferrer">Lumina <span v-if="version">v{{ version }}</span></a>
+      <slot name="actions" />
+      <div class="kk-mobile-drawer__account"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span>{{ accountLabel }}</div>
+      <button type="button" @click="openMyToken"><span class="material-symbols-outlined" aria-hidden="true">key</span>{{ t('My Token') }}</button>
+      <button type="button" @click="signOut()"><span class="material-symbols-outlined" aria-hidden="true">logout</span>{{ t('Sign out') }}</button>
+    </template>
+  </MobileNavigation>
   <nav class="micl-navigationrail kk-rail" aria-label="Administration">
     <div class="kk-rail-action">
       <a
@@ -79,7 +93,7 @@ function openMyToken() {
       <aside class="kk-bottom-toolbar" role="toolbar" :aria-label="t('Quick toolbar')">
         <div class="kk-bottom-toolbar__inner">
           <div class="kk-bottom-toolbar__brand">
-            <a class="kk-product-link" :href="PRODUCT_URL" target="_blank" rel="noopener noreferrer">kkRepo</a>
+            <a class="kk-product-link" :href="PRODUCT_URL" target="_blank" rel="noopener noreferrer">Lumina</a>
             <a
               v-if="version"
               class="kk-product-version"

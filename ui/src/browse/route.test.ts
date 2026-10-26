@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BROWSE_PREFIX, browseHash, parseBrowseHash, searchHash } from "./route";
+import { BROWSE_PREFIX, browseHash, parseBrowseHash, replaceBrowseRoute, route, searchHash } from "./route";
 
 describe("browse hash routes", () => {
   it("keeps the legacy prefix", () => {
@@ -70,5 +70,14 @@ describe("browse hash writers", () => {
   it("writes the search route", () => {
     expect(searchHash("", "")).toBe("#browse/search");
     expect(searchHash("npm", "log4j")).toBe("#browse/search?format=npm&q=log4j");
+  });
+
+  it("replaces the repository path without pushing a history entry", () => {
+    window.history.replaceState({}, "", "/browse/#browse/welcome");
+
+    replaceBrowseRoute("#browse/browse:repo:dir/file.txt");
+
+    expect(route.value).toMatchObject({ view: "browse", repo: "repo", path: "dir/file.txt" });
+    expect(window.location.hash).toBe("#browse/browse:repo:dir/file.txt");
   });
 });

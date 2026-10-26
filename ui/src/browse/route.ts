@@ -62,6 +62,26 @@ export function navigate(hash: string): void {
   }, 120);
 }
 
+/**
+ * Updates the selected browse path without adding a history entry. The legacy
+ * console replaced the URL while walking the repository tree so the Back button
+ * still returns to the repository catalog instead of every expanded folder.
+ */
+export function replaceBrowseRoute(hash: string): void {
+  const target = hash.replace(/^#/, "");
+  const location = globalThis.location;
+  try {
+    globalThis.history?.replaceState?.(
+      null,
+      "",
+      `${location?.pathname ?? "/browse/"}${location?.search ?? ""}#${target}`,
+    );
+  } catch {
+    // Ignore history failures (sandboxed iframes); the reactive route still updates.
+  }
+  route.value = parseBrowseHash(`#${target}`);
+}
+
 export function browseHash(repo: string, path = "", source = ""): string {
   const base = `${BROWSE_PREFIX}browse:${repo}${path ? `:${path}` : ""}`;
   return source ? `${base}?source=${encodeURIComponent(source)}` : base;
