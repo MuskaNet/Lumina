@@ -39,7 +39,7 @@ async function copyUrl(repo: Repository) {
 </script>
 
 <template>
-  <section class="kk-empty-state" style="align-items: flex-start; text-align: start">
+  <section class="kk-welcome-header">
     <h2 class="kk-empty-state__title">{{ t("Browse repositories") }}</h2>
     <p class="kk-empty-state__body">
       {{ t("Select a repository to browse its stored components, or search across every repository.") }}
@@ -48,40 +48,37 @@ async function copyUrl(repo: Repository) {
 
   <div v-for="group in grouped" :key="group.format" class="kk-format-group">
     <h3 class="kk-schema-form__group">{{ group.format }}</h3>
-    <div class="kk-repo-grid">
-      <button
-        v-for="repo in group.repos"
-        :key="repo.name"
-        type="button"
-        class="kk-repo-card"
-        @click="emit('open', repo.name)"
-      >
-        <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">inventory_2</span>
-        <span class="kk-repo-card__body">
-          <strong>{{ repo.name }}</strong>
-          <small class="kk-secondary">{{ repo.type }} · {{ repo.online ? t("Online") : t("Offline") }}</small>
-        </span>
-        <span
-          class="kk-badge"
-          :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
-        >
-          {{ repo.type }}
-        </span>
-      </button>
-    </div>
-    <p class="kk-hint">
+    <p class="kk-hint kk-format-group__hint">
       {{ t("Copy a repository URL from the list below, or open a repository to browse it.") }}
     </p>
-    <div class="kk-hint">
-      <button
-        v-for="repo in group.repos"
-        :key="`${repo.name}-url`"
-        type="button"
-        class="kk-location"
-        @click="copyUrl(repo)"
-      >
-        <code class="kk-mono">/repository/{{ repo.name }}/</code>
-      </button>
+    <div class="kk-repo-grid">
+      <article v-for="repo in group.repos" :key="repo.name" class="kk-repo-card">
+        <button
+          type="button"
+          class="kk-repo-card__open"
+          :aria-label="repo.name"
+          @click="emit('open', repo.name)"
+        >
+          <span class="micl-list-item__icon material-symbols-outlined" aria-hidden="true">inventory_2</span>
+          <span class="kk-repo-card__body">
+            <strong>{{ repo.name }}</strong>
+            <small class="kk-secondary">{{ repo.type }} · {{ repo.online ? t("Online") : t("Offline") }}</small>
+          </span>
+          <span
+            class="kk-badge"
+            :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
+          >
+            {{ repo.type }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="kk-location kk-repo-card__url"
+          @click="copyUrl(repo)"
+        >
+          <code class="kk-mono">/repository/{{ repo.name }}/</code>
+        </button>
+      </article>
     </div>
   </div>
 

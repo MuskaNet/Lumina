@@ -56,8 +56,8 @@ function onDocumentPointerDown(event: Event) {
 function positionPopover() {
   const rect = trigger.value?.getBoundingClientRect();
   if (!rect) return;
-  const width = Math.max(rect.width, 280);
-  const viewportWidth = typeof window === "undefined" ? width : window.innerWidth;
+  const viewportWidth = window.innerWidth;
+  const width = Math.min(rect.width, Math.max(0, viewportWidth - 16));
   const left = Math.min(rect.left, Math.max(8, viewportWidth - width - 8));
   position.value = { left, top: rect.bottom + 6, width };
 }
@@ -253,7 +253,8 @@ onBeforeUnmount(unbindListeners);
           :data-option-index="index"
           :tabindex="-1"
           clickable
-          :selected="option.value === activeValue"
+          :selected="option.value === modelValue"
+          :class="{ 'is-active': option.value === activeValue }"
           :aria-selected="option.value === modelValue"
           role="option"
           @click="select(option)"
@@ -265,6 +266,7 @@ onBeforeUnmount(unbindListeners);
           <template #headline>{{ option.displayName }}</template>
           <template #trailing>
             <span class="kk-recipe-type">{{ t(option.typeLabel) }}</span>
+            <span class="material-symbols-outlined kk-recipe-option__check" aria-hidden="true">{{ option.value === modelValue ? "check" : "" }}</span>
           </template>
         </M3ListItem>
         <li v-if="!filtered.length" class="kk-recipe-empty">{{ t("No matching recipes") }}</li>

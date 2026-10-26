@@ -23,6 +23,12 @@ describe("browse hash routes", () => {
     expect(route.query.get("source")).toBe("npm");
   });
 
+  it("parses the repository catalog route without a repository", () => {
+    const route = parseBrowseHash("#browse/browse");
+
+    expect(route).toMatchObject({ view: "browse", repo: "", path: "" });
+  });
+
   it("keeps colons inside the repository path tail", () => {
     const route = parseBrowseHash("#browse/browse:repo:dir/a:b");
 

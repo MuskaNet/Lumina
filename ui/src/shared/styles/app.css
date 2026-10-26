@@ -79,6 +79,41 @@ body.micl-window {
   --md-comp-text-field-input-space: 14px;
 }
 
+/* Native select menus match the compact recipe picker rows. */
+:is(.micl-textfield-outlined, .micl-textfield-filled) > select::picker(select) {
+  padding: 8px;
+  gap: 4px;
+}
+
+:is(.micl-textfield-outlined, .micl-textfield-filled) > select option {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 40px;
+  padding: 8px 12px;
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+:is(.micl-textfield-outlined, .micl-textfield-filled) > select option:checked {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+:is(.micl-textfield-outlined, .micl-textfield-filled) > select option:is(:hover, :focus-visible):not(:disabled) {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, var(--md-sys-color-surface-container-high));
+}
+
+:is(.micl-textfield-outlined, .micl-textfield-filled) > select option:disabled {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.38;
+  cursor: default;
+}
+
 /* Prevent floating label and placeholder collision */
 .micl-textfield-outlined:has(> input:not(:placeholder-shown))::before,
 .micl-textfield-outlined:has(> textarea:not(:placeholder-shown))::before,
@@ -134,6 +169,18 @@ body.micl-window {
   min-inline-size: 240px;
 }
 
+.kk-welcome-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: start;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-format-group__hint {
+  margin: 4px 0 12px;
+}
+
 .kk-repo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
@@ -142,8 +189,9 @@ body.micl-window {
 
 .kk-repo-card {
   display: flex;
-  align-items: center;
-  gap: var(--md-sys-padding-s, 12px);
+  flex-direction: column;
+  min-inline-size: 0;
+  gap: 8px;
   padding: var(--md-sys-padding-s, 12px);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-medium, 12px);
@@ -171,6 +219,29 @@ body.micl-window {
 .kk-repo-card:focus-visible {
   outline: var(--md-sys-state-focus-indicator-thickness, 3px) solid var(--md-sys-color-secondary);
   outline-offset: -2px;
+}
+
+.kk-repo-card__open {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-padding-s, 12px);
+  inline-size: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kk-repo-card__open:focus-visible {
+  outline: var(--md-sys-state-focus-indicator-thickness, 3px) solid var(--md-sys-color-secondary);
+  outline-offset: 2px;
+}
+
+.kk-repo-card__url {
+  font-size: var(--md-sys-typescale-body-small-size);
 }
 
 .kk-repo-card__body {
@@ -452,8 +523,8 @@ body.micl-window {
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  gap: 12px;
+  padding: 10px 14px;
   background-color: var(--md-sys-color-surface-container-high, var(--md-sys-color-surface-container));
   color: var(--md-sys-color-on-surface);
   border-radius: 9999px;
@@ -487,18 +558,22 @@ body.micl-window {
   background-color: var(--md-sys-color-outline-variant);
 }
 
+.kk-bottom-toolbar__admin-btn,
 .kk-bottom-toolbar__account-btn,
 .kk-bottom-toolbar__login-btn {
   margin: 0 !important;
-  inline-size: 40px !important;
-  min-inline-size: 40px !important;
-  block-size: 40px !important;
+  inline-size: 48px !important;
+  min-inline-size: 48px !important;
+  block-size: 48px !important;
+  flex-shrink: 0;
+  text-decoration: none;
   border-radius: 50% !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
 
+.kk-bottom-toolbar__admin-btn,
 .kk-bottom-toolbar__account-btn {
   color: var(--md-sys-color-on-surface-variant) !important;
 }
@@ -509,6 +584,7 @@ body.micl-window {
   block-size: 28px !important;
 }
 
+.kk-bottom-toolbar__admin-btn:hover,
 .kk-bottom-toolbar__account-btn:hover {
   color: var(--md-sys-color-on-surface) !important;
 }
@@ -571,9 +647,26 @@ body.micl-window {
   opacity: 0.8;
 }
 
+.kk-bottom-toolbar--browse .kk-bottom-toolbar__search {
+  box-sizing: border-box;
+  inline-size: min(240px, calc(100vw - 184px));
+  min-inline-size: 0;
+  min-block-size: 48px;
+  padding: 10px 18px;
+}
+
+.kk-bottom-toolbar--browse .kk-bottom-toolbar__search:focus-within {
+  inline-size: min(320px, calc(100vw - 184px));
+}
+
+.kk-bottom-toolbar--browse .kk-bottom-toolbar__search input {
+  min-inline-size: 0;
+  font-size: 1rem;
+}
+
 /* Offset snackbar so it does not collide with floating toolbar */
 .micl-snackbar.kk-snackbar {
-  inset-block-end: 80px !important;
+  inset-block-end: 104px !important;
 }
 
 /* ---- Toolbar / summary ------------------------------------------------- */
@@ -1818,6 +1911,7 @@ dialog.micl-dialog .micl-dialog__actions {
 }
 
 .kk-recipe-popover {
+  box-sizing: border-box;
   position: fixed;
   inset: auto;
   z-index: 1200;
@@ -1833,6 +1927,15 @@ dialog.micl-dialog .micl-dialog__actions {
   box-shadow: var(--md-sys-elevation-level3, 0 6px 20px rgb(0 0 0 / 24%));
 }
 
+.kk-recipe-search,
+.kk-cleanup-repo-search {
+  --md-comp-text-field-container-height: 40px;
+  --md-comp-text-field-icon-size: 20px;
+  --md-comp-text-field-input-space: 12px;
+  --md-sys-typescale-body-large-size: 0.875rem;
+  --md-sys-typescale-body-large-line-height: 1.25rem;
+}
+
 .kk-recipe-search {
   margin: 0;
 }
@@ -1846,6 +1949,26 @@ dialog.micl-dialog .micl-dialog__actions {
   list-style: none;
   /* Compact rows for a picker list (MICL defaults to 56px for one line). */
   --md-comp-list-item-one-line-container-height: 40px;
+}
+
+.kk-recipe-option,
+.kk-cleanup-repo-option {
+  margin-block: 2px;
+}
+
+.kk-recipe-option[aria-selected="true"] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.kk-recipe-option.is-active:not([aria-selected="true"]) {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, var(--md-sys-color-surface-container-high));
+}
+
+.kk-recipe-option__check {
+  flex: 0 0 20px;
+  inline-size: 20px;
+  font-size: 20px;
 }
 
 .kk-recipe-option .format-logo {
@@ -2060,5 +2183,53 @@ dialog.micl-dialog .micl-dialog__actions {
   font-size: 0.75rem;
   text-align: end;
 }
+
+/* ---- Browse: repository catalog ---------------------------------------- */
+
+.kk-repo-name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Client endpoint plus its copy affordance; long Docker/npm registry URLs wrap
+ * instead of widening the table. */
+.kk-repo-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.kk-repo-url__link {
+  color: var(--md-sys-color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.kk-repo-url__link:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+}
+
+.kk-repo-url__copy {
+  margin: 0 !important;
+  inline-size: 32px !important;
+  min-inline-size: 32px !important;
+  block-size: 32px !important;
+  flex-shrink: 0;
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.kk-repo-url__copy:hover {
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.kk-repo-url__copy .material-symbols-outlined {
+  font-size: 18px !important;
+}
+
 
 

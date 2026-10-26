@@ -1,20 +1,27 @@
-import { readSettings, writeSettings, BUNDLED_THEMES, DEFAULT_THEME } from "../settings";
+import {
+  readSettings,
+  writeSettings,
+  BUNDLED_THEMES,
+  DEFAULT_THEME,
+  normalizeThemeId,
+} from "../settings";
 
-const THEME_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const DARK_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
 export type ColorScheme = "light" | "dark";
 
 export function normalizeTheme(value: unknown, supported: readonly string[] = defaultThemes()): string {
-  const candidate = String(value ?? "").trim().toLowerCase();
-  if (!THEME_PATTERN.test(candidate)) return DEFAULT_THEME;
+  const candidate = normalizeThemeId(value);
+  if (!candidate) return DEFAULT_THEME;
   return supported.includes(candidate) ? candidate : DEFAULT_THEME;
 }
 
 export function defaultThemes(): string[] {
   const advertised = readSettings().supportedDefaultThemes;
   const themes = Array.isArray(advertised)
-    ? advertised.filter((theme) => typeof theme === "string" && THEME_PATTERN.test(theme))
+    ? advertised
+        .map((theme) => normalizeThemeId(theme))
+        .filter((theme): theme is string => theme !== null)
     : [...BUNDLED_THEMES];
   if (!themes.includes(DEFAULT_THEME)) themes.unshift(DEFAULT_THEME);
   return [...new Set(themes)];

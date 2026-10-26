@@ -23,6 +23,7 @@ const EXTRA_ICONS = [
   "arrow_downward",
   "arrow_back",
   "info",
+  "check",
   "check_circle",
   "error",
   "account_circle",

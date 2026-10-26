@@ -9,16 +9,19 @@ import "../shared/styles/app.css";
 import App from "./App.vue";
 import { router } from "./router";
 import { initTheme } from "../shared/theme";
-import { applyLanguagePreference } from "../shared/i18n";
-import { readSettings } from "../shared/settings";
+import { applyCachedUiPreferences, syncUiPreferencesFromServer } from "../shared/ui-preferences";
 import { installMiclValueSync } from "../shared/micl-sync";
 
 installMiclValueSync();
 initTheme();
 document.body.classList.add("micl-window");
-applyLanguagePreference(readSettings().defaultLanguage);
+applyCachedUiPreferences();
 
 createApp(App).use(router).mount("#app");
+
+// Apply the defaults stored on the server (readable before sign-in). The cached
+// values were applied above, so a slow or failing request never blocks the console.
+void syncUiPreferencesFromServer();
 
 // MICL registers its progressive enhancements after mount so the runtime
 // observes the nodes Vue renders.

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
 import RepositoryRecipeCombobox from "./RepositoryRecipeCombobox.vue";
 import { buildRecipeOptions } from "../repositoryRecipes";
@@ -22,6 +22,37 @@ async function openCombobox(wrapper: ReturnType<typeof mountCombobox>) {
 }
 
 describe("RepositoryRecipeCombobox", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("keeps the selected checkmark when another row is hovered or keyboard-active", async () => {
+    const wrapper = mountCombobox();
+    await openCombobox(wrapper);
+    await wrapper.find('[data-recipe-value="docker-proxy"]').trigger("mousemove");
+
+    const selected = wrapper.find('[data-recipe-value="maven2-hosted"]');
+    const hovered = wrapper.find('[data-recipe-value="docker-proxy"]');
+    expect(selected.classes()).toContain("is-selected");
+    expect(selected.find(".kk-recipe-option__check").text()).toBe("check");
+    expect(hovered.classes()).not.toContain("is-selected");
+    expect(hovered.classes()).toContain("is-active");
+    expect(hovered.find(".kk-recipe-option__check").text()).toBe("");
+    wrapper.unmount();
+  });
+
+  it("matches the dropdown width and left edge to a narrow trigger", async () => {
+    const wrapper = mountCombobox();
+    vi.spyOn(wrapper.find(".kk-recipe-trigger").element, "getBoundingClientRect").mockReturnValue({
+      left: 100, right: 340, top: 100, bottom: 152, width: 240, height: 52,
+      x: 100, y: 100, toJSON: () => ({}),
+    });
+    await openCombobox(wrapper);
+
+    const popover = wrapper.find(".kk-recipe-popover").element as HTMLElement;
+    expect(popover.style.width).toBe("240px");
+    expect(popover.style.left).toBe("100px");
+    wrapper.unmount();
+  });
+
   it("shows the selected recipe with its brand logo and type badge", () => {
     const wrapper = mountCombobox();
     const trigger = wrapper.find(".kk-recipe-trigger");

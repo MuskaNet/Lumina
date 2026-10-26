@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import WelcomeView from "../browse/views/WelcomeView.vue";
 import { FORMAT_ICON_NAMES } from "./repositoryIcons";
 
@@ -46,6 +46,8 @@ describe("repository format icons", () => {
 });
 
 describe("welcome view", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   const repositories = [
     { name: "maven-hosted", format: "maven2", type: "hosted", online: true },
     { name: "npm-proxy", format: "npm", type: "proxy", online: false },
@@ -70,10 +72,42 @@ describe("welcome view", () => {
     ]);
   });
 
+  it("places each copy link below the unchanged repository summary within its card", () => {
+    const wrapper = mount(WelcomeView, { props: { repositories } });
+
+    for (const card of wrapper.findAll(".kk-repo-card")) {
+      const summary = card.find(".kk-repo-card__open");
+      const copy = card.find(".kk-repo-card__url");
+      expect(summary.find(".material-symbols-outlined").text()).toBe("inventory_2");
+      expect(summary.find("strong").exists()).toBe(true);
+      expect(summary.find(".kk-secondary").exists()).toBe(true);
+      expect(summary.find(".kk-badge").exists()).toBe(true);
+      expect(summary.element.nextElementSibling).toBe(copy.element);
+      expect(card.element.lastElementChild).toBe(copy.element);
+      expect(copy.find("button").exists()).toBe(false);
+    }
+
+    for (const group of wrapper.findAll(".kk-format-group")) {
+      expect(group.find("h3").element.nextElementSibling).toBe(group.find(".kk-hint").element);
+      expect(group.find(".kk-hint").element.nextElementSibling).toBe(group.find(".kk-repo-grid").element);
+    }
+    expect(wrapper.find(".kk-welcome-header.kk-empty-state").exists()).toBe(false);
+  });
+
+  it("copies only its own repository URL without opening the repository", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    const wrapper = mount(WelcomeView, { props: { repositories } });
+
+    await wrapper.find(".kk-repo-card__url").trigger("click");
+
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/repository/maven-hosted/`);
+    expect(wrapper.emitted("open")).toBeUndefined();
+  });
+
   it("opens a repository when its card is selected", async () => {
     const wrapper = mount(WelcomeView, { props: { repositories } });
 
-    await wrapper.findAll(".kk-repo-card")[0].trigger("click");
+    await wrapper.findAll(".kk-repo-card__open")[0].trigger("click");
 
     expect(wrapper.emitted("open")).toEqual([["maven-hosted"]]);
   });

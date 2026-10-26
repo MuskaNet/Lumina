@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { api } from "../../shared/api/client";
-import { t, applyLanguagePreference } from "../../shared/i18n";
+import { t } from "../../shared/i18n";
 import { showToast } from "../../shared/snackbar";
-import { setTheme } from "../../shared/theme";
-import type { UiLanguage } from "../../shared/settings";
+import { cacheServerUiSettings, writeSettings, type UiLanguage } from "../../shared/settings";
+import { applyCachedUiPreferences } from "../../shared/ui-preferences";
 
 interface UiSettingsView {
   defaultLanguage: string;
@@ -39,6 +39,8 @@ async function load() {
     settings.value = payload;
     language.value = payload.defaultLanguage;
     theme.value = payload.defaultTheme;
+    // Keep the local start-up cache in sync with the server-side defaults.
+    cacheServerUiSettings(payload);
   } catch (error) {
     showToast(`${t("Failed to load UI settings")}: ${(error as Error).message}`, "error");
   } finally {
@@ -53,9 +55,18 @@ async function save() {
       defaultLanguage: language.value,
       defaultTheme: theme.value,
     });
-    if (payload) settings.value = payload;
-    setTheme(theme.value);
-    applyLanguagePreference(language.value as UiLanguage);
+    if (payload) {
+      settings.value = payload;
+      // Persist the saved defaults locally as well: the next reload applies them
+      // synchronously instead of waiting for the server round-trip.
+      cacheServerUiSettings(payload);
+    } else {
+      writeSettings({
+        defaultLanguage: language.value as UiLanguage,
+        defaultTheme: theme.value,
+      });
+    }
+    applyCachedUiPreferences();
     showToast(t("UI settings saved."), "ok");
   } catch (error) {
     showToast(`${t("Save failed")}: ${(error as Error).message}`, "error");

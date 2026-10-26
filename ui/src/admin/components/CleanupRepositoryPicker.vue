@@ -77,8 +77,8 @@ function onDocumentPointerDown(event: Event) {
 function positionPopover() {
   const rect = trigger.value?.getBoundingClientRect();
   if (!rect) return;
-  const width = Math.max(rect.width, 360);
-  const viewportWidth = typeof window === "undefined" ? width : window.innerWidth;
+  const viewportWidth = window.innerWidth;
+  const width = Math.min(rect.width, Math.max(0, viewportWidth - 16));
   const left = Math.min(rect.left, Math.max(8, viewportWidth - width - 8));
   position.value = { left, top: rect.bottom + 6, width };
 }

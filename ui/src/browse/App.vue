@@ -14,40 +14,24 @@ import LoginDialog from "../shared/components/LoginDialog.vue";
 import { route, navigate, browseHash, BROWSE_PREFIX } from "./route";
 import BrowseView from "./views/BrowseView.vue";
 import MyTokenView from "./views/MyTokenView.vue";
+import RepositoryListView from "./views/RepositoryListView.vue";
 import SearchView from "./views/SearchView.vue";
 import UploadView from "./views/UploadView.vue";
 import WelcomeView from "./views/WelcomeView.vue";
-
-interface Repository {
-  name: string;
-  type?: string | null;
-  format?: string | null;
-  online?: boolean;
-  url?: string | null;
-}
+import type { Repository } from "./repositoryUrls";
 
 const repositories = ref<Repository[]>([]);
 const search = ref("");
 const loginOpen = ref(false);
 const version = appVersion();
 
-function focusSearch() {
-  const input = document.getElementById("browse-search") as HTMLInputElement | null;
-  if (input) {
-    input.focus();
-    input.select();
-  } else {
-    navigate(`${BROWSE_PREFIX}search`);
-  }
-}
-
 const NAV = [
   { id: "welcome", label: "Welcome", icon: "home", hash: `${BROWSE_PREFIX}welcome` },
+  { id: "browse", label: "Browse", icon: "inventory_2", hash: `${BROWSE_PREFIX}browse` },
   { id: "upload", label: "Upload", icon: "upload", hash: `${BROWSE_PREFIX}upload` },
-  { id: "my-token", label: "My Token", icon: "key", hash: `${BROWSE_PREFIX}my-token` },
 ];
 
-const activeId = computed(() => (route.value.view === "browse" ? "welcome" : route.value.view));
+const activeId = computed(() => route.value.view);
 
 async function loadRepositories() {
   try {
@@ -96,7 +80,7 @@ async function onSignedIn() {
         class="kk-rail-fab"
         :title="t('Search')"
         :aria-label="t('Search')"
-        @click="focusSearch"
+        @click="navigate(`${BROWSE_PREFIX}search`)"
       >
         <span class="material-symbols-outlined" aria-hidden="true">search</span>
       </button>
@@ -114,18 +98,6 @@ async function onSignedIn() {
           <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
         </div>
         <span class="micl-navigationrail__text kk-rail-label">{{ t(item.label) }}</span>
-      </a>
-
-      <a
-        class="micl-navigationrail__item kk-rail-item"
-        href="/admin/#admin/repository/repositories"
-        :title="t('Admin')"
-        @click="beginTask()"
-      >
-        <div class="kk-rail-indicator">
-          <span class="micl-navigationrail__icon material-symbols-outlined" aria-hidden="true">settings</span>
-        </div>
-        <span class="micl-navigationrail__text kk-rail-label">{{ t("Admin") }}</span>
       </a>
     </div>
   </nav>
@@ -148,6 +120,11 @@ async function onSignedIn() {
           :repositories="repositories"
           @open="(repo: string) => navigate(browseHash(repo))"
         />
+        <RepositoryListView
+          v-else-if="route.view === 'browse' && !route.repo"
+          :repositories="repositories"
+          @open="(repo: string) => navigate(browseHash(repo))"
+        />
         <BrowseView
           v-else-if="route.view === 'browse'"
           :repositories="repositories"
@@ -165,7 +142,7 @@ async function onSignedIn() {
       </div>
 
       <!-- Floating bottom toolbar -->
-      <aside class="kk-bottom-toolbar" role="toolbar" :aria-label="t('Quick toolbar')">
+      <aside class="kk-bottom-toolbar kk-bottom-toolbar--browse" role="toolbar" :aria-label="t('Quick toolbar')">
         <div class="kk-bottom-toolbar__inner">
           <form class="kk-bottom-toolbar__search" role="search" @submit="submitSearch">
             <span class="material-symbols-outlined kk-bottom-toolbar__search-icon" aria-hidden="true">search</span>
@@ -181,6 +158,16 @@ async function onSignedIn() {
 
           <div class="kk-bottom-toolbar__divider"></div>
 
+          <a
+            v-if="session?.userId"
+            class="micl-iconbutton-standard-s kk-bottom-toolbar__admin-btn"
+            href="/admin/#admin/repository/repositories"
+            :aria-label="t('Admin')"
+            :title="t('Admin')"
+            @click="beginTask()"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+          </a>
           <button
             v-if="session?.userId"
             type="button"

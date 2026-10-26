@@ -81,6 +81,82 @@ describe("browse application", () => {
     expect(urls).toContain("/internal/repositories");
   });
 
+  it("exposes the repository catalog as a Browse destination", async () => {
+    await renderApp();
+
+    const rail = wrapper!.find('nav[aria-label="Repository browser"]');
+    const browseLink = rail.find('a[href="#browse/browse"]');
+    expect(browseLink.text()).toContain("Browse");
+
+    setView({ view: "browse", repo: "" });
+    await nextTick();
+    await flushPromises();
+
+    expect(browseLink.attributes("aria-current")).toBe("page");
+    expect(wrapper!.text()).toContain("maven-hosted");
+    expect(wrapper!.findAll("tbody tr")).toHaveLength(1);
+  });
+
+  it("opens the repository content tree from a catalog row", async () => {
+    const urls = await renderApp();
+
+    setView({ view: "browse", repo: "" });
+    await nextTick();
+    await flushPromises();
+
+    // The catalog is rendered from the already-loaded repository list.
+    expect(urls.some((url) => url.startsWith("/internal/browse/"))).toBe(false);
+
+    await wrapper!.find("tbody tr").trigger("click");
+    await flushPromises();
+
+    expect(window.location.hash).toBe("#browse/browse:maven-hosted");
+    expect(route.value.repo).toBe("maven-hosted");
+    expect(urls.some((url) => url.startsWith("/internal/browse/maven-hosted"))).toBe(true);
+  });
+
+  it("places admin beside the account button and keeps token navigation in its menu", async () => {
+    await renderApp();
+
+    const rail = wrapper!.find('nav[aria-label="Repository browser"]');
+    expect(rail.find('a[href="#browse/my-token"]').exists()).toBe(false);
+    expect(rail.find('a[href^="/admin/"]').exists()).toBe(false);
+    expect(rail.findAll("a").map((link) => link.text())).toEqual([
+      "homeWelcome",
+      "inventory_2Browse",
+      "uploadUpload",
+    ]);
+
+    const toolbar = wrapper!.find('[role="toolbar"]');
+    expect(toolbar.classes()).toContain("kk-bottom-toolbar--browse");
+    expect(toolbar.find('[popovertarget="kk-browse-user-menu"]').exists()).toBe(true);
+
+    const adminLink = toolbar.find('a[href="/admin/#admin/repository/repositories"]');
+    expect(adminLink.attributes("aria-label")).toBe("Admin");
+    expect(adminLink.element.nextElementSibling).toBe(
+      toolbar.find('[popovertarget="kk-browse-user-menu"]').element,
+    );
+
+    const menu = wrapper!.find("#kk-browse-user-menu");
+    expect(menu.find('a[href^="/admin/"]').exists()).toBe(false);
+    const tokenItem = menu.findAll("li").find((item) => item.text().includes("My Token"));
+    expect(tokenItem).toBeDefined();
+    await tokenItem!.trigger("click");
+    expect(window.location.hash).toBe("#browse/my-token");
+  });
+
+  it("retains sign-in access in the larger toolbar for anonymous visitors", async () => {
+    await renderApp({ session: null });
+
+    const toolbar = wrapper!.find(".kk-bottom-toolbar--browse");
+    expect(toolbar.find(".kk-bottom-toolbar__account-btn").exists()).toBe(false);
+    expect(toolbar.find(".kk-bottom-toolbar__admin-btn").exists()).toBe(false);
+    await toolbar.find(".kk-bottom-toolbar__login-btn").trigger("click");
+    await flushPromises();
+
+    expect(loginDialogOpen()).toBe(true);
+  });
+
   it("renders the browse view for the legacy repository route", async () => {
     const urls = await renderApp();
 
@@ -90,6 +166,32 @@ describe("browse application", () => {
 
     expect(wrapper!.text()).toContain("/repository/maven-hosted/");
     expect(urls.some((url) => url.startsWith("/internal/browse/maven-hosted"))).toBe(true);
+  });
+
+  it("opens the component search page from the top-left search button", async () => {
+    const urls = await renderApp();
+
+    await wrapper!.find('nav[aria-label="Repository browser"] .kk-rail-fab').trigger("click");
+    await flushPromises();
+
+    expect(window.location.hash).toBe("#browse/search");
+    expect(route.value.view).toBe("search");
+    expect(wrapper!.find("#search-keyword").exists()).toBe(true);
+    expect(wrapper!.find("#search-format").exists()).toBe(true);
+    expect(urls).toContain("/internal/search/components?limit=50");
+    expect(window.document.activeElement?.id).not.toBe("browse-search");
+  });
+
+  it("submits the bottom search field to the search page with its keyword", async () => {
+    const urls = await renderApp();
+
+    await wrapper!.find("#browse-search").setValue("log4j");
+    await wrapper!.find(".kk-bottom-toolbar__search").trigger("submit");
+    await flushPromises();
+
+    expect(window.location.hash).toBe("#browse/search?q=log4j");
+    expect((wrapper!.find("#search-keyword").element as HTMLInputElement).value).toBe("log4j");
+    expect(urls).toContain("/internal/search/components?limit=50&q=log4j");
   });
 
   it("renders the search view and queries the component search endpoint", async () => {
