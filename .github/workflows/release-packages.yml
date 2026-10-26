@@ -1,6 +1,6 @@
 name: Release Packages
 
-run-name: Release packages v${{ github.event.release.tag_name || inputs.version }} from ${{ github.ref_name }}
+run-name: Release packages ${{ github.event.release.tag_name || format('v{0}', inputs.version) }}
 
 on:
   release:
