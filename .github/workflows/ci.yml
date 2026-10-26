@@ -43,6 +43,12 @@ jobs:
           npm ci
           npm test
 
+      - name: Build admin and browse UI
+        working-directory: ui
+        run: |
+          npm run build:admin
+          npm run build:browse
+
       - name: Validate development compose file
         run: |
           docker compose -f docker-compose.dev.yml config

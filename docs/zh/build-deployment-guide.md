@@ -276,7 +276,9 @@ server/target/kkrepo-<release-version>-native-linux-<architecture>.zip
 
 手动触发 GitHub 的 `Release Packages` 工作流后，它只接受已经合并到 `main` 的版本，并构建公开发行矩阵：一组平台无关的 JVM 压缩包、Native Linux `amd64` 和 `arm64` 压缩包，以及一份合并的 SHA-256 清单。同一批对应架构的 Native 构建会先推送 `<version>-native-amd64` 和 `<version>-native-arm64` 镜像，再合成为公开使用的版本化 `<version>-native` 和滚动更新的 `native-latest` 多架构 manifest。创建 GitHub Release 和上传压缩包资产仍是后续独立、显式的发行步骤。
 
-Lumina fork 的工作流将镜像发布到 `ghcr.io/muskanet/lumina`：JVM 使用 `<version>` 和 `latest`，Native 使用上述 Native 标签；scanner 发布到 `ghcr.io/muskanet/lumina-scanner:<version>`。三种运行时镜像均包含 Linux `amd64` 和 `arm64`。发布需要在运行工作流的仓库中配置 Actions secrets `GHCR_USERNAME`（PAT 所属账号）和 `GHCR_TOKEN`（具有 `write:packages` 的 classic PAT）；该账号必须具有 MuskaNet 组织的包发布权限，并按组织要求授权 SSO。不要把 token 提交到源码。此流程不执行完整测试套件；发行前应检查同一提交的 CI 结果。
+Lumina fork 的 CI 和 `Release Packages` 工作流会在 Maven 构建前使用 Node.js 24 执行 `npm ci`、`npm run build:admin` 和 `npm run build:browse`，将两个前端的生产资源写入对应 UI 模块；前端构建失败会阻止后续打包。JVM 和两种架构的 Native 发行构建均执行此步骤，因此发行包和主服务镜像包含该提交重新构建的页面。
+
+Lumina fork 的工作流将镜像发布到 `ghcr.io/muskanet/lumina`：JVM 使用 `<version>` 和 `latest`，Native 使用上述 Native 标签；scanner 发布到 `ghcr.io/muskanet/lumina-scanner:<version>`。三种运行时镜像均包含 Linux `amd64` 和 `arm64`。发布需要工作流的 `packages: write` 权限，并使用内置 `${{ secrets.GITHUB_TOKEN }}`；仓库中不再保存个人 token。仓库的软件包权限必须允许该工作流向 `MuskaNet` 命名空间发布。不要提交 token。此流程不执行完整测试套件；发行前应检查同一提交的 CI 结果。
 
 默认仍是 JVM 打包。JVM 压缩包包含 `lib/kkrepo.jar`，Native 压缩包包含可执行文件 `lib/kkrepo`。共用的 `bin/start.sh` 会自动选择包内运行时，因此服务命令和外部配置目录保持一致。Native 压缩包的目标机器不需要 Java，但操作系统和 CPU 架构必须与包名一致。
 
