@@ -398,6 +398,54 @@ describe("repository table icons", () => {
   });
 });
 
+describe("repository sorting", () => {
+  beforeEach(installApi);
+
+  it("toggles every text header and retains sorting while filtering", async () => {
+    const wrapper = await mountView();
+    for (const key of ["name", "recipe", "type", "format"]) {
+      const columnIndex = { name: 1, recipe: 2, type: 3, format: 4 }[key]!;
+      const header = wrapper.findAll("thead th")[columnIndex]!;
+      for (const direction of ["asc", "desc"] as const) {
+        if (header.attributes("aria-sort") !== (direction === "asc" ? "ascending" : "descending")) {
+          await header.get("button").trigger("click");
+        }
+        const actual = wrapper.findAll("tbody tr").map((row) => row.findAll("td")[columnIndex]!.text());
+        const expected = [...actual].sort((a, b) => a.localeCompare(b));
+        if (direction === "desc") expected.reverse();
+        expect(actual).toEqual(expected);
+        expect(header.attributes("aria-sort")).toBe(direction === "asc" ? "ascending" : "descending");
+      }
+    }
+    await wrapper.get("#repo-filter").setValue("maven");
+    expect(wrapper.findAll("tbody tr")).toHaveLength(3);
+    expect(wrapper.findAll("thead th")[4]!.attributes("aria-sort")).toBe("descending");
+    wrapper.unmount();
+  });
+
+  it("sorts inventory counters numerically without losing bigint precision, keeping missing values last", async () => {
+    const repos = repositoriesFixture.slice(0, 3).map((repo, index) => ({ ...repo, id: index + 1 }));
+    mocks.get.mockResolvedValue(repos);
+    mocks.getOrNull.mockImplementation((path: string) => Promise.resolve(path.endsWith("statistics/usage") ? {
+      usage: {
+        "1": { assetCount: "10", totalBytes: "9007199254740993" },
+        "2": { assetCount: "2", totalBytes: "9007199254740992" },
+        "3": { assetCount: "99", totalBytes: "99" },
+      },
+    } : null));
+    const wrapper = await mountView();
+    for (const index of [7, 8]) {
+      const header = wrapper.findAll("thead th")[index]!;
+      await header.get("button").trigger("click");
+      const names = () => wrapper.findAll("tbody tr").map((row) => row.findAll("td")[1]!.text());
+      expect(names()).toEqual(["maven-proxy", "maven-hosted", "maven-group"]);
+      await header.get("button").trigger("click");
+      expect(names()).toEqual(["maven-hosted", "maven-proxy", "maven-group"]);
+    }
+    wrapper.unmount();
+  });
+});
+
 describe("repository usage", () => {
   beforeEach(installApi);
 

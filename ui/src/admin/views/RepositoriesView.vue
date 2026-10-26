@@ -4,7 +4,7 @@ import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
 import { formatInventoryBytes, inventoryValue, type InventorySnapshot } from "../../shared/inventory";
 import { showToast } from "../../shared/snackbar";
-import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
+import M3DataTable, { type DataTableColumn, type DataTableSort } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
 import M3List from "../../shared/components/M3List.vue";
 import M3ListItem from "../../shared/components/M3ListItem.vue";
@@ -102,8 +102,28 @@ const filteredRepositories = computed(() => {
   });
 });
 
+const sort = ref<DataTableSort>({ key: "name", direction: "asc" });
+
 const rows = computed(() => {
-  return [...filteredRepositories.value].sort((a, b) => a.name.localeCompare(b.name));
+  const { key, direction } = sort.value;
+  const numeric = key === "assetCount" || key === "totalBytes";
+  return [...filteredRepositories.value].sort((a, b) => {
+    let comparison: number;
+    if (numeric) {
+      const left = String(a.type).toLowerCase() === "group" ? null : inventoryValue(usage.value, a.id ?? "", key);
+      const right = String(b.type).toLowerCase() === "group" ? null : inventoryValue(usage.value, b.id ?? "", key);
+      if (left == null || right == null) {
+        if (left == null && right != null) return 1;
+        if (left != null && right == null) return -1;
+        comparison = 0;
+      } else {
+        comparison = left < right ? -1 : left > right ? 1 : 0;
+      }
+    } else {
+      comparison = String(a[key as keyof Repository] ?? "").localeCompare(String(b[key as keyof Repository] ?? ""));
+    }
+    return comparison === 0 ? a.name.localeCompare(b.name) : comparison * (direction === "asc" ? 1 : -1);
+  });
 });
 
 const usageRows = computed(() =>
@@ -689,6 +709,7 @@ onMounted(load);
 <M3DataTable
     :columns="columns"
     :rows="rows"
+    v-model:sort="sort"
     :row-key="(row: Repository) => row.name"
     :loading="loading"
     :empty-text="t('No repositories found.')"
