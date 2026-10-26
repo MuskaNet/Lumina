@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { t } from "../../shared/i18n";
 import { showToast } from "../../shared/snackbar";
 import { writeClipboard } from "../../shared/clipboard";
+import { repositoryClientUrl } from "../repositoryUrls";
 
 interface Repository {
   name: string;
@@ -10,6 +11,7 @@ interface Repository {
   format?: string | null;
   online?: boolean;
   url?: string | null;
+  docker?: { connectorEnabled?: boolean | null; connectorPort?: number | string | null; connectorPublicUrl?: string | null } | null;
 }
 
 const props = defineProps<{ repositories: Repository[] }>();
@@ -29,9 +31,8 @@ const grouped = computed(() => {
 });
 
 async function copyUrl(repo: Repository) {
-  const base = `${globalThis.location.origin}/repository/${encodeURIComponent(repo.name)}/`;
   try {
-    await writeClipboard(base);
+    await writeClipboard(repositoryClientUrl(repo));
     showToast(t("Copied"), "ok");
   } catch {
     showToast(t("Unable to copy repository URL"), "error");
@@ -83,7 +84,7 @@ async function copyUrl(repo: Repository) {
           :title="t('Copy repository URL')"
           @click="copyUrl(repo)"
         >
-          <code class="kk-mono">/repository/{{ repo.name }}/</code>
+          <code class="kk-mono">{{ repositoryClientUrl(repo) }}</code>
           <span class="material-symbols-outlined kk-repo-card__copy-icon" aria-hidden="true">content_copy</span>
         </button>
       </article>

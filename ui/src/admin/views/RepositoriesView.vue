@@ -41,6 +41,7 @@ import {
   type AptStatus,
   type ConanRepositoryStatus,
 } from "../repositoryStatus";
+import { repositoryClientUrl } from "../../browse/repositoryUrls";
 import { formatLogoClass, typeIconName } from "../repositoryIcons";
 
 interface Recipe {
@@ -97,7 +98,7 @@ const filteredRepositories = computed(() => {
   return repositories.value.filter((repo) => {
     if (selectedStore && repo.blobStoreName !== selectedStore) return false;
     if (!needle) return true;
-    return [repo.name, repo.format, repo.type, repo.recipe, repo.blobStoreName, repo.url]
+    return [repo.name, repo.format, repo.type, repo.recipe, repo.blobStoreName, repositoryClientUrl(repo)]
       .some((value) => String(value ?? "").toLowerCase().includes(needle));
   });
 });
@@ -744,7 +745,7 @@ onMounted(load);
     <template #cell-totalBytes="{ row }">
       {{ repoMetric(row, "totalBytes", true) }}
     </template>
-    <template #cell-url="{ row }"><code class="kk-mono">{{ row.url || "—" }}</code></template>
+    <template #cell-url="{ row }"><code class="kk-mono">{{ repositoryClientUrl(row) || "—" }}</code></template>
     <template #cell-actions="{ row }">
       <div class="kk-row-actions">
         <button type="button" class="micl-button-text-s" @click="openEdit(row)">{{ t("Edit") }}</button>

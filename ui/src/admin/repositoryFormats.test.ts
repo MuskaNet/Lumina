@@ -61,14 +61,14 @@ describe("welcome view", () => {
     expect(groups).toEqual(["maven2", "npm"]);
   });
 
-  it("shows the copyable /repository/<repo>/ URL for every repository", () => {
+  it("shows the absolute client URL for every repository", () => {
     const wrapper = mount(WelcomeView, { props: { repositories } });
 
     const urls = wrapper.findAll(".kk-location code").map((node) => node.text());
     expect(urls).toEqual([
-      "/repository/maven-hosted/",
-      "/repository/maven-proxy/",
-      "/repository/npm-proxy/",
+      "http://localhost:3000/repository/maven-hosted/",
+      "http://localhost:3000/repository/maven-proxy/",
+      "http://localhost:3000/repository/npm-proxy/",
     ]);
   });
 
