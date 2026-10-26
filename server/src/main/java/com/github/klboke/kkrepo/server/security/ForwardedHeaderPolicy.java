@@ -88,8 +88,10 @@ public class ForwardedHeaderPolicy {
 
   public String serverBaseUrl(HttpServletRequest request) {
     boolean trustedForwarded = trusted(request);
-    String scheme = trustedForwarded ? firstHeader(request, "X-Forwarded-Proto", request.getScheme()) : request.getScheme();
-    String host = trustedForwarded ? firstHeader(request, "X-Forwarded-Host", request.getServerName()) : request.getServerName();
+    String forwardedProto = trustedForwarded ? firstHeader(request, "X-Forwarded-Proto", null) : null;
+    String forwardedHost = trustedForwarded ? firstHeader(request, "X-Forwarded-Host", null) : null;
+    String scheme = forwardedProto != null ? forwardedProto : request.getScheme();
+    String host = forwardedHost != null ? forwardedHost : request.getServerName();
     if (scheme == null || scheme.isBlank() || host == null || host.isBlank()) {
       return "";
     }
@@ -97,7 +99,12 @@ public class ForwardedHeaderPolicy {
     String authority = host;
     boolean bracketedIpv6WithoutPort = host.startsWith("[") && host.endsWith("]");
     if (!host.contains(":") || bracketedIpv6WithoutPort) {
-      int port = parsePort(portHeader, request.getServerPort());
+      // A forwarded origin must not inherit the backend HTTP connector's port.
+      // A preserved Host header may still explicitly carry the external port.
+      // Requests without forwarded origin headers retain their direct connection port.
+      int fallbackPort = forwardedHost != null ? -1
+          : forwardedProto != null ? explicitHostPort(request) : request.getServerPort();
+      int port = parsePort(portHeader, fallbackPort);
       boolean standard = ("http".equalsIgnoreCase(scheme) && port == 80)
           || ("https".equalsIgnoreCase(scheme) && port == 443);
       if (port > 0 && !standard) {
@@ -105,6 +112,17 @@ public class ForwardedHeaderPolicy {
       }
     }
     return scheme + "://" + authority;
+  }
+
+  private static int explicitHostPort(HttpServletRequest request) {
+    String host = request.getHeader("Host");
+    if (host == null) return -1;
+    int colon = host.lastIndexOf(':');
+    // Only an authority port counts; an IPv6 address's own colons do not.
+    if (colon < 0 || host.indexOf(']') > colon
+        || (!host.startsWith("[") && host.indexOf(':') != colon)) return -1;
+    int port = parsePort(host.substring(colon + 1), -1);
+    return port > 0 && port <= 65535 ? port : -1;
   }
 
   private static String normalize(String value) {

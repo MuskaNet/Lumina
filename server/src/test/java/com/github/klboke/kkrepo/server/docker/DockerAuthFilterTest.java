@@ -134,6 +134,42 @@ class DockerAuthFilterTest {
   }
 
   @ParameterizedTest
+  @CsvSource({
+      "80, false, , registry.example.com",
+      "8082, false, , registry.example.com",
+      "80, true, , registry.example.com",
+      "8082, true, , registry.example.com",
+      "8443, false, registry.example.com:8443, registry.example.com:8443"
+  })
+  void httpsConnectorChallengeDoesNotRequireForwardedPort(
+      int backendPort, boolean forwardedHost, String originalHost, String expectedAuthority)
+      throws Exception {
+    when(authService.challenge(
+        "https://" + expectedAuthority + "/service/rest/v1/docker/token", expectedAuthority))
+        .thenCallRealMethod();
+    var filter = new DockerAuthFilter(registry, authService,
+        mock(SecurityAuthenticationService.class), accessDecisionService,
+        new ForwardedHeaderPolicy("10.0.0.1"));
+    var request = new MockHttpServletRequest("GET", "/v2/");
+    request.setAttribute(DockerConnectorConfiguration.CONNECTOR_REPOSITORY_ATTRIBUTE, "docker-hosted");
+    request.setScheme("http");
+    request.setServerName("registry.example.com");
+    request.setServerPort(backendPort);
+    request.setRemoteAddr("10.0.0.1");
+    if (originalHost != null) request.addHeader("Host", originalHost);
+    request.addHeader("X-Forwarded-Proto", "https");
+    if (forwardedHost) request.addHeader("X-Forwarded-Host", "registry.example.com");
+    var response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, new MockFilterChain());
+
+    assertEquals(401, response.getStatus());
+    assertEquals("Bearer realm=\"https://" + expectedAuthority + "/service/rest/v1/docker/token\","
+        + "service=\"" + expectedAuthority + "\"", response.getHeader(HttpHeaders.WWW_AUTHENTICATE));
+    assertEquals(DockerConstants.API_VERSION, response.getHeader(DockerConstants.API_VERSION_HEADER));
+  }
+
+  @ParameterizedTest
   @CsvSource({"10.0.0.1", "10.0.0.0/16", "2001:db8::/32"})
   void untrustedForwardedHeadersCannotOverrideBearerChallenge(String trustedProxies) throws Exception {
     when(authService.challenge(

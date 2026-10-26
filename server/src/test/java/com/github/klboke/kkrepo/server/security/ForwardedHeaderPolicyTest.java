@@ -151,6 +151,62 @@ class ForwardedHeaderPolicyTest {
     assertEquals("http://kkrepo.internal:8080", policy.serverBaseUrl(request("10.1.0.1")));
   }
 
+  @ParameterizedTest
+  @CsvSource({
+      "https, registry.example.com, , 80, https://registry.example.com",
+      "https, registry.example.com, , 8082, https://registry.example.com",
+      "https, , , 80, https://kkrepo.internal",
+      "https, , , 8082, https://kkrepo.internal",
+      "https, registry.example.com, 443, 8082, https://registry.example.com",
+      "https, registry.example.com, 8443, 8082, https://registry.example.com:8443",
+      "https, registry.example.com:8443, , 8082, https://registry.example.com:8443",
+      "https, [2001:db8::1], , 8082, https://[2001:db8::1]",
+      "https, [2001:db8::1]:8443, , 8082, https://[2001:db8::1]:8443",
+      "http, registry.example.com, , 8082, http://registry.example.com",
+      ", registry.example.com, , 8082, http://registry.example.com",
+      ", , , 8082, http://kkrepo.internal:8082",
+      ", , 8443, 8082, http://kkrepo.internal:8443",
+      "https, registry.example.com, invalid, 8082, https://registry.example.com"
+  })
+  void externalOriginDoesNotInheritBackendPort(
+      String proto, String host, String port, int backendPort, String expected) {
+    var request = request("10.0.0.1");
+    request.setServerPort(backendPort);
+    request.removeHeader("X-Forwarded-Proto");
+    request.removeHeader("X-Forwarded-Host");
+    request.removeHeader("X-Forwarded-Port");
+    if (proto != null) request.addHeader("X-Forwarded-Proto", proto);
+    if (host != null) request.addHeader("X-Forwarded-Host", host);
+    if (port != null) request.addHeader("X-Forwarded-Port", port);
+    assertEquals(expected, new ForwardedHeaderPolicy("10.0.0.1").serverBaseUrl(request));
+    assertEquals("http://kkrepo.internal" + (backendPort == 80 ? "" : ":" + backendPort),
+        new ForwardedHeaderPolicy("").serverBaseUrl(request));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "registry.example.com:8443, registry.example.com, 8443, , , https://registry.example.com:8443",
+      "[2001:db8::1]:8443, [2001:db8::1], 8443, , , https://[2001:db8::1]:8443",
+      "registry.example.com:443, registry.example.com, 443, , , https://registry.example.com",
+      "registry.example.com:8443, registry.example.com, 8443, public.example.com, , https://public.example.com",
+      "registry.example.com:8443, registry.example.com, 8443, , 9443, https://registry.example.com:9443",
+      "registry.example.com, registry.example.com, 80, , , https://registry.example.com",
+      "[2001:db8::1], [2001:db8::1], 80, , , https://[2001:db8::1]"
+  })
+  void preservesExplicitHostPortWhenOnlySchemeIsForwarded(
+      String originalHost, String serverName, int serverPort, String forwardedHost,
+      String forwardedPort, String expected) {
+    var request = request("10.0.0.1");
+    request.setServerName(serverName);
+    request.setServerPort(serverPort);
+    request.addHeader("Host", originalHost);
+    request.removeHeader("X-Forwarded-Host");
+    request.removeHeader("X-Forwarded-Port");
+    if (forwardedHost != null) request.addHeader("X-Forwarded-Host", forwardedHost);
+    if (forwardedPort != null) request.addHeader("X-Forwarded-Port", forwardedPort);
+    assertEquals(expected, new ForwardedHeaderPolicy("10.0.0.1").serverBaseUrl(request));
+  }
+
   private static MockHttpServletRequest request(String remote) {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setRemoteAddr(remote);
