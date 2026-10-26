@@ -13,6 +13,10 @@
 
 短 TTL 性能缓存默认使用进程内存；HTTP session、认证 ticket、catalog 广播和跨副本 cache token 使用共享数据库。
 
+## CI 覆盖率上传
+
+CI 收集单元/协议测试 job 和两种数据库 smoke job 的各模块 JaCoCo XML 报告，再统一上传到 Codacy。在 Codacy 仓库的 **Settings → Coverage** 中复制仓库级 **Project API Token**，在 GitHub **Settings → Secrets and variables → Actions** 中添加仓库 Secret `CODACY_PROJECT_TOKEN`；不要使用账号级 API Token，也不要提交 token。Secret 不可用时跳过上传，包括来自 fork 的 PR；其他上传失败会使 coverage job 失败。覆盖率质量门禁需在 Codacy 配置，原 Codecov 阈值不会自动迁移。
+
 ## 本地依赖
 
 本地运行至少需要 MySQL 或 PostgreSQL。MySQL 仍是默认 Compose 服务，`postgresql` profile 可启动另一种后端。blob store 可以使用 File blob store；如果要验证 S3 兼容对象存储行为，可以使用下表中的本地服务默认值：

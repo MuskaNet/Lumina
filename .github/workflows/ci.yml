@@ -56,12 +56,12 @@ jobs:
       - name: Run non-live compatibility tests
         run: mvn -B -ntp -pl compat-test -am -Dtest=MavenMetadataMergeCompatibilityTest,MavenWritePolicyCompatibilityTest,NpmProtocolCompatibilityTest -Dsurefire.failIfNoSpecifiedTests=false verify
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
+      - name: Collect unit and protocol coverage
+        uses: actions/upload-artifact@v7
         with:
-          directory: .
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-unit-and-protocol
+          path: '**/target/site/jacoco/jacoco.xml'
+          if-no-files-found: error
 
   persistence-package-boundary:
     name: persistence-package-boundary
@@ -116,13 +116,42 @@ jobs:
           java-version: "25"
           cache: maven
       - run: mvn -B -ntp -pl server -am -Dtest=DatabaseServerSmokeTest#${{ matrix.method }} -Dsurefire.failIfNoSpecifiedTests=false verify
-      - name: Upload smoke coverage to Codecov
-        uses: codecov/codecov-action@v7
+      - name: Collect smoke coverage
+        uses: actions/upload-artifact@v7
         with:
-          directory: .
-          fail_ci_if_error: true
-          flags: server-smoke-${{ matrix.database }}
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-server-smoke-${{ matrix.database }}
+          path: '**/target/site/jacoco/jacoco.xml'
+          if-no-files-found: error
+
+  coverage:
+    name: Upload coverage to Codacy
+    needs: [unit-and-protocol-tests, server-smoke]
+    runs-on: ubuntu-latest
+    env:
+      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download coverage reports
+        uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          path: coverage-reports
+      - name: Find coverage reports
+        id: reports
+        shell: bash
+        run: |
+          reports="$(find coverage-reports -type f -name jacoco.xml | sort | paste -sd, -)"
+          test -n "$reports"
+          echo "files=$reports" >> "$GITHUB_OUTPUT"
+      - name: Upload coverage to Codacy
+        if: env.CODACY_PROJECT_TOKEN != ''
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: ${{ steps.reports.outputs.files }}
+      - name: Explain skipped upload
+        if: env.CODACY_PROJECT_TOKEN == ''
+        run: echo 'Codacy upload skipped because CODACY_PROJECT_TOKEN is unavailable (for example, on fork pull requests).' >> "$GITHUB_STEP_SUMMARY"
 
   mysql-v29-upgrade-compatibility:
     name: mysql-v29-upgrade-compatibility

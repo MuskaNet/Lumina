@@ -13,6 +13,10 @@ The service requires MySQL or PostgreSQL and blob storage at runtime. During dev
 
 Short-TTL performance cache uses in-process memory by default. HTTP sessions, authentication tickets, catalog broadcast, and cross-replica cache tokens use the shared database.
 
+## CI Coverage Upload
+
+CI collects the per-module JaCoCo XML reports from the unit/protocol job and both database smoke jobs, then uploads them together to Codacy. In Codacy, open the repository's **Settings → Coverage** and copy its **Project API Token**. Store it in GitHub **Settings → Secrets and variables → Actions** as the repository secret `CODACY_PROJECT_TOKEN`; do not use an account API token or commit the token. Uploads are skipped when the secret is unavailable, including fork pull requests. Upload failures otherwise fail the coverage job. Configure coverage quality gates in Codacy; the former Codecov thresholds do not carry over automatically.
+
 ## Local Dependencies
 
 Local runtime requires either MySQL or PostgreSQL. MySQL remains the default Compose service; the `postgresql` profile starts the alternative backend. The blob store can use File blob store. If you need to validate S3-compatible object storage behavior, use these local defaults:

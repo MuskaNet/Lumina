@@ -1,7 +1,7 @@
 # Lumina
 
 [![CI](https://github.com/MuskaNet/Lumina/actions/workflows/ci.yml/badge.svg)](https://github.com/MuskaNet/Lumina/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/MuskaNet/Lumina/branch/main/graph/badge.svg)](https://codecov.io/gh/MuskaNet/Lumina)
+[Codacy coverage](https://app.codacy.com/gh/MuskaNet/Lumina/dashboard)
 [![Release](https://img.shields.io/github/v/release/MuskaNet/Lumina)](https://github.com/MuskaNet/Lumina/releases)
 [![License](https://img.shields.io/github/license/MuskaNet/Lumina)](LICENSE)
 [![Security Policy](https://img.shields.io/badge/security-policy-green)](SECURITY.md)
