@@ -72,6 +72,20 @@ curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quicksta
 
 如果 kkRepo 部署在 Nginx 或其他 HTTPS 反向代理后面，请参考 [Nginx 反向代理配置注意事项](docs/zh/nginx-reverse-proxy.md)，确保 npm `dist.tarball` 等生成的仓库 URL 保持公网 `https://` scheme 和 host。
 
+### 独立前端代理
+
+轻量级 `lumina-fp` 镜像使用 Nginx 提供管理控制台和用户侧浏览器，并将 API 请求反向代理到 kkRepo 后端。在仓库根目录设置后端地址并启动 Compose：
+
+```bash
+API_UPSTREAM=http://192.168.1.100:8080 docker compose -f docker-compose.fp.yml up -d
+```
+
+默认 `API_UPSTREAM` 为 `http://127.0.0.1:8080`；如果后端位于其他地址，请显式设置对应的 `API_UPSTREAM`。代理地址为 `http://127.0.0.1:18080/`，访问 `/` 时会跳转到 `/browse/` 并保留对外端口。也可以按需覆盖 `LUMINA_FP_PORT` 和 `LUMINA_FP_IMAGE_TAG`。停止服务：
+
+```bash
+docker compose -f docker-compose.fp.yml down
+```
+
 本地开发热重载和测试说明见 [中文开发指南](docs/zh/development-guide.md)。
 
 ## 支持能力

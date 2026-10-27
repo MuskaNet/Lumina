@@ -280,7 +280,7 @@ server/target/kkrepo-<release-version>-native-linux-<architecture>.zip
 
 Lumina fork 的 CI 和 `Release Packages` 工作流会在 Maven 构建前使用 Node.js 24 执行 `npm ci`、`npm run build:admin` 和 `npm run build:browse`，将两个前端的生产资源写入对应 UI 模块；前端构建失败会阻止后续打包。JVM 和两种架构的 Native 发行构建均执行此步骤，因此发行包和主服务镜像包含该提交重新构建的页面。
 
-Lumina fork 的工作流将镜像发布到 `ghcr.io/muskanet/lumina`：JVM 使用 `<version>` 和 `latest`，Native 使用上述 Native 标签；scanner 发布到 `ghcr.io/muskanet/lumina-scanner:<version>`。三种运行时镜像均包含 Linux `amd64` 和 `arm64`。发布需要工作流的 `packages: write` 权限，并使用内置 `${{ secrets.GITHUB_TOKEN }}`；仓库中不再保存个人 token。仓库的软件包权限必须允许该工作流向 `MuskaNet` 命名空间发布。不要提交 token。此流程不执行完整测试套件；发行前应检查同一提交的 CI 结果。
+Lumina fork 的工作流将镜像发布到 `ghcr.io/muskanet/lumina`：JVM 使用 `<version>` 和 `latest`，Native 使用上述 Native 标签；scanner 发布到 `ghcr.io/muskanet/lumina-scanner:<version>`，独立前端代理发布到 `ghcr.io/muskanet/lumina-fp:<version>` 和 `latest`。所有发行镜像均包含 Linux `amd64` 和 `arm64`。`lumina-fp` 只包含 admin、browse 静态资源和 Nginx；运行时通过 `API_UPSTREAM` 设置后端基础 URL，例如 `docker run -d -p 8080:80 -e API_UPSTREAM=http://192.168.1.100:8080 ghcr.io/muskanet/lumina-fp:latest`。发布需要工作流的 `packages: write` 权限，并使用内置 `${{ secrets.GITHUB_TOKEN }}`；仓库中不再保存个人 token。仓库的软件包权限必须允许该工作流向 `MuskaNet` 命名空间发布。不要提交 token。此流程不执行完整测试套件；发行前应检查同一提交的 CI 结果。
 
 默认仍是 JVM 打包。JVM 压缩包包含 `lib/kkrepo.jar`，Native 压缩包包含可执行文件 `lib/kkrepo`。共用的 `bin/start.sh` 会自动选择包内运行时，因此服务命令和外部配置目录保持一致。Native 压缩包的目标机器不需要 Java，但操作系统和 CPU 架构必须与包名一致。
 

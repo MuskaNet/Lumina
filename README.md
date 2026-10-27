@@ -72,6 +72,16 @@ For measured startup, memory, image-size, and warmed-throughput tradeoffs betwee
 
 If kkRepo is deployed behind Nginx or another HTTPS reverse proxy, follow the [Nginx Reverse Proxy Notes](docs/en/nginx-reverse-proxy.md) so generated repository URLs, such as npm `dist.tarball`, keep the public `https://` scheme and host.
 
+### Standalone Frontend Proxy
+
+The lightweight `lumina-fp` image serves the admin and browse frontends through Nginx and proxies API requests to the kkRepo backend. From the repository root, set the backend URL and start the Compose stack:
+
+```bash
+API_UPSTREAM=http://192.168.1.100:8080 docker compose -f docker-compose.fp.yml up -d
+```
+
+The default `API_UPSTREAM` is `http://127.0.0.1:8080`; set it explicitly when the backend is reachable at another address. The proxy is available at `http://127.0.0.1:18080/`. It redirects `/` to `/browse/` while preserving the public port. You can override `LUMINA_FP_PORT` and `LUMINA_FP_IMAGE_TAG` as needed. Stop it with `docker compose -f docker-compose.fp.yml down`.
+
 Local hot-reload development and testing are documented in the [Development Guide](docs/en/development-guide.md).
 
 ## Supported Capabilities
