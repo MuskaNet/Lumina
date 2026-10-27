@@ -47,7 +47,7 @@ describe("RepositoryRecipeCombobox", () => {
     setLanguage("zh-CN");
     const wrapper = mountCombobox("maven2-group");
     try {
-      expect(wrapper.get(".kk-recipe-selection .kk-recipe-type").text()).toBe("Group");
+      expect(wrapper.get(".kk-recipe-trigger .kk-recipe-type").text()).toBe("Group");
       await openCombobox(wrapper);
       expect(wrapper.findAll(".kk-recipe-options .kk-recipe-type").map((badge) => badge.text()))
         .toEqual(["Hosted", "Proxy", "Group", "Proxy"]);

@@ -96,7 +96,7 @@ function reorder(name: string, offset: number): void {
         <span :id="`${filterId}-available-title`">{{ t(availableTitle) }}</span>
         <span class="kk-member-count">{{ available.length }}</span>
       </header>
-      <div class="micl-textfield-outlined kk-member-filter">
+      <div class="micl-textfield-filled kk-member-filter">
         <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
         <label :for="filterId">{{ t("Filter") }}</label>
         <input :id="filterId" v-model="filter" type="search" autocomplete="off">
@@ -224,7 +224,7 @@ function reorder(name: string, offset: number): void {
   margin-block-start: 4px;
 }
 
-.kk-member-filter.micl-textfield-outlined {
+.kk-member-filter.micl-textfield-filled {
   --md-comp-text-field-container-height: 40px;
   --md-comp-text-field-icon-size: 20px;
   --md-comp-text-field-input-space: 12px;

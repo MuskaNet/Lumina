@@ -214,10 +214,12 @@ onBeforeUnmount(unbindListeners);
       <span v-if="selected" class="kk-recipe-selection">
         <span :class="formatLogoClass(selected.format)" aria-hidden="true"></span>
         <span class="kk-recipe-name">{{ selected.displayName }}</span>
-        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-recipe-type">{{ selected.typeLabel }}</span></span>
       </span>
       <span v-else class="kk-recipe-placeholder">
         {{ options.length ? t("Select a recipe") : t("No recipes available") }}
+      </span>
+      <span v-if="selected" class="micl-chips kk-chip-host kk-recipe-selected-type">
+        <span class="micl-chip-assist micl-chip--elevated kk-recipe-type">{{ selected.typeLabel }}</span>
       </span>
       <span class="material-symbols-outlined kk-recipe-caret" aria-hidden="true">arrow_drop_down</span>
     </button>
@@ -230,7 +232,7 @@ onBeforeUnmount(unbindListeners);
       :popover="popoverSupported ? 'manual' : undefined"
       :style="{ left: `${position.left}px`, top: `${position.top}px`, width: `${position.width}px` }"
     >
-      <div class="micl-textfield-outlined kk-recipe-search">
+      <div class="micl-textfield-filled kk-recipe-search">
         <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
         <label :for="`${fieldId}-search`">{{ t("Filter recipes") }}</label>
         <input
@@ -334,10 +336,16 @@ onBeforeUnmount(unbindListeners);
 }
 
 .kk-recipe-selection {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   min-inline-size: 0;
+  flex: 1 1 auto;
+}
+
+.kk-recipe-selected-type {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
 }
 
 .kk-recipe-selection .format-logo {
