@@ -336,8 +336,10 @@ function validate(): string {
     if (!form.region.trim()) return t("Region is required.");
     if (!form.bucket.trim()) return t("Bucket is required.");
     if (showStaticCredentials.value) {
-      if (!form.accessKey.trim()) return t("Access key is required.");
-      if (!form.secretKey) return t("Secret key is required.");
+      // On edit, blank credentials mean "keep the currently stored value".
+      // The server preserves them; users only need to enter a value to rotate it.
+      if (editingId.value == null && !form.accessKey.trim()) return t("Access key is required.");
+      if (editingId.value == null && !form.secretKey) return t("Secret key is required.");
     }
   } else if (!form.path.trim()) {
     return t("Path is required.");
