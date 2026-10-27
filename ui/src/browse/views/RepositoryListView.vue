@@ -191,3 +191,52 @@ onUnmounted(() => {
     </template>
   </M3DataTable>
 </template>
+
+<style scoped>
+/* ---- Browse: repository catalog ---------------------------------------- */
+
+.kk-repo-name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Client endpoint plus its copy affordance; long Docker/npm registry URLs wrap
+ * instead of widening the table. */
+.kk-repo-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.kk-repo-url__link {
+  color: var(--md-sys-color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.kk-repo-url__link:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+}
+
+.kk-repo-url__copy {
+  margin: 0 !important;
+  inline-size: 32px !important;
+  min-inline-size: 32px !important;
+  block-size: 32px !important;
+  flex-shrink: 0;
+  color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.kk-repo-url__copy:hover {
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.kk-repo-url__copy .material-symbols-outlined {
+  font-size: 18px !important;
+}
+</style>

@@ -296,3 +296,227 @@ onBeforeUnmount(unbindListeners);
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ---- Cleanup target repository picker --------------------------------- */
+
+.kk-cleanup-repo-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-block-start: calc(var(--md-sys-typescale-body-small-line-height, 16px) / 2);
+}
+
+.kk-cleanup-repo-label {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 10px;
+  z-index: 1;
+  padding-inline: 4px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size, 0.75rem);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.kk-cleanup-repo-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-block-size: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kk-cleanup-repo-trigger:hover {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+.kk-cleanup-repo-field.is-open .kk-cleanup-repo-trigger,
+.kk-cleanup-repo-trigger:focus-visible {
+  padding: 7px 11px;
+  border: 2px solid var(--md-sys-color-primary);
+  outline: none;
+}
+
+.kk-cleanup-repo-field.is-invalid .kk-cleanup-repo-trigger {
+  border-color: var(--md-sys-color-error);
+}
+
+.kk-cleanup-repo-field.is-open .kk-cleanup-repo-label {
+  color: var(--md-sys-color-primary);
+}
+
+.kk-cleanup-repo-placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.kk-cleanup-repo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.kk-cleanup-repo-chip {
+  max-inline-size: 14rem;
+  padding: 2px 10px;
+  overflow: hidden;
+  border-radius: var(--md-sys-shape-corner-full, 999px);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kk-cleanup-repo-more {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.kk-cleanup-repo-caret {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 22px;
+  transition: transform 120ms ease;
+}
+
+.kk-cleanup-repo-field.is-open .kk-cleanup-repo-caret {
+  transform: rotate(180deg);
+}
+
+.kk-recipe-popover {
+  box-sizing: border-box;
+  position: fixed;
+  inset: auto;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-block-size: min(420px, 60vh);
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: var(--md-sys-elevation-level3, 0 6px 20px rgb(0 0 0 / 24%));
+}
+
+.kk-cleanup-repo-popover {
+  max-block-size: min(520px, 70vh);
+}
+
+.kk-cleanup-repo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.kk-cleanup-repo-search {
+  --md-comp-text-field-container-height: 40px;
+  --md-comp-text-field-icon-size: 20px;
+  --md-comp-text-field-input-space: 12px;
+  --md-sys-typescale-body-large-size: 0.875rem;
+  --md-sys-typescale-body-large-line-height: 1.25rem;
+  flex: 1 1 14rem;
+  min-inline-size: 10rem;
+  margin: 0;
+}
+
+.kk-cleanup-repo-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kk-cleanup-repo-options {
+  flex: 1 1 auto;
+  min-block-size: 120px;
+  max-block-size: 320px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.kk-cleanup-repo-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block: 2px;
+  padding: 6px 8px;
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  cursor: pointer;
+}
+
+.kk-cleanup-repo-option:hover,
+.kk-cleanup-repo-option.is-selected {
+  background: var(--md-sys-color-secondary-container);
+}
+
+.kk-cleanup-repo-option .format-logo {
+  inline-size: 18px;
+  block-size: 18px;
+  flex: 0 0 18px;
+}
+
+.kk-cleanup-repo-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-inline-size: 0;
+  gap: 1px;
+}
+
+.kk-cleanup-repo-copy strong {
+  overflow: hidden;
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kk-cleanup-repo-copy small {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.kk-cleanup-repo-type {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--md-sys-shape-corner-full, 999px);
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04rem;
+  text-transform: uppercase;
+}
+
+.kk-cleanup-repo-empty {
+  padding: 20px 8px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.875rem;
+  text-align: center;
+  list-style: none;
+}
+
+.kk-cleanup-repo-footer {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem;
+  text-align: end;
+}
+</style>

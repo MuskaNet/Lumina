@@ -352,3 +352,19 @@ onMounted(loadJobs);
   </section>
 </div>
 </template>
+
+<style scoped>
+.kk-progress {
+  block-size: 8px;
+  border-radius: 9999px;
+  background: var(--md-sys-color-surface-container-high);
+  overflow: hidden;
+}
+
+.kk-progress__bar {
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--md-sys-color-primary);
+  transition: inline-size 200ms ease;
+}
+</style>

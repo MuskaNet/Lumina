@@ -191,3 +191,10 @@ defineExpose({ close, signOutAndReload });
     </div>
   </dialog>
 </template>
+
+<style scoped>
+.kk-dialog--login {
+  --md-comp-dialog-max-width: 440px;
+  inline-size: min(28rem, calc(100vw - 32px));
+}
+</style>

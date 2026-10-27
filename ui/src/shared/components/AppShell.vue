@@ -9,6 +9,7 @@ import M3List from "./M3List.vue";
 import M3ListItem from "./M3ListItem.vue";
 import MobileNavigation from "./MobileNavigation.vue";
 import M3TopProgressBar from "./M3TopProgressBar.vue";
+import FloatingBottomBar from "./FloatingBottomBar.vue";
 
 export interface ShellNavItem {
   id: string;
@@ -89,35 +90,20 @@ function openMyToken() {
         <slot />
       </div>
 
-      <!-- Floating bottom toolbar -->
-      <aside class="kk-bottom-toolbar" role="toolbar" :aria-label="t('Quick toolbar')">
-        <div class="kk-bottom-toolbar__inner">
+      <FloatingBottomBar>
+        <template #brand>
           <div class="kk-bottom-toolbar__brand">
             <a class="kk-product-link" :href="PRODUCT_URL" target="_blank" rel="noopener noreferrer">Lumina</a>
-            <a
-              v-if="version"
-              class="kk-product-version"
-              :href="`${PRODUCT_URL}/releases`"
-              target="_blank"
-              rel="noopener noreferrer"
-            >v{{ version }}</a>
+            <a v-if="version" class="kk-product-version" :href="`${PRODUCT_URL}/releases`" target="_blank" rel="noopener noreferrer">v{{ version }}</a>
           </div>
-
-          <div v-if="$slots.actions" class="kk-bottom-toolbar__divider"></div>
-          <slot name="actions" />
-
-          <div class="kk-bottom-toolbar__divider"></div>
-          <button
-            type="button"
-            class="micl-iconbutton-standard-s kk-bottom-toolbar__account-btn"
-            popovertarget="kk-user-menu"
-            :aria-label="`${t('Account menu for')} ${accountLabel}`"
-            :title="`${t('Account menu for')} ${accountLabel}`"
-          >
+        </template>
+        <template #actions><slot name="actions" /></template>
+        <template #account>
+          <button type="button" class="micl-iconbutton-standard-s kk-bottom-toolbar__account-btn" popovertarget="kk-user-menu" :aria-label="`${t('Account menu for')} ${accountLabel}`" :title="`${t('Account menu for')} ${accountLabel}`">
             <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
           </button>
-        </div>
-      </aside>
+        </template>
+      </FloatingBottomBar>
     </section>
   </main>
 

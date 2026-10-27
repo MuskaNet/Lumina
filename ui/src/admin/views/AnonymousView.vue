@@ -107,3 +107,37 @@ onMounted(load);
   </div>
   </div>
 </template>
+
+<style scoped>
+/* Banner Switch (for Anonymous view: pure filled block, no border, 100% width) */
+.kk-banner-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background-color: var(--md-sys-color-surface-container);
+  border: none;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.kk-banner-switch .kk-switch-row {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.kk-banner-hint {
+  font-size: 0.8125rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+@media (width <= 768px) {
+  .kk-banner-switch {
+    padding: 12px 16px;
+    border-radius: 16px;
+  }
+}
+</style>

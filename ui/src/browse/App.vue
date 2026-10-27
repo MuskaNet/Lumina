@@ -12,6 +12,7 @@ import M3List from "../shared/components/M3List.vue";
 import M3ListItem from "../shared/components/M3ListItem.vue";
 import MobileNavigation from "../shared/components/MobileNavigation.vue";
 import LoginDialog from "../shared/components/LoginDialog.vue";
+import FloatingBottomBar from "../shared/components/FloatingBottomBar.vue";
 import { route, navigate, browseHash, BROWSE_PREFIX } from "./route";
 import BrowseView from "./views/BrowseView.vue";
 import MyTokenView from "./views/MyTokenView.vue";
@@ -159,9 +160,8 @@ async function onSignedIn() {
         <MyTokenView v-else-if="route.view === 'my-token'" />
       </div>
 
-      <!-- Floating bottom toolbar -->
-      <aside class="kk-bottom-toolbar kk-bottom-toolbar--browse" role="toolbar" :aria-label="t('Quick toolbar')">
-        <div class="kk-bottom-toolbar__inner">
+      <FloatingBottomBar browse>
+        <template #search>
           <form class="kk-bottom-toolbar__search" role="search" @submit="submitSearch">
             <span class="material-symbols-outlined kk-bottom-toolbar__search-icon" aria-hidden="true">search</span>
             <input
@@ -173,9 +173,8 @@ async function onSignedIn() {
               autocomplete="off"
             >
           </form>
-
-          <div class="kk-bottom-toolbar__divider"></div>
-
+        </template>
+        <template #actions>
           <a
             v-if="session?.userId"
             class="micl-iconbutton-standard-s kk-bottom-toolbar__admin-btn"
@@ -206,8 +205,8 @@ async function onSignedIn() {
           >
             <span class="material-symbols-outlined" aria-hidden="true">login</span>
           </button>
-        </div>
-      </aside>
+        </template>
+      </FloatingBottomBar>
     </section>
   </main>
 

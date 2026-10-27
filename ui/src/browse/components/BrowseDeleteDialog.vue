@@ -292,3 +292,67 @@ defineExpose({ open });
     </div>
   </dialog>
 </template>
+
+<style scoped>
+/* ---- Browse: delete dialogs -------------------------------------------- */
+
+.kk-browse-delete-summary {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.kk-browse-delete-summary dt {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+.kk-browse-delete-summary dd {
+  margin: 0;
+  min-inline-size: 0;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.kk-browse-delete-warning {
+  margin: 0;
+  color: var(--md-sys-color-error);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.kk-browse-delete-paths {
+  margin: 8px 0 0;
+  padding-inline-start: 20px;
+  max-block-size: 12rem;
+  overflow: auto;
+  font-size: 0.75rem;
+}
+
+.kk-browse-delete-paths li {
+  margin-block-end: 2px;
+  overflow-wrap: anywhere;
+}
+
+.kk-browse-delete-confirm {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.kk-browse-delete-confirm:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 1px;
+}
+
+.kk-browse-delete-review {
+  margin-inline-start: auto;
+}
+</style>

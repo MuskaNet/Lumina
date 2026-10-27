@@ -6,8 +6,6 @@ import { formatInventoryBytes, inventoryValue, type InventorySnapshot } from "..
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn, type DataTableSort } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
-import M3List from "../../shared/components/M3List.vue";
-import M3ListItem from "../../shared/components/M3ListItem.vue";
 import RepositoryRecipeCombobox from "../components/RepositoryRecipeCombobox.vue";
 import {
   ALPINE_METADATA_MODES,
@@ -24,13 +22,9 @@ import {
   type RepositoryDraft,
   type RepositoryViewLike,
 } from "../repositoryForm";
+import MemberTransferPicker from "../components/MemberTransferPicker.vue";
 import {
-  addMemberNames,
-  availableMembers,
-  moveMember,
-  removeMemberNames,
   selectMemberCandidates,
-  toggleMemberHighlight,
 } from "../repositoryMembers";
 import { buildRecipeOptions, type RecipeOption } from "../repositoryRecipes";
 import {
@@ -267,92 +261,20 @@ const savedOutboundPasswordPlaceholder = computed(() =>
 
 /* ---- Group member transfer --------------------------------------------- */
 
-const memberFilter = ref("");
-const memberAvailableHighlight = ref<string[]>([]);
-const memberSelectedHighlight = ref<string[]>([]);
+const memberNames = computed<string[]>({
+  get: () => draft.memberText
+    .split(/\r?\n/)
+    .map((name) => name.trim())
+    .filter(Boolean),
+  set: (names) => { draft.memberText = names.join("\n"); },
+});
 
 const memberCandidates = computed(() =>
   selectMemberCandidates(repositories.value, draftFormat.value, editing.value?.name ?? ""),
 );
-/** The newline-joined member list, in resolution priority order. */
-const memberNames = computed(() =>
-  draft.memberText
-    .split(/\r?\n/)
-    .map((name) => name.trim())
-    .filter(Boolean),
-);
-const memberAvailable = computed(() =>
-  availableMembers(memberCandidates.value, memberNames.value, memberFilter.value),
-);
-
-function setMemberNames(names: string[]) {
-  draft.memberText = names.join("\n");
-}
 
 function resetMemberTransfer() {
-  memberFilter.value = "";
-  memberAvailableHighlight.value = [];
-  memberSelectedHighlight.value = [];
-}
-
-function addMembersToSelection(names: string[]) {
-  if (!names.length) return;
-  setMemberNames(addMemberNames(memberNames.value, names));
-  memberAvailableHighlight.value = [];
-  memberSelectedHighlight.value = names.filter((name) => memberNames.value.includes(name));
-}
-
-function removeMembersFromSelection(names: string[]) {
-  if (!names.length) return;
-  setMemberNames(removeMemberNames(memberNames.value, names));
-  memberSelectedHighlight.value = [];
-  memberAvailableHighlight.value = names;
-}
-
-function onMemberClick(
-  side: "available" | "selected",
-  name: string,
-  event: MouseEvent | KeyboardEvent,
-) {
-  const mouse = event instanceof MouseEvent ? event : null;
-  if (mouse && mouse.detail > 1) {
-    if (side === "available") addMembersToSelection([name]);
-    else removeMembersFromSelection([name]);
-    return;
-  }
-  const additive = Boolean(mouse && (mouse.ctrlKey || mouse.metaKey || mouse.shiftKey));
-  if (side === "available") {
-    memberAvailableHighlight.value = toggleMemberHighlight(
-      memberAvailableHighlight.value, name, additive,
-    );
-    if (!additive) memberSelectedHighlight.value = [];
-  } else {
-    memberSelectedHighlight.value = toggleMemberHighlight(
-      memberSelectedHighlight.value, name, additive,
-    );
-    if (!additive) memberAvailableHighlight.value = [];
-  }
-}
-
-function addHighlightedMembers() {
-  addMembersToSelection([...memberAvailableHighlight.value]);
-}
-
-function addAllMembers() {
-  addMembersToSelection(memberAvailable.value.map((repo) => repo.name));
-}
-
-function removeHighlightedMembers() {
-  removeMembersFromSelection([...memberSelectedHighlight.value]);
-}
-
-function removeAllMembers() {
-  removeMembersFromSelection([...memberNames.value]);
-}
-
-function orderMember(name: string, offset: number) {
-  setMemberNames(moveMember(memberNames.value, name, offset));
-  memberSelectedHighlight.value = [name];
+  // The reusable picker owns filter and selection state.
 }
 
 // A recipe change (create mode only) can invalidate selected members: the server
@@ -362,7 +284,7 @@ watch(draftFormat, () => {
   resetMemberTransfer();
   if (editing.value) return;
   const valid = new Set(memberCandidates.value.map((repo) => repo.name));
-  setMemberNames(memberNames.value.filter((name) => valid.has(name)));
+  memberNames.value = memberNames.value.filter((name) => valid.has(name));
 });
 
 /* ---- Conan status ------------------------------------------------------ */
@@ -771,7 +693,7 @@ onMounted(load);
         <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">tune</span></span>
         <h2 class="kk-card-header__title">{{ t("General") }}</h2>
       </div>
-      <div class="kk-field-grid">
+      <div class="kk-field-grid kk-repository-general-grid">
         <div class="micl-textfield-outlined">
           <label for="repo-name">{{ t("Name") }}</label>
           <input id="repo-name" v-model="draft.name" type="text" :readonly="Boolean(editing)" autocomplete="off">
@@ -954,118 +876,16 @@ onMounted(load);
         </label>
       </div>
 
-      <div v-else-if="isGroup" class="kk-member-transfer">
-        <section class="kk-member-pane" aria-labelledby="member-available-title">
-          <header class="kk-member-pane__head">
-            <span id="member-available-title">{{ t("Available") }}</span>
-            <span class="kk-member-count">{{ memberAvailable.length }}</span>
-          </header>
-          <div class="micl-textfield-outlined">
-            <span class="micl-textfield__icon-leading material-symbols-outlined" aria-hidden="true">search</span>
-            <label for="member-filter">{{ t("Filter") }}</label>
-            <input id="member-filter" v-model="memberFilter" type="search" autocomplete="off">
-          </div>
-          <M3List class="kk-member-list" :aria-label="t('Available')">
-            <M3ListItem
-              v-for="repo in memberAvailable"
-              :key="repo.name"
-              :headline="repo.name"
-              :supporting-text="String(repo.type ?? '').toLowerCase()"
-              clickable
-              :selected="memberAvailableHighlight.includes(repo.name)"
-              @click="onMemberClick('available', repo.name, $event)"
-            />
-            <li v-if="!memberAvailable.length" class="kk-member-empty">
-              {{ memberFilter.trim() ? t("No matches") : t("No eligible members") }}
-            </li>
-          </M3List>
-        </section>
-
-        <div class="kk-member-actions" role="group" :aria-label="t('Member repositories')">
-          <button
-            type="button"
-            class="micl-iconbutton-standard-s"
-            :disabled="!memberAvailable.length"
-            :title="t('Add all')"
-            :aria-label="t('Add all')"
-            @click="addAllMembers"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_right</span>
-          </button>
-          <button
-            type="button"
-            class="micl-iconbutton-standard-s"
-            :disabled="!memberAvailableHighlight.length"
-            :title="t('Add selected')"
-            :aria-label="t('Add selected')"
-            @click="addHighlightedMembers"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-          </button>
-          <button
-            type="button"
-            class="micl-iconbutton-standard-s"
-            :disabled="!memberSelectedHighlight.length"
-            :title="t('Remove selected')"
-            :aria-label="t('Remove selected')"
-            @click="removeHighlightedMembers"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-          </button>
-          <button
-            type="button"
-            class="micl-iconbutton-standard-s"
-            :disabled="!memberNames.length"
-            :title="t('Remove all')"
-            :aria-label="t('Remove all')"
-            @click="removeAllMembers"
-          >
-            <span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_left</span>
-          </button>
-        </div>
-
-        <section class="kk-member-pane" aria-labelledby="member-selected-title">
-          <header class="kk-member-pane__head">
-            <span id="member-selected-title">{{ t("Selected") }}</span>
-            <span class="kk-member-count">{{ memberNames.length }}</span>
-          </header>
-          <p class="kk-member-hint">{{ t("Priority (top → bottom)") }}</p>
-          <M3List class="kk-member-list" :aria-label="t('Selected')">
-            <M3ListItem
-              v-for="(name, index) in memberNames"
-              :key="name"
-              :headline="name"
-              clickable
-              :selected="memberSelectedHighlight.includes(name)"
-              @click="onMemberClick('selected', name, $event)"
-            >
-              <template #trailing>
-                <span class="kk-member-order">{{ index + 1 }}</span>
-                <button
-                  type="button"
-                  class="micl-iconbutton-standard-s"
-                  :title="t('Move up')"
-                  :aria-label="t('Move up')"
-                  :disabled="index === 0"
-                  @click.stop="orderMember(name, -1)"
-                >
-                  <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
-                </button>
-                <button
-                  type="button"
-                  class="micl-iconbutton-standard-s"
-                  :title="t('Move down')"
-                  :aria-label="t('Move down')"
-                  :disabled="index === memberNames.length - 1"
-                  @click.stop="orderMember(name, 1)"
-                >
-                  <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
-                </button>
-              </template>
-            </M3ListItem>
-          </M3List>
-        </section>
-      </div>
+      <MemberTransferPicker
+        v-model="memberNames"
+        :options="memberCandidates.map((repo) => ({ name: repo.name, supportingText: String(repo.type ?? '').toLowerCase() }))"
+        available-title="Available"
+        selected-title="Selected"
+        filter-id="member-filter"
+        available-empty="No matches"
+        selected-empty="No eligible members"
+        reorder
+      />
     </section>
 
     <!-- Format-specific -->

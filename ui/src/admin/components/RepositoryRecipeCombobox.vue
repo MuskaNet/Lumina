@@ -273,3 +273,174 @@ onBeforeUnmount(unbindListeners);
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ---- Repository recipe combobox --------------------------------------- */
+
+.kk-recipe-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-block-start: calc(var(--md-sys-typescale-body-small-line-height, 16px) / 2);
+}
+
+.kk-recipe-label {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 10px;
+  z-index: 1;
+  padding-inline: 4px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: var(--md-sys-typescale-body-small-size, 0.75rem);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.kk-recipe-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-block-size: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kk-recipe-trigger:hover {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+.kk-recipe-field.is-open .kk-recipe-trigger,
+.kk-recipe-trigger:focus-visible {
+  padding: 7px 11px;
+  border: 2px solid var(--md-sys-color-primary);
+  outline: none;
+}
+
+.kk-recipe-field.is-open .kk-recipe-label {
+  color: var(--md-sys-color-primary);
+}
+
+.kk-recipe-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.kk-recipe-selection {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.kk-recipe-selection .format-logo {
+  inline-size: 20px;
+  block-size: 20px;
+  flex: 0 0 20px;
+}
+
+.kk-recipe-name {
+  overflow: hidden;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kk-recipe-placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.kk-recipe-caret {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 22px;
+  transition: transform 120ms ease;
+}
+
+.kk-recipe-field.is-open .kk-recipe-caret {
+  transform: rotate(180deg);
+}
+
+.kk-recipe-type {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--md-sys-shape-corner-full, 999px);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04rem;
+  text-transform: uppercase;
+}
+
+.kk-recipe-popover {
+  box-sizing: border-box;
+  position: fixed;
+  inset: auto;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-block-size: min(420px, 60vh);
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium, 12px);
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: var(--md-sys-elevation-level3, 0 6px 20px rgb(0 0 0 / 24%));
+}
+
+.kk-recipe-search {
+  --md-comp-text-field-container-height: 40px;
+  --md-comp-text-field-icon-size: 20px;
+  --md-comp-text-field-input-space: 12px;
+  --md-sys-typescale-body-large-size: 0.875rem;
+  --md-sys-typescale-body-large-line-height: 1.25rem;
+  margin: 0;
+}
+
+.kk-recipe-options {
+  flex: 1 1 auto;
+  max-block-size: 320px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  /* Compact rows for a picker list (MICL defaults to 56px for one line). */
+  --md-comp-list-item-one-line-container-height: 40px;
+}
+
+.kk-recipe-option {
+  margin-block: 2px;
+}
+
+.kk-recipe-option[aria-selected="true"] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.kk-recipe-option.is-active:not([aria-selected="true"]) {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, var(--md-sys-color-surface-container-high));
+}
+
+.kk-recipe-option .format-logo {
+  inline-size: 18px;
+  block-size: 18px;
+  flex: 0 0 18px;
+}
+
+.kk-recipe-empty {
+  padding: 16px 8px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.875rem;
+  text-align: center;
+  list-style: none;
+}
+</style>
