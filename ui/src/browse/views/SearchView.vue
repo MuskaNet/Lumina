@@ -16,8 +16,34 @@ interface ComponentHit {
   [key: string]: unknown;
 }
 
-const props = defineProps<{ query: string; format: string }>();
+const SUPPORTED_FORMATS = [
+  ["", "All formats"],
+  ["maven2", "Maven"],
+  ["npm", "npm"],
+  ["pypi", "PyPI"],
+  ["cargo", "Cargo / Rust"],
+  ["pub", "Dart / Pub"],
+  ["composer", "Composer / PHP"],
+  ["go", "Go"],
+  ["helm", "Helm"],
+  ["docker", "Docker / OCI"],
+  ["nuget", "NuGet"],
+  ["rubygems", "RubyGems"],
+  ["yum", "Yum / RPM"],
+  ["terraform", "Terraform"],
+  ["swift", "Swift"],
+  ["ansiblegalaxy", "Ansible Galaxy"],
+  ["conda", "Conda"],
+  ["conan", "Conan"],
+  ["apt", "APT"],
+  ["alpine", "Alpine"],
+  ["r", "R"],
+  ["huggingface", "Hugging Face"],
+  ["gitlfs", "Git LFS"],
+  ["raw", "Raw"],
+] as const;
 
+const props = defineProps<{ query: string; format: string }>();
 const keyword = ref(props.query);
 const format = ref(props.format);
 const limit = ref(50);
@@ -104,9 +130,11 @@ watch(
       <label for="search-keyword">{{ t("Search components") }}</label>
       <input id="search-keyword" v-model="keyword" type="search" autocomplete="off">
     </div>
-      <div class="micl-textfield-outlined kk-filter">
+      <div class="micl-textfield-outlined kk-filter kk-format-select">
       <label for="search-format">{{ t("Format") }}</label>
-      <input id="search-format" v-model="format" type="text" placeholder="maven2" autocomplete="off">
+      <select id="search-format" v-model="format">
+        <option v-for="[value, label] in SUPPORTED_FORMATS" :key="value" :value="value">{{ t(label) }}</option>
+      </select>
     </div>
     </div>
   </form>

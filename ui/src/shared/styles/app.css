@@ -2105,12 +2105,27 @@ dialog.micl-dialog .micl-dialog__actions {
   list-style: none;
 }
 
-.kk-member-actions {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
+.kk-member-filter {
+  margin-block-start: 0;
 }
+
+.kk-member-option {
+  padding: 8px 10px;
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.kk-member-option:hover,
+.kk-member-option.is-selected {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.kk-member-option + .kk-member-option {
+  margin-block-start: 2px;
+}
+
 
 /* ---- Snackbar / Toast --------------------------------------------------
  * Material Design 3 Expressive Snackbar enhancements.
