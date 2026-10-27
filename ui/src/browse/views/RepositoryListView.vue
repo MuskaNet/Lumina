@@ -133,7 +133,7 @@ onUnmounted(() => {
       <label for="repository-filter">{{ t("Filter") }}</label>
       <input id="repository-filter" v-model="filter" type="search" autocomplete="off">
     </div>
-    <span class="kk-tonal-chip" role="status">
+    <span class="micl-chip-assist kk-tonal-chip" role="status">
       <span class="material-symbols-outlined kk-tonal-chip__icon" aria-hidden="true">database</span>
       <span>{{ t("Matching repositories") }}: {{ rows.length }}</span>
     </span>
@@ -163,9 +163,9 @@ onUnmounted(() => {
       </span>
     </template>
     <template #cell-status="{ row }">
-      <span class="kk-badge kk-status-chip" :class="row.repository.online ? 'kk-badge--ok' : 'kk-badge--bad'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge kk-status-chip" :class="row.repository.online ? 'kk-badge--ok' : 'kk-badge--bad'">
         {{ row.status }}
-      </span>
+      </span></span>
     </template>
     <template #cell-url="{ row }">
       <span class="kk-repo-url">

@@ -177,9 +177,9 @@ onMounted(load);
   >
     <template #cell-realmId="{ row }"><code class="kk-mono">{{ row.realmId }}</code></template>
     <template #cell-enabled="{ row }">
-      <span class="kk-badge" :class="row.enabled ? 'kk-badge--ok' : 'kk-badge--warn'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.enabled ? 'kk-badge--ok' : 'kk-badge--warn'">
         {{ row.enabled ? t("Enabled") : t("Disabled") }}
-      </span>
+      </span></span>
     </template>
     <template #cell-actions="{ row }">
       <div class="kk-row-actions">

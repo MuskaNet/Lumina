@@ -214,7 +214,7 @@ onBeforeUnmount(unbindListeners);
       <span v-if="selected" class="kk-recipe-selection">
         <span :class="formatLogoClass(selected.format)" aria-hidden="true"></span>
         <span class="kk-recipe-name">{{ selected.displayName }}</span>
-        <span class="kk-recipe-type">{{ selected.typeLabel }}</span>
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-recipe-type">{{ selected.typeLabel }}</span></span>
       </span>
       <span v-else class="kk-recipe-placeholder">
         {{ options.length ? t("Select a recipe") : t("No recipes available") }}
@@ -265,7 +265,7 @@ onBeforeUnmount(unbindListeners);
           </template>
           <template #headline>{{ option.displayName }}</template>
           <template #trailing>
-            <span class="kk-recipe-type">{{ option.typeLabel }}</span>
+            <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-recipe-type">{{ option.typeLabel }}</span></span>
           </template>
         </M3ListItem>
         <li v-if="!filtered.length" class="kk-recipe-empty">{{ t("No matching recipes") }}</li>
@@ -370,14 +370,9 @@ onBeforeUnmount(unbindListeners);
 
 .kk-recipe-type {
   flex: 0 0 auto;
-  padding: 2px 8px;
-  border-radius: var(--md-sys-shape-corner-full, 999px);
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.04rem;
-  text-transform: uppercase;
+  --md-comp-assist-chip-label-text-color: var(--md-sys-color-on-secondary-container);
+  --md-comp-assist-chip-outline-color: transparent;
+  --md-comp-assist-chip-elevated-container-color: var(--md-sys-color-secondary-container);
 }
 
 .kk-recipe-popover {
@@ -401,8 +396,6 @@ onBeforeUnmount(unbindListeners);
   --md-comp-text-field-container-height: 40px;
   --md-comp-text-field-icon-size: 20px;
   --md-comp-text-field-input-space: 12px;
-  --md-sys-typescale-body-large-size: 0.875rem;
-  --md-sys-typescale-body-large-line-height: 1.25rem;
   margin: 0;
 }
 

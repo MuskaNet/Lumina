@@ -146,14 +146,14 @@ onMounted(load);
     <template #cell-displayName="{ row }">{{ row.displayName || "—" }}</template>
     <template #cell-tokenPrefix="{ row }"><code class="kk-mono">{{ row.tokenPrefix }}…</code></template>
     <template #cell-status="{ row }">
-      <span class="kk-badge" :class="row.status === 'active' ? 'kk-badge--ok' : 'kk-badge--warn'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.status === 'active' ? 'kk-badge--ok' : 'kk-badge--warn'">
         {{ t(row.status || "active") }}
-      </span>
+      </span></span>
     </template>
     <template #cell-expiresAt="{ row }">{{ dateLabel(row.expiresAt) }}</template>
     <template #cell-lastUsedAt="{ row }">{{ dateLabel(row.lastUsedAt) }}</template>
     <template #cell-actions="{ row }">
-      <div class="kk-row-actions">
+      <div class="micl-buttongroup kk-row-actions" role="group" :aria-label="t('Actions')">
         <button type="button" class="micl-button-text-s" @click="reset(row)">{{ t("Reset") }}</button>
         <button type="button" class="micl-button-text-s" @click="remove(row)">{{ t("Delete") }}</button>
       </div>

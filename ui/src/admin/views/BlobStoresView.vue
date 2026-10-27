@@ -493,7 +493,7 @@ onMounted(() => {
     </template>
 
     <template #cell-health="{ row }">
-      <span class="kk-badge" :class="`kk-badge--${storeHealth(row).tone}`">{{ t(storeHealth(row).status) }}</span>
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="`kk-badge--${storeHealth(row).tone}`">{{ t(storeHealth(row).status) }}</span></span>
       <small v-if="storeHealth(row).message" class="kk-secondary" :title="t(storeHealth(row).message)">
         {{ t(storeHealth(row).message) }}
       </small>

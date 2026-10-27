@@ -71,11 +71,13 @@ async function copyUrl(repo: Repository) {
             <strong>{{ repo.name }}</strong>
             <small class="kk-secondary">{{ repo.type }} · {{ repo.online ? t("Online") : t("Offline") }}</small>
           </span>
-          <span
-            class="kk-badge kk-pill-badge"
-            :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
-          >
-            {{ repo.type }}
+          <span class="micl-chips kk-chip-host">
+            <span
+              class="micl-chip-assist micl-chip--elevated kk-badge kk-pill-badge"
+              :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
+            >
+              {{ repo.type }}
+            </span>
           </span>
         </button>
         <button

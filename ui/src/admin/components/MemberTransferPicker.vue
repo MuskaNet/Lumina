@@ -120,7 +120,7 @@ function reorder(name: string, offset: number): void {
       </M3List>
     </section>
 
-    <div class="kk-member-actions" role="group" :aria-label="t('Selection actions')">
+    <div class="micl-buttongroup kk-member-actions" role="group" :aria-label="t('Selection actions')">
       <button type="button" class="micl-iconbutton-standard-s" :disabled="!available.length" :title="t('Add all')" @click="addAll"><span class="material-symbols-outlined" aria-hidden="true">keyboard_double_arrow_right</span></button>
       <button type="button" class="micl-iconbutton-standard-s" :disabled="!availableHighlight.length" :title="t('Add selected')" @click="addSelected"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
       <button type="button" class="micl-iconbutton-standard-s" :disabled="!selectedHighlight.length" :title="t('Remove selected')" @click="removeSelected"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
@@ -222,32 +222,13 @@ function reorder(name: string, offset: number): void {
 
 .kk-member-filter {
   margin-block-start: 4px;
-  padding-inline: 4px;
-  border: 0;
-  border-radius: var(--md-sys-shape-corner-small, 8px);
-  background: var(--md-sys-color-surface-container-high);
 }
 
 .kk-member-filter.micl-textfield-outlined {
-  --md-comp-text-field-container-height: 36px;
-  --md-comp-text-field-input-space: 8px;
-  --_textfield-outline-width: 0px;
-  border: 0;
-  box-shadow: none;
-}
-
-.kk-member-filter.micl-textfield-outlined:focus-within {
-  --_textfield-outline-width: 0px;
-  border: 0;
-}
-
-.kk-member-filter.micl-textfield-outlined::before,
-.kk-member-filter.micl-textfield-outlined::after {
-  border-block-start-width: 0;
-}
-
-.kk-member-filter.micl-textfield-outlined > input {
-  border: 0;
+  --md-comp-text-field-container-height: 40px;
+  --md-comp-text-field-icon-size: 20px;
+  --md-comp-text-field-input-space: 12px;
+  margin-block-start: 4px;
 }
 
 .kk-member-list {
@@ -331,9 +312,7 @@ function reorder(name: string, offset: number): void {
   --micl-width: 28px;
   --micl-height: 28px;
   flex: 0 0 auto;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
   color: var(--md-sys-color-on-surface-variant);
-  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .kk-member-option__actions .kk-member-order .material-symbols-outlined {
@@ -397,6 +376,7 @@ function reorder(name: string, offset: number): void {
   .kk-member-actions {
     flex-direction: row;
     justify-content: center;
+    --md-comp-button-group-standard-small-between-space: 4px;
   }
 }
 </style>

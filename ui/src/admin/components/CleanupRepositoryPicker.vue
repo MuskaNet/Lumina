@@ -245,7 +245,7 @@ onBeforeUnmount(unbindListeners);
             @keydown="onSearchKeydown"
           >
         </div>
-        <div class="kk-cleanup-repo-actions">
+        <div class="micl-buttongroup kk-cleanup-repo-actions" role="group" :aria-label="t('Selection actions')">
           <button
             type="button"
             class="micl-button-text-s"
@@ -435,9 +435,8 @@ onBeforeUnmount(unbindListeners);
 }
 
 .kk-cleanup-repo-actions {
-  display: flex;
   align-items: center;
-  gap: 4px;
+  --md-comp-button-group-standard-small-between-space: 4px;
 }
 
 .kk-cleanup-repo-options {

@@ -257,7 +257,7 @@ watch(
       ></span>
       <span class="kk-browse-crumbs__repo">{{ props.repo }}</span>
     </nav>
-    <div class="kk-browse-bar__actions">
+    <div class="micl-buttongroup kk-browse-bar__actions" role="group" :aria-label="t('Actions')">
       <a
         class="micl-button-text-s"
         :href="htmlViewUrl"

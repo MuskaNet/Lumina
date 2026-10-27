@@ -494,9 +494,9 @@ onMounted(load);
     :aria-label="t('Cleanup runs')"
   >
     <template #cell-status="{ row }">
-      <span class="kk-badge" :class="row.status === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.status === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
         {{ t(String(row.status || '—')) }}
-      </span>
+      </span></span>
     </template>
     <template #cell-mode="{ row }">{{ t(String(row.mode || '—')) }}</template>
     <template #cell-startedAt="{ row }">{{ timestamp(row.startedAt) }}</template>
@@ -704,9 +704,9 @@ onMounted(load);
       >
         <template #cell-name="{ row }">{{ row.repositoryName ?? row.name ?? "—" }}</template>
         <template #cell-state="{ row }">
-          <span class="kk-badge" :class="row.state === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
+          <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.state === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
             {{ t(String(row.state || '—')) }}
-          </span>
+          </span></span>
         </template>
         <template #cell-scanned="{ row }">{{ row.scanned ?? 0 }}</template>
         <template #cell-matched="{ row }">{{ row.matched ?? 0 }}</template>

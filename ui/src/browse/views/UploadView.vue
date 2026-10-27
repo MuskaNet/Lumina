@@ -166,7 +166,7 @@ onMounted(load);
           <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">upload</span>
           <span>{{ busy ? t("Uploading…") : t("Upload") }}</span>
         </button>
-        <span v-if="target" class="kk-tonal-chip">
+        <span v-if="target" class="micl-chip-assist kk-tonal-chip">
           <span class="material-symbols-outlined kk-tonal-chip__icon" aria-hidden="true">category</span>
           {{ target.format }}
         </span>

@@ -270,7 +270,7 @@ onMounted(loadJobs);
     :aria-label="t('Migration jobs')"
   >
     <template #cell-status="{ row }">
-      <span class="kk-badge" :class="row.active ? 'kk-badge--warn' : 'kk-badge--ok'">{{ t(String(row.status || '—')) }}</span>
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.active ? 'kk-badge--warn' : 'kk-badge--ok'">{{ t(String(row.status || '—')) }}</span></span>
     </template>
     <template #cell-startedAt="{ row }">{{ timestamp(row.startedAt) }}</template>
     <template #cell-actions="{ row }">
@@ -338,9 +338,9 @@ onMounted(loadJobs);
       <template #cell-targetRepositoryName="{ row }">{{ row.targetRepositoryName || "—" }}</template>
       <template #cell-format="{ row }">{{ row.format || "—" }}</template>
       <template #cell-status="{ row }">
-        <span class="kk-badge" :class="row.status === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.status === 'COMPLETED' ? 'kk-badge--ok' : 'kk-badge--warn'">
           {{ t(String(row.status || '—')) }}
-        </span>
+        </span></span>
         <small v-if="row.lastError" class="kk-secondary" :title="row.lastError">{{ row.lastError }}</small>
       </template>
       <template #cell-totalAssets="{ row }">{{ row.totalAssets ?? 0 }}</template>

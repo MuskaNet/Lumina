@@ -309,7 +309,7 @@ onMounted(load);
     <template #cell-description="{ row }">{{ row.description || "—" }}</template>
     <template #cell-usedBy="{ row }">{{ usedBy(row) }}</template>
     <template #cell-actions="{ row }">
-      <div class="kk-row-actions">
+      <div class="micl-buttongroup kk-row-actions" role="group" :aria-label="t('Actions')">
         <button type="button" class="micl-button-text-s" @click="openEdit(row)">
           {{ options.permissions.update ? t("Edit") : t("View") }}
         </button>

@@ -1,5 +1,7 @@
 import { createApp } from "vue";
 import "material-inspired-component-library/dist/micl.css";
+import "material-inspired-component-library/dist/chip.css";
+import "material-inspired-component-library/dist/buttongroup.css";
 import micl from "material-inspired-component-library/dist/micl";
 import "../shared/theme/themes.generated.css";
 import "../shared/fonts/material-symbols.css";

@@ -231,9 +231,9 @@ onMounted(load);
     <template #cell-name="{ row }">{{ [row.firstName, row.lastName].filter(Boolean).join(" ") || "—" }}</template>
     <template #cell-email="{ row }">{{ row.email || "—" }}</template>
     <template #cell-status="{ row }">
-      <span class="kk-badge" :class="row.status === 'disabled' ? 'kk-badge--warn' : 'kk-badge--ok'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.status === 'disabled' ? 'kk-badge--warn' : 'kk-badge--ok'">
         {{ t(row.status || 'active') }}
-      </span>
+      </span></span>
     </template>
     <template #cell-roles="{ row }">{{ (row.roles ?? []).join(", ") || "—" }}</template>
     <template #cell-actions="{ row }">

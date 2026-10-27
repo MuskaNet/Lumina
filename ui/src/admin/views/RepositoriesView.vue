@@ -651,14 +651,14 @@ onMounted(load);
       </span>
     </template>
     <template #cell-type="{ row }">
-      <span class="kk-badge" :class="typeLabel(row) === 'group' ? 'kk-badge--warn' : 'kk-badge--ok'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="typeLabel(row) === 'group' ? 'kk-badge--warn' : 'kk-badge--ok'">
         {{ typeLabel(row) }}
-      </span>
+      </span></span>
     </template>
     <template #cell-online="{ row }">
-      <span class="kk-badge" :class="row.online ? 'kk-badge--ok' : 'kk-badge--bad'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.online ? 'kk-badge--ok' : 'kk-badge--bad'">
         {{ row.online ? t("Online") : t("Offline") }}
-      </span>
+      </span></span>
     </template>
     <template #cell-blobStoreName="{ row }">{{ row.blobStoreName || "—" }}</template>
     <template #cell-assetCount="{ row }">
@@ -669,7 +669,7 @@ onMounted(load);
     </template>
     <template #cell-url="{ row }"><code class="kk-mono">{{ repositoryClientUrl(row) || "—" }}</code></template>
     <template #cell-actions="{ row }">
-      <div class="kk-row-actions">
+      <div class="micl-buttongroup kk-row-actions" role="group" :aria-label="t('Actions')">
         <button type="button" class="micl-button-text-s" @click="openEdit(row)">{{ t("Edit") }}</button>
         <button type="button" class="micl-button-text-s" @click="askDelete(row)">{{ t("Delete") }}</button>
       </div>

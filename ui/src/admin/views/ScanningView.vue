@@ -594,7 +594,7 @@ onMounted(() => load(true));
       <template #cell-packageName="{ row }"><code class="kk-mono">{{ row.packageName || "—" }}</code></template>
       <template #cell-installedVersion="{ row }">{{ row.installedVersion || "—" }}</template>
       <template #cell-severity="{ row }">
-        <span class="kk-badge" :class="badgeTone(String(row.severity ?? ''))">{{ t(String(row.severity || '—')) }}</span>
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="badgeTone(String(row.severity ?? ''))">{{ t(String(row.severity || '—')) }}</span></span>
       </template>
       <template #cell-affectedArtifactCount="{ row }">{{ row.affectedArtifactCount ?? "—" }}</template>
       <template #cell-activeWaiverCount="{ row }">{{ row.activeWaiverCount ?? 0 }}</template>
@@ -603,7 +603,7 @@ onMounted(() => load(true));
       </template>
       <template #cell-stage="{ row }">{{ t(String(row.stage || '—')) }}</template>
       <template #cell-status="{ row }">
-        <span class="kk-badge" :class="badgeTone(String(row.status ?? ''))">{{ t(String(row.status || '—')) }}</span>
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="badgeTone(String(row.status ?? ''))">{{ t(String(row.status || '—')) }}</span></span>
       </template>
       <template #cell-attempts="{ row }">{{ row.attempts ?? 0 }} / {{ row.maxAttempts ?? 0 }}</template>
       <template #cell-format="{ row }">{{ row.format || "—" }}</template>
@@ -611,26 +611,26 @@ onMounted(() => load(true));
       <template #cell-type="{ row }">{{ row.type || "—" }}</template>
       <template #cell-policyName="{ row }">{{ row.policyName || "—" }}</template>
       <template #cell-policyEnabled="{ row }">
-        <span class="kk-badge" :class="row.policyEnabled ? 'kk-badge--ok' : 'kk-badge--warn'">
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.policyEnabled ? 'kk-badge--ok' : 'kk-badge--warn'">
           {{ row.policyEnabled ? t("Yes") : t("No") }}
-        </span>
+        </span></span>
       </template>
       <template #cell-enabled="{ row }">
-        <span class="kk-badge" :class="row.enabled ? 'kk-badge--ok' : 'kk-badge--warn'">
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.enabled ? 'kk-badge--ok' : 'kk-badge--warn'">
           {{ row.enabled ? t("Yes") : t("No") }}
-        </span>
+        </span></span>
       </template>
       <template #cell-blockSeverity="{ row }">
-        <span class="kk-badge" :class="badgeTone(String(row.blockSeverity ?? ''))">{{ t(String(row.blockSeverity || '—')) }}</span>
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="badgeTone(String(row.blockSeverity ?? ''))">{{ t(String(row.blockSeverity || '—')) }}</span></span>
       </template>
       <template #cell-onlyFixable="{ row }">{{ row.onlyFixable ? t("Yes") : t("No") }}</template>
       <template #cell-revision="{ row }">{{ row.revision ?? "—" }}</template>
       <template #cell-scopeType="{ row }">{{ t(String(row.scopeType || '—')) }}</template>
       <template #cell-repository="{ row }">{{ row.repository || "—" }}</template>
       <template #cell-active="{ row }">
-        <span class="kk-badge" :class="row.active ? 'kk-badge--ok' : 'kk-badge--warn'">
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.active ? 'kk-badge--ok' : 'kk-badge--warn'">
           {{ row.active ? t("Yes") : t("No") }}
-        </span>
+        </span></span>
       </template>
       <template #cell-expiresAt="{ row }">{{ timestamp(row.expiresAt as string) }}</template>
 
