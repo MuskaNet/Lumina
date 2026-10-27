@@ -13,10 +13,11 @@ Lumina is a fork of [kkRepo](https://github.com/klboke/kkRepo) designed to provi
 
 Lumina inherits kkRepo's capabilities as a community-driven, fully open-source, self-hosted artifact repository designed to address the limitations and pain points of Sonatype Nexus Community Edition and provide the community with an open, reliable, and sustainably evolving artifact management solution. It currently supports Maven, npm, PyPI, Go, Helm, Cargo/Rust, Dart/Pub, Composer/PHP, Terraform, Swift Package Registry, Ansible Galaxy, Conda, APT/Debian, Conan 2, Alpine/APK, R/CRAN, Docker/OCI, NuGet, RubyGems, Yum, Raw, and other artifact formats.
 
+Lumina maintains its own release version in [`LUMINA_VERSION`](LUMINA_VERSION), independently of the kkRepo Maven version. A Lumina release is created with a `vX.Y.Z` GitHub Release tag; the workflow reads the kkRepo version from Maven and publishes the release assets automatically. The main and scanner images retain kkRepo-only tags and add explicit combined tags in the form `<kkRepo-version>-lumina-<Lumina-version>` (for example, `1.3.4-lumina-0.1.0`). The frontend-only `lumina-fp` image uses only the independent Lumina version and `latest` tags.
+
 ## Features
 
 - Support for 20+ mainstream repository formats across hosted, proxy, and group repository types.
-- Supports AOT compilation and runtime, with about one-second startup readiness and memory usage below 200 MB.
 - Per-repository outbound HTTP or SOCKS5 proxy configuration for proxy repositories, with optional proxy authentication and HTTPS upstream tunneling.
 - Artifact security scanning with CycloneDX SBOM generation, known-vulnerability matching, policy and waiver management, and optional download enforcement.
 - Rich artifact cleanup policies for enterprise-grade artifact lifecycle management.

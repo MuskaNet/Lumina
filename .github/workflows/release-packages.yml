@@ -1,6 +1,6 @@
 name: Release Packages
 
-run-name: Release packages ${{ github.event.release.tag_name || format('v{0}', inputs.version) }}
+run-name: Release packages ${{ github.event.release.tag_name || format('kkRepo {0} + Lumina {1}', inputs.version, inputs.lumina_version || 'from LUMINA_VERSION') }}
 
 on:
   release:
@@ -8,8 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release version without the v prefix
+        description: kkRepo version without the v prefix
         required: true
+        type: string
+      lumina_version:
+        description: Lumina version without the v prefix (defaults to LUMINA_VERSION)
+        required: false
         type: string
 
 env:
@@ -30,37 +34,9 @@ jobs:
     timeout-minutes: 10
     outputs:
       version: ${{ steps.version.outputs.version }}
+      lumina_version: ${{ steps.version.outputs.lumina_version }}
+      combined_version: ${{ steps.version.outputs.combined_version }}
     steps:
-      - name: Resolve and validate release version
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_INPUT: ${{ inputs.version }}
-        run: |
-          if [[ -n "$RELEASE_TAG" ]]; then
-            if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-              echo "Published release tag must use the vX.Y.Z form, got $RELEASE_TAG" >&2
-              exit 1
-            fi
-            version="${BASH_REMATCH[1]}"
-          else
-            version="$RELEASE_INPUT"
-            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Version must use the x.y.z form without a v prefix" >&2
-              exit 1
-            fi
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Require merged main for manual dispatch
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          if [[ -z "$RELEASE_TAG" && "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Manually dispatched release packages must be built from the merged main branch, got $GITHUB_REF" >&2
-            exit 1
-          fi
-
       - name: Check out repository
         uses: actions/checkout@v7
 
@@ -71,13 +47,62 @@ jobs:
           java-version: "25"
           cache: maven
 
+      - name: Resolve and validate release versions
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          KKREPO_VERSION_INPUT: ${{ inputs.version }}
+          LUMINA_VERSION_INPUT: ${{ inputs.lumina_version }}
+        run: |
+          kk_repo_version="$(mvn -q -N -DforceStdout help:evaluate -Dexpression=project.version)"
+          declared_lumina_version="$(tr -d '[:space:]' < LUMINA_VERSION)"
+          lumina_version="${LUMINA_VERSION_INPUT:-$declared_lumina_version}"
+
+          if [[ -n "$RELEASE_TAG" ]]; then
+            if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              echo "Lumina release tag must use the vX.Y.Z form, got $RELEASE_TAG" >&2
+              exit 1
+            fi
+            lumina_version="${BASH_REMATCH[1]}"
+            if [[ "$lumina_version" != "$declared_lumina_version" ]]; then
+              echo "Release tag Lumina version $lumina_version does not match LUMINA_VERSION $declared_lumina_version" >&2
+              exit 1
+            fi
+          fi
+
+          if [[ -n "$KKREPO_VERSION_INPUT" && "$KKREPO_VERSION_INPUT" != "$kk_repo_version" ]]; then
+            echo "Requested kkRepo version $KKREPO_VERSION_INPUT does not match Maven project version $kk_repo_version" >&2
+            exit 1
+          fi
+          if [[ ! "$kk_repo_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Maven project version must use the x.y.z form, got $kk_repo_version" >&2
+            exit 1
+          fi
+          if [[ ! "$lumina_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Lumina version must use the x.y.z form, got $lumina_version" >&2
+            exit 1
+          fi
+
+          echo "version=$kk_repo_version" >> "$GITHUB_OUTPUT"
+          echo "lumina_version=$lumina_version" >> "$GITHUB_OUTPUT"
+          echo "combined_version=${kk_repo_version}-lumina-${lumina_version}" >> "$GITHUB_OUTPUT"
+
+      - name: Require merged main for manual dispatch
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ -z "$RELEASE_TAG" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Manually dispatched release packages must be built from the merged main branch, got $GITHUB_REF" >&2
+            exit 1
+          fi
+
       - name: Match the project version
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           project_version="$(mvn -q -N -DforceStdout help:evaluate -Dexpression=project.version)"
           if [[ "$project_version" != "$RELEASE_VERSION" ]]; then
-            echo "Requested version $RELEASE_VERSION does not match project version $project_version" >&2
+            echo "Requested version $RELEASE_VERSION does not match Maven project version $project_version" >&2
             exit 1
           fi
 
@@ -111,7 +136,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.RELEASE_IMAGE }}-fp:${{ needs.validate.outputs.version }}
+            ${{ env.RELEASE_IMAGE }}-fp:${{ needs.validate.outputs.lumina_version }}
             ${{ env.RELEASE_IMAGE }}-fp:latest
           cache-from: type=gha,scope=frontend-release
           cache-to: type=gha,mode=max,scope=frontend-release
@@ -237,6 +262,7 @@ jobs:
         env:
           EXPECTED_ARCHITECTURE: ${{ matrix.image-architecture }}
           NATIVE_IMAGE: ${{ env.RELEASE_IMAGE }}:${{ needs.validate.outputs.version }}${{ matrix.image-suffix }}
+          COMBINED_NATIVE_IMAGE: ${{ env.RELEASE_IMAGE }}:${{ needs.validate.outputs.combined_version }}${{ matrix.image-suffix }}
         run: |
           actual_platform="$(docker image inspect "$NATIVE_IMAGE" --format '{{.Os}}/{{.Architecture}}')"
           expected_platform="linux/${EXPECTED_ARCHITECTURE}"
@@ -244,7 +270,9 @@ jobs:
             echo "Expected $expected_platform Native image, got $actual_platform" >&2
             exit 1
           fi
+          docker tag "$NATIVE_IMAGE" "$COMBINED_NATIVE_IMAGE"
           docker push "$NATIVE_IMAGE"
+          docker push "$COMBINED_NATIVE_IMAGE"
 
       - name: Log in for JVM image publication
         if: matrix.id == 'jvm'
@@ -273,6 +301,7 @@ jobs:
           push: true
           tags: |
             ${{ env.RELEASE_IMAGE }}:${{ needs.validate.outputs.version }}
+            ${{ env.RELEASE_IMAGE }}:${{ needs.validate.outputs.combined_version }}
             ${{ env.RELEASE_IMAGE }}:latest
           cache-from: type=gha,scope=jvm-release
           cache-to: type=gha,mode=max,scope=jvm-release
@@ -281,8 +310,9 @@ jobs:
         if: matrix.id == 'jvm'
         env:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          COMBINED_VERSION: ${{ needs.validate.outputs.combined_version }}
         run: |
-          for tag in "$RELEASE_VERSION" latest; do
+          for tag in "$RELEASE_VERSION" "$COMBINED_VERSION" latest; do
             manifest="$(docker buildx imagetools inspect "${RELEASE_IMAGE}:${tag}")"
             grep -Eq 'Platform:[[:space:]]+linux/amd64' <<<"$manifest"
             grep -Eq 'Platform:[[:space:]]+linux/arm64' <<<"$manifest"
@@ -341,7 +371,9 @@ jobs:
           file: scanner-adapter/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.RELEASE_IMAGE }}-scanner:${{ needs.validate.outputs.version }}
+          tags: |
+            ${{ env.RELEASE_IMAGE }}-scanner:${{ needs.validate.outputs.version }}
+            ${{ env.RELEASE_IMAGE }}-scanner:${{ needs.validate.outputs.combined_version }}
           cache-from: type=gha,scope=scanner-release
           cache-to: type=gha,mode=max,scope=scanner-release
 
@@ -349,16 +381,20 @@ jobs:
         env:
           IMAGE: ${{ env.RELEASE_IMAGE }}-scanner
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          COMBINED_VERSION: ${{ needs.validate.outputs.combined_version }}
         run: |
-          manifest="$(docker buildx imagetools inspect "${IMAGE}:${RELEASE_VERSION}")"
-          grep -Eq 'Platform:[[:space:]]+linux/amd64' <<<"$manifest"
-          grep -Eq 'Platform:[[:space:]]+linux/arm64' <<<"$manifest"
-          printf '%s\n' "$manifest"
+          for tag in "$RELEASE_VERSION" "$COMBINED_VERSION"; do
+            manifest="$(docker buildx imagetools inspect "${IMAGE}:${tag}")"
+            grep -Eq 'Platform:[[:space:]]+linux/amd64' <<<"$manifest"
+            grep -Eq 'Platform:[[:space:]]+linux/arm64' <<<"$manifest"
+            printf '%s\n' "$manifest"
+          done
 
           {
             echo "### Scanner adapter image"
             echo
             echo "- \`${IMAGE}:${RELEASE_VERSION}\`"
+            echo "- \`${IMAGE}:${COMBINED_VERSION}\`"
             echo "- Platforms: \`linux/amd64\`, \`linux/arm64\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -416,7 +452,7 @@ jobs:
 
   publish-github-release:
     name: Upload release assets
-    needs: [validate, collect, publish-scanner-image, publish-native-image]
+    needs: [validate, collect, publish-frontend-image, publish-scanner-image, publish-native-image]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -453,14 +489,16 @@ jobs:
         env:
           IMAGE: ${{ env.RELEASE_IMAGE }}
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          COMBINED_VERSION: ${{ needs.validate.outputs.combined_version }}
         run: |
           docker buildx imagetools create \
             --tag "${IMAGE}:${RELEASE_VERSION}-native" \
+            --tag "${IMAGE}:${COMBINED_VERSION}-native" \
             --tag "${IMAGE}:native-latest" \
             "${IMAGE}:${RELEASE_VERSION}-native-amd64" \
             "${IMAGE}:${RELEASE_VERSION}-native-arm64"
 
-          for tag in "${RELEASE_VERSION}-native" native-latest; do
+          for tag in "${RELEASE_VERSION}-native" "${COMBINED_VERSION}-native" native-latest; do
             manifest="$(docker buildx imagetools inspect "${IMAGE}:${tag}")"
             grep -Eq 'Platform:[[:space:]]+linux/amd64' <<<"$manifest"
             grep -Eq 'Platform:[[:space:]]+linux/arm64' <<<"$manifest"
@@ -471,6 +509,7 @@ jobs:
             echo "### Native container image"
             echo
             echo "- \`${IMAGE}:${RELEASE_VERSION}-native\`"
+            echo "- \`${IMAGE}:${COMBINED_VERSION}-native\`"
             echo "- \`${IMAGE}:native-latest\`"
             echo "- Platforms: \`linux/amd64\`, \`linux/arm64\`"
           } >> "$GITHUB_STEP_SUMMARY"

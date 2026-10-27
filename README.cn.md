@@ -13,6 +13,8 @@ Lumina 是 [kkRepo](https://github.com/klboke/kkRepo) 的 fork 改版，旨在�
 
 Lumina 继承了 kkRepo 的完整制品管理能力，是一款社区驱动、完全开源的自托管制品仓库，旨在解决 Sonatype Nexus 社区版的各类限制与痛点，为社区提供开放、可靠且可持续演进的制品管理方案。目前已支持 Maven、npm、PyPI、Go、Helm、Cargo/Rust、Dart/Pub、Composer/PHP、Terraform、Swift Package Registry、Ansible Galaxy、Conda、APT/Debian、Conan 2、Alpine/APK、R/CRAN、Docker/OCI、NuGet、RubyGems、Yum 和 Raw 等制品格式。
 
+Lumina 使用独立的 [`LUMINA_VERSION`](LUMINA_VERSION) 维护发行版本，不再与 kkRepo 的 Maven 版本绑定。Lumina 发布时创建 `vX.Y.Z` 格式的 GitHub Release tag，工作流会自动从 Maven 读取 kkRepo 版本并上传发行资产。主服务和 scanner 镜像会保留 kkRepo 单独版本标签，并额外发布 `<kkRepo版本>-lumina-<Lumina版本>` 组合标签，例如 `1.3.4-lumina-0.1.0`。纯前端 `lumina-fp` 镜像只使用独立的 Lumina 版本标签和 `latest` 标签。
+
 ## 功能特性
 
 - 支持 20+ 种主流仓库格式，覆盖 hosted、proxy 和 group 仓库管理。
