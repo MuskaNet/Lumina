@@ -9,10 +9,6 @@
 :root {
   --md-ref-typeface-plain: "Google Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --md-ref-typeface-brand: "Google Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --md-sys-motion-expressive-default-effects-duration: 200ms !important;
-  --md-sys-motion-expressive-slow-effects-duration: 300ms !important;
-  --md-sys-motion-expressive-default-spatial-duration: 200ms !important;
-  --md-sys-motion-expressive-fast-spatial-duration: 300ms !important;
   font-family: var(--md-ref-typeface-plain);
   /* Override MICL's erroneous 50% border radius for full/pill shape to prevent non-square elements from deforming into ellipses */
   --md-sys-shape-corner-full: 9999px !important;
@@ -81,9 +77,6 @@ body.micl-window {
 .micl-textfield-filled {
   --md-comp-text-field-container-height: 52px;
   --md-comp-text-field-input-space: 14px;
-  --md-comp-text-field-motion-duration: 300ms;
-  --md-comp-text-field-motion-duration-reverse: 200ms;
-  --md-comp-text-field-motion-effects: var(--md-sys-motion-expressive-slow-effects, cubic-bezier(0.34, 0.88, 0.34, 1));
 }
 
 /* Native select menus match the compact recipe picker rows. */
