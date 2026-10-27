@@ -9,7 +9,7 @@
 
 **English** | [中文](README.cn.md)
 
-Lumina is a fork of [kkRepo](https://github.com/klboke/kkRepo) designed to provide a more aesthetically pleasing Material Design 3 Expressive user interface, built with the [MICL](https://github.com/MuskaNet/material-inspired-component-library) component library.
+Lumina is a fork of [kkRepo](https://github.com/klboke/kkRepo) designed to provide a more aesthetically pleasing Material Design 3 Expressive user interface, built with the [MICL](https://github.com/henkpb/micl) component library.
 
 Lumina inherits kkRepo's capabilities as a community-driven, fully open-source, self-hosted artifact repository designed to address the limitations and pain points of Sonatype Nexus Community Edition and provide the community with an open, reliable, and sustainably evolving artifact management solution. It currently supports Maven, npm, PyPI, Go, Helm, Cargo/Rust, Dart/Pub, Composer/PHP, Terraform, Swift Package Registry, Ansible Galaxy, Conda, APT/Debian, Conan 2, Alpine/APK, R/CRAN, Docker/OCI, NuGet, RubyGems, Yum, Raw, and other artifact formats.
 

@@ -9,7 +9,7 @@
 
 [English](README.md) | **中文**
 
-Lumina 是 [kkRepo](https://github.com/klboke/kkRepo) 的 fork 改版，旨在实现一套更好看的 Material Design 3 Expressive 用户界面，基于 [MICL](https://github.com/MuskaNet/material-inspired-component-library) 组件库制作。
+Lumina 是 [kkRepo](https://github.com/klboke/kkRepo) 的 fork 改版，旨在实现一套更好看的 Material Design 3 Expressive 用户界面，基于 [MICL](https://github.com/henkpb/micl) 组件库制作。
 
 Lumina 继承了 kkRepo 的完整制品管理能力，是一款社区驱动、完全开源的自托管制品仓库，旨在解决 Sonatype Nexus 社区版的各类限制与痛点，为社区提供开放、可靠且可持续演进的制品管理方案。目前已支持 Maven、npm、PyPI、Go、Helm、Cargo/Rust、Dart/Pub、Composer/PHP、Terraform、Swift Package Registry、Ansible Galaxy、Conda、APT/Debian、Conan 2、Alpine/APK、R/CRAN、Docker/OCI、NuGet、RubyGems、Yum 和 Raw 等制品格式。
 
