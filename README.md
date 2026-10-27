@@ -38,19 +38,19 @@ Sonatype, Nexus, and Nexus Repository are trademarks of Sonatype, Inc. Lumina is
 Start a local trial environment with the public release image and MySQL:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | bash
 ```
 
 To run the same image with the default PostgreSQL 16 quickstart instead (the runtime supports PostgreSQL 12+):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | KKREPO_DATABASE_TYPE=postgresql bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | KKREPO_DATABASE_TYPE=postgresql bash
 ```
 
 To use the multi-architecture Native image instead of the default JVM image:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | KKREPO_RUNTIME=native bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | KKREPO_RUNTIME=native bash
 ```
 
 `KKREPO_RUNTIME` and `KKREPO_DATABASE_TYPE` are independent and can be combined, for example with `KKREPO_RUNTIME=native KKREPO_DATABASE_TYPE=postgresql`.

@@ -16,31 +16,31 @@
 如果只是想快速体验，可以用公开发行镜像一条命令拉起 kkrepo 和 MySQL：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | bash
 ```
 
 如需改用 PostgreSQL：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh \
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh \
   | KKREPO_DATABASE_TYPE=postgresql bash
 ```
 
 默认使用 JVM 运行时。如需改用 Native 镜像：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh \
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh \
   | KKREPO_RUNTIME=native bash
 ```
 
 运行时和数据库可以独立选择。使用 Native 镜像和 PostgreSQL 启动：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh \
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh \
   | KKREPO_RUNTIME=native KKREPO_DATABASE_TYPE=postgresql bash
 ```
 
-`KKREPO_RUNTIME=jvm` 选择 `ghcr.io/klboke/kkrepo:1.3.4`，`KKREPO_RUNTIME=native` 选择 `ghcr.io/klboke/kkrepo:1.3.4-native`。两种镜像均发布 Linux `amd64` 和 `arm64` 架构。显式设置 `KKREPO_IMAGE_TAG` 时，会覆盖对应运行时的默认 tag。
+`KKREPO_RUNTIME=jvm` 选择 `ghcr.io/muskanet/lumina:1.3.4`，`KKREPO_RUNTIME=native` 选择 `ghcr.io/muskanet/lumina:1.3.4-native`。两种镜像均发布 Linux `amd64` 和 `arm64` 架构。显式设置 `KKREPO_IMAGE_TAG` 时，会覆盖对应运行时的默认 tag。
 
 该脚本会逐步打印日志并执行：
 
@@ -55,13 +55,13 @@ curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quicksta
 如果希望先检查脚本内容，可以改用两步执行：
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh
+curl -fsSLO https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh
 bash quickstart.sh
 ```
 
 默认会启动：
 
-- `ghcr.io/klboke/kkrepo:1.3.4` 中的 JVM 运行时
+- `ghcr.io/muskanet/lumina:1.3.4` 中的 JVM 运行时
 - MySQL 8.0
 - 持续探测应用就绪状态的 `kkrepo-health` sidecar
 - 用于本地试用的持久化 MySQL volume 和 File blob storage volume
@@ -102,7 +102,7 @@ docker compose -f docker-compose.quickstart.yml down -v
 如果默认端口被占用，可以覆盖端口后启动：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | KKREPO_HTTP_PORT=19190 KKREPO_MANAGEMENT_PORT=19191 bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | KKREPO_HTTP_PORT=19190 KKREPO_MANAGEMENT_PORT=19191 bash
 ```
 
 ## 源码本地快速启动
@@ -164,20 +164,20 @@ server/target/kkrepo-server-<version>.jar
 拉取最新公开发行镜像：
 
 ```bash
-docker pull ghcr.io/klboke/kkrepo:1.3.4
+docker pull ghcr.io/muskanet/lumina:1.3.4
 ```
 
 也可以使用 `latest` 跟随最新公开发行版本：
 
 ```bash
-docker pull ghcr.io/klboke/kkrepo:latest
+docker pull ghcr.io/muskanet/lumina:latest
 ```
 
 Native 镜像使用独立 tag：
 
 ```bash
-docker pull ghcr.io/klboke/kkrepo:1.3.4-native
-docker pull ghcr.io/klboke/kkrepo:native-latest
+docker pull ghcr.io/muskanet/lumina:1.3.4-native
+docker pull ghcr.io/muskanet/lumina:native-latest
 ```
 
 构建默认镜像：

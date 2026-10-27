@@ -213,7 +213,7 @@ case "$KKREPO_DATABASE_TYPE" in
     ;;
 esac
 COMPOSE_FILE="${KKREPO_COMPOSE_FILE:-$KKREPO_COMPOSE_SOURCE_NAME}"
-KKREPO_COMPOSE_URL="${KKREPO_COMPOSE_URL:-https://raw.githubusercontent.com/klboke/kkrepo/main/$KKREPO_COMPOSE_SOURCE_NAME}"
+KKREPO_COMPOSE_URL="${KKREPO_COMPOSE_URL:-https://raw.githubusercontent.com/MuskaNet/Lumina/main/$KKREPO_COMPOSE_SOURCE_NAME}"
 KKREPO_WAIT_TIMEOUT="${KKREPO_WAIT_TIMEOUT:-180}"
 KKREPO_SKIP_PORT_CHECK="${KKREPO_SKIP_PORT_CHECK:-false}"
 SCRIPT_SOURCE="${BASH_SOURCE[0]:-}"
@@ -260,7 +260,7 @@ COMPOSE_READY=true
 log "Compose file: $(pwd)/$COMPOSE_FILE"
 log "Database backend: ${KKREPO_DATABASE_TYPE}"
 log "Runtime: ${KKREPO_RUNTIME}"
-log "Image tag: ghcr.io/klboke/kkrepo:${KKREPO_IMAGE_TAG}"
+log "Image tag: ghcr.io/muskanet/lumina:${KKREPO_IMAGE_TAG}"
 log "HTTP port: ${KKREPO_HTTP_PORT}"
 log "Management port: ${KKREPO_MANAGEMENT_PORT}"
 

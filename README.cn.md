@@ -39,19 +39,19 @@ Sonatype、Nexus 和 Nexus Repository 是 Sonatype, Inc. 的商标。Lumina 是�
 使用公开发行镜像和 MySQL 在本地启动一个试用环境：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | bash
 ```
 
 使用同一镜像和默认 PostgreSQL 16 quickstart 启动（运行时兼容 PostgreSQL 12+）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | KKREPO_DATABASE_TYPE=postgresql bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | KKREPO_DATABASE_TYPE=postgresql bash
 ```
 
 如需从默认 JVM 镜像切换到多架构 Native 镜像：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/klboke/kkrepo/main/scripts/quickstart.sh | KKREPO_RUNTIME=native bash
+curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quickstart.sh | KKREPO_RUNTIME=native bash
 ```
 
 `KKREPO_RUNTIME` 和 `KKREPO_DATABASE_TYPE` 可以独立选择，也可以组合使用，例如 `KKREPO_RUNTIME=native KKREPO_DATABASE_TYPE=postgresql`。

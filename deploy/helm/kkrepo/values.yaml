@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: ghcr.io/klboke/kkrepo
+  repository: ghcr.io/muskanet/lumina
   pullPolicy: IfNotPresent
   tag: ""
 
@@ -81,7 +81,7 @@ securityScanning:
   enabled: false
   metricsCountLimit: 10000
   image:
-    repository: ghcr.io/klboke/kkrepo-scanner
+    repository: ghcr.io/muskanet/lumina-scanner
     pullPolicy: IfNotPresent
     tag: ""
   replicaCount: 1
