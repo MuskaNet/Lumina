@@ -341,6 +341,7 @@ function describeDescriptor(row: {
 .kk-detail-row dt {
   color: var(--md-sys-color-on-surface-variant);
   font-size: 0.8125rem;
+  overflow-wrap: anywhere;
 }
 
 .kk-detail-row dd {
