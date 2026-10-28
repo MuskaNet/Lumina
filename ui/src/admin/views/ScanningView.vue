@@ -7,7 +7,7 @@ import M3DataTable, { type DataTableColumn } from "../../shared/components/M3Dat
 import M3Dialog from "../../shared/components/M3Dialog.vue";
 import M3Tabs from "../../shared/components/M3Tabs.vue";
 
-type ScanTab = "overview" | "tasks" | "findings" | "repositories" | "policies" | "waivers";
+type ScanTab = "tasks" | "findings" | "repositories" | "policies" | "waivers";
 
 interface CursorPage<T> {
   items?: T[];
@@ -75,7 +75,6 @@ interface ScanPolicy {
 type Row = Record<string, unknown>;
 
 const TABS = [
-  { id: "overview", label: "Overview" },
   { id: "tasks", label: "Tasks" },
   { id: "findings", label: "Findings" },
   { id: "repositories", label: "Repositories" },
@@ -87,7 +86,7 @@ const SEVERITIES = ["UNKNOWN", "NEGLIGIBLE", "LOW", "MEDIUM", "HIGH", "CRITICAL"
 const ENFORCEMENT_MODES = ["AUDIT", "ENFORCE"];
 const POLICY_ACTIONS = ["ALLOW", "BLOCK"];
 
-const tab = ref<ScanTab>("overview");
+const tab = ref<ScanTab>("tasks");
 const overview = ref<Overview | null>(null);
 const items = ref<Row[]>([]);
 const repositories = ref<ScanRepository[]>([]);
@@ -131,24 +130,20 @@ async function load(reset = false) {
     nextAfter.value = null;
   }
   try {
-    if (tab.value === "overview") {
-      const data = await api.get<Overview>("/internal/security/scanning/summary");
-      if (version !== requestVersion) return;
-      overview.value = data;
-      items.value = [];
-      return;
-    }
     const after = pageHistory.value[page.value] ?? 0;
     const params = new URLSearchParams({ after: String(after), limit: "25" });
     if (search.value.trim()) params.set("q", search.value.trim());
     if (tab.value === "findings") params.set("currentOnly", String(currentOnly.value));
-    const payload = await api.get<CursorPage<Row>>(
-      `/internal/security/scanning/${tab.value}?${params.toString()}`,
-    );
+    // The summary sits above the tabs, so it reloads with every tab and
+    // refresh rather than only on the tab that used to own it.
+    const [summary, payload] = await Promise.all([
+      api.get<Overview>("/internal/security/scanning/summary"),
+      api.get<CursorPage<Row>>(`/internal/security/scanning/${tab.value}?${params.toString()}`),
+    ]);
     if (version !== requestVersion) return;
+    overview.value = summary;
     items.value = payload.items ?? [];
     nextAfter.value = payload.nextAfter ?? null;
-    overview.value = null;
     if (tab.value === "repositories") {
       repositories.value = items.value as unknown as ScanRepository[];
     }
@@ -184,9 +179,28 @@ function previousPage() {
   void load();
 }
 
+const OVERVIEW_LABELS = [
+  "Scanning",
+  "Scanner",
+  "Database",
+  "Ready",
+  "Repositories",
+  "Candidate backlog",
+  "Pending tasks",
+  "Running tasks",
+  "Failed tasks",
+  "Partial assets",
+  "Stale assets",
+  "Critical findings",
+  "High findings",
+  "Observed",
+] as const;
+
 const overviewEntries = computed(() => {
   const data = overview.value;
-  if (!data) return [];
+  // Text placeholders keep the strip stable while the numbers load, matching
+  // how the repository list renders its inventory metrics.
+  if (!data) return OVERVIEW_LABELS.map((label) => ({ label: t(label), value: "…" }));
   const summary = data.summary ?? {};
   return [
     { label: t("Scanning"), value: data.deploymentEnabled ? t("Enabled") : t("Disabled") },
@@ -552,27 +566,20 @@ onMounted(() => load(true));
     </div>
   </div>
 
+  <div class="kk-summary" aria-live="polite" :aria-busy="loading ? 'true' : undefined">
+    <div v-for="entry in overviewEntries" :key="entry.label" class="kk-summary__item">
+      <span class="kk-summary__label">{{ entry.label }}</span>
+      <strong class="kk-summary__value">{{ entry.value }}</strong>
+    </div>
+  </div>
+
   <div class="kk-section-navigation"><M3Tabs :tabs="TABS" :active="tab" @select="tab = $event as ScanTab" /></div>
 
   <p v-if="error && !policyDialog && !waiverDialog && !configDialog" class="kk-form-error" role="alert">
     {{ error }}
   </p>
 
-  <section v-if="tab === 'overview'" class="kk-surface-card">
-    <div class="kk-card-header">
-      <span class="kk-card-header__icon-box" aria-hidden="true"><span class="material-symbols-outlined">security</span></span>
-      <h2 class="kk-card-header__title">{{ t("Overview") }}</h2>
-    </div>
-    <div class="kk-summary">
-      <div v-for="entry in overviewEntries" :key="entry.label" class="kk-summary__item">
-        <span class="kk-summary__label">{{ entry.label }}</span>
-        <strong class="kk-summary__value">{{ loading ? "…" : entry.value }}</strong>
-      </div>
-    </div>
-  </section>
-
-  <section class="kk-surface-card" v-else>
-    <section class="kk-table-region">
+  <section class="kk-table-surface">
 <M3DataTable
       :columns="columns"
       :rows="filtered"
@@ -664,7 +671,6 @@ onMounted(() => load(true));
         </div>
       </template>
     </M3DataTable>
-</section>
 
     <div class="kk-toolbar kk-action-bar">
       <span class="kk-muted">{{ t("Page") }} {{ page + 1 }}</span>

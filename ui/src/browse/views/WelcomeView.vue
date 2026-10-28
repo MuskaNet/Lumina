@@ -291,6 +291,8 @@ async function copyUrl(repo: Repository) {
 .kk-repo-card:hover,
 .kk-repo-card:focus-within {
   --_card-elevation: none;
+  --_card-hover-elevation: none;
+  --_card-pressed-elevation: none;
 }
 
 .kk-repo-card__headline,
