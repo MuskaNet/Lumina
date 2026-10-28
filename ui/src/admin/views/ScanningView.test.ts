@@ -119,19 +119,22 @@ describe("ScanningView findings filter", () => {
 
     const wrapper = mount(ScanningView);
     await flushPromises();
-    await selectTab(wrapper, "Findings");
-    // The tab switch already requested the default current view.
+    // The default Tasks tab already requested a page of tasks.
     expect(pending).toHaveLength(1);
 
-    await wrapper.find(".kk-current-findings input").setValue(false);
+    await selectTab(wrapper, "Findings");
+    // The tab switch already requested the default current view.
     expect(pending).toHaveLength(2);
 
-    pending[1]!({ items: [{ id: 2, advisoryId: "CVE-HISTORICAL" }], nextAfter: null });
+    await wrapper.find(".kk-current-findings input").setValue(false);
+    expect(pending).toHaveLength(3);
+
+    pending[2]!({ items: [{ id: 2, advisoryId: "CVE-HISTORICAL" }], nextAfter: null });
     await flushPromises();
     expect(wrapper.text()).toContain("CVE-HISTORICAL");
 
     // The stale current-only response arrives after the user already switched.
-    pending[0]!({ items: [{ id: 1, advisoryId: "CVE-CURRENT" }], nextAfter: 1 });
+    pending[1]!({ items: [{ id: 1, advisoryId: "CVE-CURRENT" }], nextAfter: 1 });
     await flushPromises();
     expect(wrapper.text()).toContain("CVE-HISTORICAL");
     expect(wrapper.text()).not.toContain("CVE-CURRENT");
