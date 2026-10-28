@@ -256,3 +256,122 @@ defineExpose({ load, expandTo, refresh });
     </div>
   </div>
 </template>
+
+<style scoped>
+.kk-tree {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 2px;
+  font-size: 0.875rem;
+}
+
+.kk-tree__state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+.kk-tree__error {
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+}
+
+.kk-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 34px;
+  padding-inline-end: 12px;
+  border-radius: 9999px;
+  margin-block: 2px;
+  white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.kk-tree-row:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+.kk-tree-row.is-selected {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 600;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kk-tree-toggle,
+.kk-tree-toggle-spacer {
+  flex: 0 0 24px;
+  inline-size: 24px;
+  block-size: 24px;
+}
+
+.kk-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.kk-tree-toggle:hover {
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.kk-tree-toggle .material-symbols-outlined {
+  font-size: 20px;
+  transition: transform 120ms ease;
+}
+
+.kk-tree-toggle .material-symbols-outlined.is-open {
+  transform: rotate(90deg);
+}
+
+.kk-tree-icon {
+  flex: 0 0 auto;
+  font-size: 18px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-tree-row.is-selected .kk-tree-icon {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.kk-tree-label {
+  flex: 1 0 auto;
+  min-inline-size: 0;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.kk-tree-label:focus-visible,
+.kk-tree-toggle:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: -2px;
+}
+
+.kk-tree__rows {
+  inline-size: max-content;
+  min-inline-size: 100%;
+}
+</style>

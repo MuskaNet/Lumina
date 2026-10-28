@@ -18,7 +18,9 @@ function declarations(selector: string): string {
 
 describe("admin filled-surface layout", () => {
   it.each(views)("keeps %s in the responsive admin layout", (view) => {
-    const source = read(`admin/views/${view}View.vue`);
+    // Page-owned CSS now lives in the view's <style> block, so only the
+    // template must stay free of hard-coded width caps.
+    const source = read(`admin/views/${view}View.vue`).replace(/<style[\s\S]*?<\/style>/g, "");
     expect(source).toContain('class="kk-settings-page"');
     expect(source).toMatch(/kk-surface-card|kk-table-surface/);
     expect(source).not.toMatch(/max-(?:width|inline-size)\s*:/);

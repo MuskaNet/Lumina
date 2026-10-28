@@ -1159,3 +1159,12 @@ onMounted(load);
   </M3Dialog>
 </div>
 </template>
+
+<style scoped>
+.kk-form-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+  padding-block: 4px;
+}
+</style>

@@ -239,4 +239,20 @@ onUnmounted(() => {
 .kk-repo-url__copy .material-symbols-outlined {
   font-size: 18px !important;
 }
+
+.kk-browse-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-radius: 24px;
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.kk-browse-filter-bar .kk-filter {
+  inline-size: min(340px, 100%);
+  margin-block-start: 0 !important;
+}
 </style>

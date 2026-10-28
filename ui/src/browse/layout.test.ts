@@ -2,7 +2,23 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(resolve(process.cwd(), "src/shared/styles/app.css"), "utf8");
+const read = (file: string) => readFileSync(resolve(process.cwd(), "src", file), "utf8");
+const styleBlock = (file: string) =>
+  [...read(file).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1]).join("\n");
+
+// Page styles live next to the page that owns them; shared layout rules stay in
+// app.css. These assertions describe the resulting cascade, so read both.
+const css = [
+  read("shared/styles/app.css"),
+  styleBlock("shared/components/M3DataTable.vue"),
+  styleBlock("browse/BrowseTree.vue"),
+  styleBlock("browse/BrowseDetailPane.vue"),
+  styleBlock("browse/components/UploadFields.vue"),
+  styleBlock("browse/views/BrowseView.vue"),
+  styleBlock("browse/views/RepositoryListView.vue"),
+  styleBlock("browse/views/UploadView.vue"),
+  styleBlock("browse/views/WelcomeView.vue"),
+].join("\n");
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
   selectors: match[1]!.replace(/\/\*[\s\S]*?\*\//g, "").trim().split(",").map((s) => s.trim()),
   body: match[2]!,

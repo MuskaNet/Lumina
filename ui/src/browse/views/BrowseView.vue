@@ -368,3 +368,150 @@ watch(
     @deleted="onDeleted"
   />
 </template>
+
+<style scoped>
+.kk-browse-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 48px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.kk-browse-crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.kk-browse-crumbs__root {
+  font-weight: 600;
+  color: var(--md-sys-color-primary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.kk-browse-crumbs__sep {
+  color: var(--md-sys-color-outline);
+}
+
+.kk-browse-crumbs__format {
+  inline-size: 20px !important;
+  block-size: 20px !important;
+  flex: 0 0 20px !important;
+}
+
+.kk-browse-crumbs__repo {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.kk-browse-bar__actions {
+  margin-inline-start: auto;
+  --md-comp-button-group-standard-small-between-space: 6px;
+}
+
+.kk-browse-split {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  block-size: auto;
+  min-block-size: 0;
+  border-radius: 28px;
+  background-color: var(--md-sys-color-surface-container);
+  overflow: hidden;
+}
+
+.kk-browse-tree-pane {
+  flex: 0 0 var(--kk-browse-tree-width, 68%);
+  box-sizing: border-box;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  background-color: var(--md-sys-color-surface-container-low);
+  padding: 12px 14px;
+}
+
+.kk-browse-resizer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--kk-browse-tree-width, 68%) - 3px);
+  inline-size: 6px;
+  z-index: 1;
+  cursor: col-resize;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  transition: background-color 150ms ease;
+}
+
+.kk-browse-resizer:hover,
+.kk-browse-resizer:focus-visible {
+  background: var(--md-sys-color-primary-container);
+  outline: none;
+}
+
+.kk-browse-detail-wrap {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  background-color: var(--md-sys-color-surface-container);
+}
+
+@media (max-width: 860px) {
+  .kk-browse-split {
+    flex-direction: column;
+    block-size: auto;
+    max-block-size: none;
+    border-radius: 20px;
+  }
+
+  .kk-browse-tree-pane {
+    flex: 1 1 auto;
+    inline-size: 100% !important;
+    min-block-size: 300px;
+    max-block-size: 45vh;
+  }
+
+  .kk-browse-resizer {
+    display: none !important;
+  }
+
+  .kk-browse-detail-wrap {
+    flex: 1 1 auto;
+    inline-size: 100%;
+    min-block-size: 0;
+    max-block-size: none;
+    padding: 16px;
+  }
+}
+
+.kk-browse-placeholder {
+  padding: 24px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.9375rem;
+}
+
+.kk-empty-state__spinner {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  aspect-ratio: 1;
+  inline-size: 36px;
+  block-size: 36px;
+  border-width: 3px;
+  color: var(--md-sys-color-primary);
+}
+</style>

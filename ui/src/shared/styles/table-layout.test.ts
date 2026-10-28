@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(resolve(process.cwd(), "src/shared/styles/app.css"), "utf8");
+const read = (file: string) => readFileSync(resolve(process.cwd(), "src", file), "utf8");
+// The table's own rules live in its SFC; shared layout rules stay in app.css.
+const css = [read("shared/components/M3DataTable.vue"), read("shared/styles/app.css")].join("\n");
 
 describe("shared table text layout", () => {
   it("prevents wrapping in headers, cells and slotted descendants", () => {
@@ -44,7 +46,7 @@ describe("shared table text layout", () => {
   });
 
   it("keeps oversized tables scrollable within their frame", () => {
-    const frame = css.match(/\.kk-table-frame\s*\{([^}]+)\}/)?.[1];
+    const frame = css.match(/(?:^|\n)\.kk-table-frame\s*\{([^}]+)\}/)?.[1];
     expect(frame).toContain("overflow: auto");
   });
 });

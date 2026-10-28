@@ -227,3 +227,246 @@ function describeDescriptor(row: {
     </template>
   </div>
 </template>
+
+<style scoped>
+.kk-detail-pane {
+  flex: 0 0 auto;
+  min-block-size: max-content;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-inline-size: 0;
+}
+
+.kk-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  padding-block-end: 4px;
+}
+
+.kk-detail-head__icon {
+  flex: 0 0 auto;
+  color: var(--md-sys-color-primary);
+  font-size: 22px;
+}
+
+.kk-detail-head__path {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-medium-font, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.kk-detail-head__delete {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
+.kk-destructive-outlined-btn {
+  border: 1px solid var(--md-sys-color-error) !important;
+  color: var(--md-sys-color-error) !important;
+  background: transparent !important;
+  padding-inline: 16px !important;
+  min-block-size: 36px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kk-destructive-outlined-btn:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-error) 12%, transparent) !important;
+}
+
+.kk-destructive-outlined-btn:active {
+  background-color: color-mix(in srgb, var(--md-sys-color-error) 20%, transparent) !important;
+}
+
+.kk-detail-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.kk-detail-panel {
+  border-radius: 20px;
+  background: var(--md-sys-color-surface-container-low);
+  overflow: hidden;
+}
+
+.kk-detail-panel__head {
+  padding: 12px 18px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kk-detail-panel__icon {
+  font-size: 18px;
+  color: var(--md-sys-color-primary);
+}
+
+.kk-detail-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 18px;
+}
+
+.kk-detail-rows--trailing {
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.kk-detail-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 30%) minmax(0, 1fr);
+  gap: 6px 14px;
+  align-items: start;
+}
+
+.kk-detail-row dt {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+.kk-detail-row dd {
+  margin: 0;
+  min-inline-size: 0;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.kk-detail-groups,
+.kk-attribute-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.kk-descriptor-group__title,
+.kk-attribute-group__title {
+  margin: 8px 0 4px;
+  color: var(--md-sys-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05rem;
+  text-transform: uppercase;
+}
+
+.kk-descriptor-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kk-descriptor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto minmax(0, 0.8fr);
+  gap: 8px;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--md-sys-color-surface-container);
+  font-size: 0.75rem;
+}
+
+.kk-descriptor-row__digest {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kk-descriptor-row__media,
+.kk-descriptor-row__platform {
+  color: var(--md-sys-color-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kk-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 18px;
+}
+
+.kk-usage__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kk-usage__selector {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.kk-usage__copy.kk-pill-btn {
+  background-color: var(--md-sys-color-secondary-container) !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap;
+}
+
+.kk-usage__copy.kk-pill-btn:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-secondary-container) 85%, var(--md-sys-color-on-secondary-container) 15%) !important;
+}
+
+.kk-usage__hint {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.kk-usage__snippet {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-highest);
+  overflow: auto;
+}
+
+.kk-usage__snippet code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.kk-detail-download {
+  display: flex;
+  margin-block-start: auto;
+  padding-block-start: 8px;
+}
+
+.kk-primary-pill-btn.kk-detail-download__btn,
+.kk-primary-pill-btn.kk-detail-download__btn:hover:not(:disabled) {
+  box-shadow: none;
+  transform: none;
+}
+
+.kk-detail-download__btn {
+  inline-size: 100%;
+}
+</style>

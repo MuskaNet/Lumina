@@ -381,7 +381,8 @@ onBeforeUnmount(unbindListeners);
   --md-comp-assist-chip-label-text-color: var(--md-sys-color-on-secondary-container);
   --md-comp-assist-chip-outline-color: transparent;
   --md-comp-assist-chip-elevated-container-color: var(--md-sys-color-secondary-container);
-}
+  --md-comp-outlined-button-outline-color: var(--md-sys-color-outline-variant);
+  background-color: var(--md-sys-color-surface-container-low) !important;}
 
 .kk-recipe-popover {
   box-sizing: border-box;

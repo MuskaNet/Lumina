@@ -40,3 +40,45 @@ function selectFile(event: Event, field: UploadField) {
     </template>
   </div>
 </template>
+
+<style scoped>
+.kk-upload-file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 0;
+  font-size: 0.875rem;
+}
+
+.kk-upload-file > label {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-upload-file > input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+}
+
+.kk-upload-file > input::file-selector-button {
+  margin-inline-end: 12px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font: inherit;
+  cursor: pointer;
+}
+
+.kk-upload-file > input:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+</style>

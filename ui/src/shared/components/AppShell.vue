@@ -134,3 +134,11 @@ function openMyToken() {
 
   <M3SnackbarHost />
 </template>
+
+<style scoped>
+.kk-product-link {
+  color: var(--md-sys-color-on-surface);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  text-decoration: none;
+}
+</style>

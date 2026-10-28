@@ -635,3 +635,16 @@ onMounted(() => {
 </div>
 </template>
 
+<style scoped>
+.kk-health-status {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-inline-size: 100%;
+}
+
+.kk-health-message {
+  display: inline;
+}
+</style>

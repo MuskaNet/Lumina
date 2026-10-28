@@ -175,3 +175,161 @@ onMounted(load);
     <p v-if="status" class="kk-form-error" role="alert">{{ status }}</p>
   </form>
 </template>
+
+<style scoped>
+.kk-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  inline-size: 100%;
+  margin-inline: 0;
+}
+
+.kk-upload-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kk-upload-heading__title {
+  margin: 0;
+  font-family: var(--md-ref-typeface-brand, var(--md-ref-typeface-plain));
+  font-size: var(--md-sys-typescale-headline-small-size, 1.5rem);
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+}
+
+.kk-upload-heading__subtitle {
+  margin: 0;
+  font-size: var(--md-sys-typescale-body-medium-size, 0.875rem);
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+.kk-upload-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.kk-upload-step-card {
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: 24px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kk-upload-step-card__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.kk-upload-step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.kk-upload-step-card__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kk-upload-step-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.3;
+}
+
+.kk-upload-step-desc {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.kk-upload-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 命名空间输入框在桌面端保持 3 列网格，移动端自动降级为单栏垂直堆叠 */
+.kk-upload-step-card--namespace :deep(.kk-upload-fields-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Field wrappers are rendered by UploadFields, so the span overrides must
+ * pierce the child component scope. */
+.kk-upload-step-card--namespace :deep(.kk-upload-fields-grid .kk-field--span-3),
+.kk-upload-step-card--namespace :deep(.kk-upload-fields-grid .kk-field--wide) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .kk-upload-step-card {
+    padding: 18px 20px;
+    border-radius: 20px;
+  }
+  .kk-upload-step-card--namespace :deep(.kk-upload-fields-grid) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.kk-upload-asset-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--md-sys-color-surface-container-low);
+  transition: border-color 200ms ease;
+}
+
+.kk-upload-asset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kk-upload-asset-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.kk-upload-add-action {
+  padding-block-start: 4px;
+}
+
+.kk-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-block-start: 8px;
+}
+</style>
