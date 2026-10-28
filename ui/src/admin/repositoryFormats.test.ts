@@ -58,7 +58,7 @@ describe("welcome view", () => {
     const wrapper = mount(WelcomeView, { props: { repositories } });
 
     const groups = wrapper.findAll(".kk-format-group h3").map((node) => node.text());
-    expect(groups).toEqual(["maven2", "npm"]);
+    expect(groups).toEqual(["Maven", "npm"]);
   });
 
   it("shows the absolute client URL for every repository", () => {
