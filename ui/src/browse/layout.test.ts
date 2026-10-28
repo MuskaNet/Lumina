@@ -97,11 +97,11 @@ describe("Browse filled-surface layout", () => {
     expect(row).toContain("justify-content: space-between");
   });
 
-  it("delegates the usage select to MICL and keeps downloads free of glow", () => {
+  it("delegates usage and download actions to MICL buttons", () => {
     expect(declarations(".kk-usage__pick")).toBe("");
     expect(declarations(".kk-usage__selector")).toContain("flex: 1 1 0");
-    expect(declarations(".kk-primary-pill-btn.kk-detail-download__btn")).toContain("box-shadow: none");
-    expect(declarations(".kk-primary-pill-btn.kk-detail-download__btn:hover:not(:disabled)")).toContain("box-shadow: none");
+    expect(css).not.toContain(".kk-primary-pill-btn.kk-detail-download__btn");
+    expect(css).toContain(".kk-detail-download__btn");
   });
 
   it("keeps step headings side-by-side and retains keyboard focus on actions", () => {

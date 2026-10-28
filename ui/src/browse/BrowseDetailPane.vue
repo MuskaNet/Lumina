@@ -179,7 +179,7 @@ function describeDescriptor(row: {
             </div>
             <button
               type="button"
-              class="kk-usage__copy kk-pill-btn"
+              class="micl-button-tonal-s kk-usage__copy"
               :aria-label="t('Copy usage snippet')"
               :title="t('Copy usage snippet')"
               @click="copySnippet"
@@ -215,7 +215,7 @@ function describeDescriptor(row: {
 
       <div v-if="downloadUrl" class="kk-detail-download">
         <a
-          class="kk-primary-pill-btn kk-detail-download__btn"
+          class="micl-button-filled-s kk-detail-download__btn"
           :href="downloadUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -415,22 +415,8 @@ function describeDescriptor(row: {
   min-inline-size: 0;
 }
 
-.kk-usage__copy.kk-pill-btn {
-  background-color: var(--md-sys-color-secondary-container) !important;
-  color: var(--md-sys-color-on-secondary-container) !important;
-  border: none !important;
-  padding: 8px 16px !important;
-  font-weight: 600 !important;
-  font-size: 0.75rem !important;
-  cursor: pointer;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
+.kk-usage__copy {
   white-space: nowrap;
-}
-
-.kk-usage__copy.kk-pill-btn:hover {
-  background-color: color-mix(in srgb, var(--md-sys-color-secondary-container) 85%, var(--md-sys-color-on-secondary-container) 15%) !important;
 }
 
 .kk-usage__hint {
@@ -460,13 +446,8 @@ function describeDescriptor(row: {
   padding-block-start: 8px;
 }
 
-.kk-primary-pill-btn.kk-detail-download__btn,
-.kk-primary-pill-btn.kk-detail-download__btn:hover:not(:disabled) {
-  box-shadow: none;
-  transform: none;
-}
-
 .kk-detail-download__btn {
   inline-size: 100%;
+  text-decoration: none;
 }
 </style>
