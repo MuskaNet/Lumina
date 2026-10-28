@@ -10,6 +10,7 @@ const LEGACY_HREFS = [
   "#admin/repository/repositories",
   "#admin/repository/cleanup-policies",
   "#admin/repository/content-selectors",
+  "#admin/repository/routingrules",
   "#admin/repository/blobstores",
   "#admin/repository/docker",
   "#admin/security/users",

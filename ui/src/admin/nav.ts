@@ -11,6 +11,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { id: "repositories", label: "Repositories", icon: "inventory_2", href: "#admin/repository/repositories", group: "Repository" },
   { id: "cleanup-policies", label: "Cleanup Policies", icon: "auto_delete", href: "#admin/repository/cleanup-policies", group: "Repository" },
   { id: "content-selectors", label: "Content Selectors", icon: "filter_list", href: "#admin/repository/content-selectors", group: "Repository" },
+  { id: "routing-rules", label: "Routing Rules", icon: "rule", href: "#admin/repository/routingrules", group: "Repository" },
   { id: "blobstores", label: "Blob Stores", icon: "database", href: "#admin/repository/blobstores", group: "Repository" },
   { id: "docker-registry", label: "Docker Registry", icon: "deployed_code", href: "#admin/repository/docker", group: "Repository" },
   { id: "security-users", label: "Users", icon: "group", href: "#admin/security/users", group: "Security" },

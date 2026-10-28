@@ -264,6 +264,9 @@ body.micl-window {
 }
 
 .kk-repo-card {
+  --md-comp-card-content-padding-block: 0px;
+  --md-comp-card-padding-inline: 0px;
+  --md-comp-card-gap: 0px;
   display: flex;
   flex-direction: column;
   min-inline-size: 0;
@@ -274,20 +277,11 @@ body.micl-window {
   color: inherit;
   font: inherit;
   text-align: start;
-  transition:
-    background-color var(--md-sys-motion-expressive-default-effects-duration, 200ms) var(--md-sys-motion-expressive-default-spatial),
-    transform var(--md-sys-motion-expressive-default-effects-duration, 200ms) var(--md-sys-motion-expressive-fast-spatial),
-    box-shadow var(--md-sys-motion-expressive-default-effects-duration, 200ms) ease;
 }
 
-.kk-repo-card:hover {
-  background-color: var(--md-sys-color-surface-container-high);
-  transform: translateY(-2px);
-}
-
-.kk-repo-card:active {
-  background-color: var(--md-sys-color-surface-container-highest);
-  transform: translateY(0);
+.kk-repo-card__headline,
+.kk-repo-card__content {
+  padding: 0;
 }
 
 .kk-repo-card__open {

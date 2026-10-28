@@ -154,6 +154,7 @@ export interface RepositoryViewLike {
   pypi?: { indexPath?: string | null } | null;
   yum?: { repodataDepth?: number | null } | null;
   conan?: { manifestMaxEntries?: number | null; manifestMaxBytes?: number | null } | null;
+  routingRuleName?: string | null;
 }
 
 export interface RepositoryDraft {
@@ -214,6 +215,7 @@ export interface RepositoryDraft {
   yumRepodataDepth: number | string | null;
   conanManifestMaxEntries: number | string | null;
   conanManifestMaxBytes: number | string | null;
+  routingRuleName: string;
 }
 
 function text(value: unknown): string {
@@ -305,6 +307,7 @@ export function createRepositoryDraft(
     yumRepodataDepth: 0,
     conanManifestMaxEntries: null,
     conanManifestMaxBytes: null,
+    routingRuleName: "",
   };
 }
 
@@ -373,6 +376,7 @@ export function repositoryDraftFromView(repo: RepositoryViewLike): RepositoryDra
     yumRepodataDepth: repo.yum?.repodataDepth ?? 0,
     conanManifestMaxEntries: repo.conan?.manifestMaxEntries ?? null,
     conanManifestMaxBytes: repo.conan?.manifestMaxBytes ?? null,
+    routingRuleName: repo.routingRuleName ?? "",
   };
 }
 
@@ -433,6 +437,7 @@ export function buildRepositoryPayload(
   const payload: Record<string, unknown> = {
     online: Boolean(draft.online),
     strictContentTypeValidation: Boolean(draft.strictContentTypeValidation),
+    routingRuleName: trimmedOrNull(draft.routingRuleName),
   };
   if (creating) {
     payload.name = draft.name.trim();

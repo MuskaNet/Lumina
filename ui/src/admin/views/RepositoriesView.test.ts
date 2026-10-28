@@ -270,6 +270,26 @@ describe("repository dialog: group member transfer", () => {
     expect(selectedPane().findAll(".micl-list-item-one")).toHaveLength(0);
     expect(wrapper.findAll(".kk-member-pane")[0].text()).toContain("maven-proxy");
   });
+
+  // Nexus exposes member repositories only for group repositories; hosted and
+  // proxy repositories have no routing order to configure.
+  it("shows the member transfer only for group repositories", async () => {
+    for (const name of ["maven-hosted", "maven-proxy"]) {
+      const wrapper = await mountView();
+      await openEdit(wrapper, name);
+      expect(wrapper.find("[data-repository-section='behavior']").exists()).toBe(true);
+      expect(wrapper.find(".kk-member-transfer").exists(), name).toBe(false);
+      wrapper.unmount();
+    }
+
+    for (const [recipe, visible] of [["maven2-hosted", false], ["maven2-proxy", false], ["maven2-group", true]] as const) {
+      const wrapper = await mountView();
+      await clickButton(wrapper, "Create repository");
+      await chooseRecipe(wrapper, recipe);
+      expect(wrapper.find(".kk-member-transfer").exists(), recipe).toBe(visible);
+      wrapper.unmount();
+    }
+  });
 });
 
 describe("repository dialog: shared section layout", () => {

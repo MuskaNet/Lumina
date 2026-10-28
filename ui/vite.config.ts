@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import vueDevTools from "vite-plugin-vue-devtools";
 
 const BACKEND = process.env.KKREPO_BACKEND ?? "http://localhost:8080";
 
@@ -51,6 +52,7 @@ export default defineConfig(({ command, mode }) => {
     base: dev ? "/" : target.base,
     plugins: [
       vue(),
+      vueDevTools(),
       {
         name: "dev-html-fallback",
         configureServer(server) {
@@ -74,6 +76,9 @@ export default defineConfig(({ command, mode }) => {
         },
       },
     ],
+    devtools: {
+      apply: 'serve',
+    },
     resolve: {
       alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
     },

@@ -59,36 +59,40 @@ async function copyUrl(repo: Repository) {
       {{ t("Copy a repository URL from the list below, or open a repository to browse it.") }}
     </p>
     <div class="kk-repo-grid">
-      <article v-for="repo in group.repos" :key="repo.name" class="kk-repo-card">
-        <button
-          type="button"
-          class="kk-repo-card__open"
-          :aria-label="repo.name"
-          @click="emit('open', repo.name)"
-        >
-          <span class="material-symbols-outlined kk-repo-card__icon" aria-hidden="true">inventory_2</span>
-          <span class="kk-repo-card__body">
-            <strong>{{ repo.name }}</strong>
-            <small class="kk-secondary">{{ repo.type }} · {{ repo.online ? t("Online") : t("Offline") }}</small>
-          </span>
-          <span class="micl-chips kk-chip-host">
-            <span
-              class="micl-chip-assist micl-chip--elevated kk-badge kk-pill-badge"
-              :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
-            >
-              {{ repo.type }}
+      <article v-for="repo in group.repos" :key="repo.name" tabindex="0" class="micl-card-elevated kk-repo-card">
+        <div class="micl-card__headline-l kk-repo-card__headline">
+          <button
+            type="button"
+            class="kk-repo-card__open"
+            :aria-label="repo.name"
+            @click="emit('open', repo.name)"
+          >
+            <span class="material-symbols-outlined kk-repo-card__icon" aria-hidden="true">inventory_2</span>
+            <span class="kk-repo-card__body">
+              <strong>{{ repo.name }}</strong>
+              <small class="kk-secondary">{{ repo.type }} · {{ repo.online ? t("Online") : t("Offline") }}</small>
             </span>
-          </span>
-        </button>
-        <button
-          type="button"
-          class="kk-location kk-repo-card__url"
-          :title="t('Copy repository URL')"
-          @click="copyUrl(repo)"
-        >
-          <code class="kk-mono">{{ repositoryClientUrl(repo) }}</code>
-          <span class="material-symbols-outlined kk-repo-card__copy-icon" aria-hidden="true">content_copy</span>
-        </button>
+            <span class="micl-chips kk-chip-host">
+              <span
+                class="micl-chip-assist micl-chip--elevated kk-badge kk-pill-badge"
+                :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
+              >
+                {{ repo.type }}
+              </span>
+            </span>
+          </button>
+        </div>
+        <div class="micl-card__content kk-repo-card__content">
+          <button
+            type="button"
+            class="kk-location kk-repo-card__url"
+            :title="t('Copy repository URL')"
+            @click="copyUrl(repo)"
+          >
+            <code class="kk-mono">{{ repositoryClientUrl(repo) }}</code>
+            <span class="material-symbols-outlined kk-repo-card__copy-icon" aria-hidden="true">content_copy</span>
+          </button>
+        </div>
       </article>
     </div>
   </div>

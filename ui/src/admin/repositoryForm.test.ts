@@ -187,9 +187,13 @@ describe("Alpine payload", () => {
     expect(resign.signatureType).toBe("RSA256");
     expect(resign.upstreamPublicKeys).toEqual(["filename=upstream.rsa.pub\n-----BEGIN PUBLIC KEY-----"]);
   });
-});
+  it("includes an optional routing rule in repository payloads", () => {
+    const draft = createRepositoryDraft();
+    draft.routingRuleName = "blocked-public";
+    const payload = buildRepositoryPayload(draft, "maven2", "PROXY", false);
+    expect(payload.routingRuleName).toBe("blocked-public");
+  });
 
-describe("proxy payload", () => {
   it("carries upstream authentication, bearer token, cache ages and redirect hosts", () => {
     const draft = draftFor("nuget", "PROXY");
     draft.remoteAuthenticationType = "ntlm";

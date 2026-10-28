@@ -87,6 +87,78 @@ import org.springframework.dao.DuplicateKeyException;
 /** Reusable black-box contract that every database backend must pass through the public API. */
 public abstract class PersistenceApiContract {
   @Test
+  void routingRulesPersistBindingsAndRenamesAcrossStoreInstances() {
+    var rules = stores().routingRules();
+    long id = rules.insert("routing-contract", "Namespace policy", "BLOCK", List.of("/private/.*", "/internal/.*"));
+    assertEquals(List.of("/private/.*", "/internal/.*"), rules.findById(id).orElseThrow().matchers());
+    assertThrows(DuplicateKeyException.class,
+        () -> rules.insert("routing-contract", "", "ALLOW", List.of("/.*")));
+    long repository = stores().repositories().insert(new RepositoryRecord(null, "routing-proxy-contract",
+        com.github.klboke.kkrepo.core.RepositoryFormat.RAW,
+        com.github.klboke.kkrepo.core.RepositoryType.PROXY, "raw-proxy", true, null, id,
+        "https://example.com/", null, null, null, false, Map.of()));
+    assertEquals(List.of("routing-proxy-contract"), rules.repositoriesUsing(id));
+    assertTrue(rules.bindings().stream().anyMatch(binding -> binding.repositoryId() == repository
+        && binding.rule().id() == id));
+    inTransaction(() -> {
+      assertEquals(id, rules.lockByName("routing-contract").orElseThrow().id());
+      assertEquals(repository, stores().repositories().lockByName("routing-proxy-contract").orElseThrow().id());
+      rules.update(id, "routing-renamed-contract", "", "ALLOW", List.of("/public/.*"));
+      return null;
+    });
+    assertTrue(rules.findByName("routing-contract").isEmpty());
+    assertEquals("ALLOW", rules.findByName("routing-renamed-contract").orElseThrow().mode());
+    assertEquals(id, stores().repositories().findById(repository).orElseThrow().routingRuleId());
+    stores().repositories().deleteById(repository);
+    rules.delete(id);
+    assertTrue(rules.findById(id).isEmpty());
+  }
+
+  @Test
+  void repositoryLockPreservesRoutingBindingsCommittedAfterItsSnapshot() throws Exception {
+    var repositories = stores().repositories();
+    var rules = stores().routingRules();
+    String name = "routing-concurrent-contract";
+    long rule = rules.insert(name, "", "BLOCK", List.of("/private/.*"));
+    long repository = repositories.insert(new RepositoryRecord(null, name, RepositoryFormat.RAW,
+        RepositoryType.PROXY, "raw-proxy", true, null, null, "https://example.com/",
+        null, null, null, false, Map.of()));
+    CountDownLatch assigned = new CountDownLatch(1);
+    CountDownLatch snapshot = new CountDownLatch(1);
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var writer = executor.submit(() -> inTransaction(() -> {
+        rules.lockByName(name).orElseThrow();
+        repositories.lockByName(name).orElseThrow();
+        repositories.update(new RepositoryRecord(repository, name, RepositoryFormat.RAW,
+            RepositoryType.PROXY, "raw-proxy", true, null, rule, "https://example.com/",
+            null, null, null, false, Map.of()));
+        assigned.countDown();
+        awaitPolicyDeletionLatch(snapshot);
+        return null;
+      }));
+      assertTrue(assigned.await(10, java.util.concurrent.TimeUnit.SECONDS));
+      var updater = executor.submit(() -> inTransaction(() -> {
+        assertNull(repositories.findByName(name).orElseThrow().routingRuleId()); // Establish RR snapshot.
+        snapshot.countDown();
+        var current = repositories.lockByName(name).orElseThrow();
+        assertEquals(rule, current.routingRuleId());
+        repositories.update(new RepositoryRecord(repository, name, RepositoryFormat.RAW,
+            RepositoryType.PROXY, "raw-proxy", false, null, current.routingRuleId(),
+            "https://example.com/", null, null, null, false, Map.of()));
+        return null;
+      }));
+      writer.get(10, java.util.concurrent.TimeUnit.SECONDS);
+      updater.get(10, java.util.concurrent.TimeUnit.SECONDS);
+      assertEquals(rule, repositories.findByName(name).orElseThrow().routingRuleId());
+      assertFalse(repositories.findByName(name).orElseThrow().online());
+    } finally {
+      snapshot.countDown();
+      repositories.deleteById(repository);
+      rules.delete(rule);
+    }
+  }
+
+  @Test
   void blobStoreCredentialsRoundTripFromStaticToEmptyAndNull() {
     var dao = stores().blobStores();
     long id = dao.insert(new BlobStoreRecord(null, "s3-credentials-contract", "s3",

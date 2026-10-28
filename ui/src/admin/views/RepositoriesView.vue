@@ -51,6 +51,12 @@ interface BlobStoreList {
   stores?: { name: string }[];
 }
 
+interface RoutingRuleOption {
+  name: string;
+  mode?: string;
+}
+
+const routingRules = ref<RoutingRuleOption[]>([]);
 const repositories = ref<Repository[]>([]);
 const recipes = ref<Recipe[]>([]);
 const blobStores = ref<{ name: string }[]>([]);
@@ -181,14 +187,16 @@ async function load() {
   loading.value = true;
   usage.value = undefined;
   try {
-    const [repos, recipeList, stores] = await Promise.all([
+    const [repos, recipeList, stores, routingRuleList] = await Promise.all([
       api.get<Repository[]>("/internal/repositories?purpose=admin"),
       api.getOrNull<Recipe[]>("/internal/repositories/recipes"),
       api.getOrNull<BlobStoreList>("/internal/blob-stores"),
+      api.getOrNull<RoutingRuleOption[]>("/service/rest/v1/routing-rules"),
     ]);
     repositories.value = repos ?? [];
     recipes.value = recipeList ?? [];
     blobStores.value = stores?.stores ?? [];
+    routingRules.value = routingRuleList ?? [];
     if (repositories.value.length === 0) {
       usage.value = { usage: {}, calculatedAt: new Date().toISOString() };
     } else {
@@ -772,6 +780,14 @@ onMounted(load);
           <label for="repo-remote-url">{{ t("Remote URL") }}</label>
           <input id="repo-remote-url" v-model="draft.remoteUrl" type="url" autocomplete="off" :readonly="draftFormat === 'swift'">
         </div>
+        <div v-if="isProxy && routingRules.length" class="micl-textfield-outlined kk-field--wide">
+          <label for="repo-routing-rule">{{ t("Routing Rule") }}</label>
+          <select id="repo-routing-rule" v-model="draft.routingRuleName">
+            <option value="">{{ t("None") }}</option>
+            <option v-for="rule in routingRules" :key="rule.name" :value="rule.name">{{ rule.name }}</option>
+          </select>
+          <small class="kk-hint">{{ t("Optional rule that controls which remote paths this repository may access.") }}</small>
+        </div>
         <div v-if="pypiIndexVisible" class="micl-textfield-outlined kk-field--wide">
           <label for="repo-pypi-index">{{ t("Remote Index Path") }}</label>
           <input id="repo-pypi-index" v-model="draft.pypiIndexPath" type="text" placeholder="/simple" spellcheck="false" autocomplete="off">
@@ -877,6 +893,7 @@ onMounted(load);
       </div>
 
       <MemberTransferPicker
+        v-if="isGroup"
         v-model="memberNames"
         :options="memberCandidates.map((repo) => ({ name: repo.name, supportingText: String(repo.type ?? '').toLowerCase() }))"
         available-title="Available"

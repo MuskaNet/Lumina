@@ -20,6 +20,7 @@ import RealmsView from "./views/RealmsView.vue";
 import RepositoriesView from "./views/RepositoriesView.vue";
 import RepositoryDataMigrationView from "./views/RepositoryDataMigrationView.vue";
 import RolesView from "./views/RolesView.vue";
+import RoutingRulesView from "./views/RoutingRulesView.vue";
 import ScanningView from "./views/ScanningView.vue";
 import UiSettingsView from "./views/UiSettingsView.vue";
 import UsersView from "./views/UsersView.vue";
@@ -28,6 +29,7 @@ const VIEWS: Record<string, Component> = {
   repositories: RepositoriesView,
   "cleanup-policies": CleanupPoliciesView,
   "content-selectors": ContentSelectorsView,
+  "routing-rules": RoutingRulesView,
   blobstores: BlobStoresView,
   "docker-registry": DockerRegistryView,
   "security-users": UsersView,
@@ -53,6 +55,7 @@ export const LEGACY_HASH_ROUTES: Record<string, string> = {
   "#admin/repository": "repositories",
   "#admin/repository/cleanup": "cleanup-policies",
   "#admin/repository/blob-stores": "blobstores",
+  "#admin/repository/routingrules": "routing-rules",
   "#admin/repository/docker-registry": "docker-registry",
   "#admin/security": "security-users",
   "#admin/security/apikeys": "security-api-keys",
