@@ -82,8 +82,8 @@ describe("welcome view", () => {
       expect(summary.find("strong").exists()).toBe(true);
       expect(summary.find(".kk-secondary").exists()).toBe(true);
       expect(summary.find(".kk-badge").exists()).toBe(true);
-      expect(summary.element.nextElementSibling).toBe(copy.element);
-      expect(card.element.lastElementChild).toBe(copy.element);
+      expect(summary.element.parentElement?.nextElementSibling).toBe(copy.element.parentElement);
+      expect(card.element.lastElementChild).toBe(copy.element.parentElement);
       expect(copy.find("button").exists()).toBe(false);
     }
 

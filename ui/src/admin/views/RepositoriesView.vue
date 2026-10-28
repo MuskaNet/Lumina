@@ -659,12 +659,12 @@ onMounted(load);
       </span>
     </template>
     <template #cell-type="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="typeLabel(row) === 'group' ? 'kk-badge--warn' : 'kk-badge--ok'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge" :class="typeLabel(row) === 'group' ? 'kk-badge--warn' : 'kk-badge--ok'">
         {{ typeLabel(row) }}
       </span></span>
     </template>
     <template #cell-online="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.online ? 'kk-badge--ok' : 'kk-badge--bad'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge" :class="row.online ? 'kk-badge--ok' : 'kk-badge--bad'">
         {{ row.online ? t("Online") : t("Offline") }}
       </span></span>
     </template>

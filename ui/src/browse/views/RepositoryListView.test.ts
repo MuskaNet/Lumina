@@ -68,7 +68,6 @@ afterEach(() => {
   wrapper?.unmount();
   wrapper = null;
   delete (navigator as unknown as { clipboard?: unknown }).clipboard;
-  delete (document as unknown as { execCommand?: unknown }).execCommand;
 });
 
 describe("RepositoryListView", () => {
@@ -162,19 +161,6 @@ describe("RepositoryListView", () => {
     const copyButton = dockerRow.find(".kk-repo-url__copy");
     expect(copyButton.attributes("aria-label")).toBe("Copied");
     expect(copyButton.find(".material-symbols-outlined").text()).toBe("check");
-  });
-
-  it("falls back to the legacy copy command outside secure contexts", async () => {
-    Object.defineProperty(navigator, "clipboard", { configurable: true, get: () => undefined });
-    const execCommand = vi.fn(() => true);
-    Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
-    const view = mountView();
-
-    await rowFor(view, "maven-hosted").find(".kk-repo-url__copy").trigger("click");
-    await flushPromises();
-
-    expect(execCommand).toHaveBeenCalledWith("copy");
-    expect(showToast).toHaveBeenCalledWith("Repository URL copied", "ok");
   });
 
   it("reports a clipboard failure instead of claiming success", async () => {

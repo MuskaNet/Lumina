@@ -163,7 +163,7 @@ onUnmounted(() => {
       </span>
     </template>
     <template #cell-status="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge kk-status-chip" :class="row.repository.online ? 'kk-badge--ok' : 'kk-badge--bad'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge kk-status-chip" :class="row.repository.online ? 'kk-badge--ok' : 'kk-badge--bad'">
         {{ row.status }}
       </span></span>
     </template>

@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { t } from "../../shared/i18n";
 import { showToast } from "../../shared/snackbar";
 import { writeClipboard } from "../../shared/clipboard";
+import { formatLogoClass } from "../../shared/formatIcons";
 import { repositoryClientUrl } from "../repositoryUrls";
 
 interface Repository {
@@ -30,6 +31,20 @@ const grouped = computed(() => {
     .map(([format, repos]) => ({ format, repos: repos.sort((a, b) => a.name.localeCompare(b.name)) }));
 });
 
+function formatDisplayName(format: string) {
+  const labels: Record<string, string> = {
+    alpine: "Alpine",
+    apt: "APT",
+    docker: "Docker",
+    maven2: "Maven",
+    npm: "npm",
+    pypi: "PyPI",
+    rubygems: "RubyGems",
+    terraform: "Terraform",
+  };
+  return labels[format.toLowerCase()] ?? format.charAt(0).toUpperCase() + format.slice(1).toLowerCase();
+}
+
 async function copyUrl(repo: Repository) {
   try {
     await writeClipboard(repositoryClientUrl(repo));
@@ -42,6 +57,9 @@ async function copyUrl(repo: Repository) {
 
 <template>
   <section class="kk-welcome-header">
+    <span class="kk-welcome-header__shape kk-welcome-header__shape--burst" aria-hidden="true"></span>
+    <span class="kk-welcome-header__shape kk-welcome-header__shape--diamond" aria-hidden="true"></span>
+    <span class="kk-welcome-header__shape kk-welcome-header__shape--pill" aria-hidden="true"></span>
     <div class="kk-welcome-header__content">
       <h2 class="kk-empty-state__title">{{ t("Browse repositories") }}</h2>
       <p class="kk-empty-state__body">
@@ -54,7 +72,10 @@ async function copyUrl(repo: Repository) {
   </section>
 
   <div v-for="group in grouped" :key="group.format" class="kk-format-group">
-    <h3 class="kk-schema-form__group kk-format-group__title">{{ group.format }}</h3>
+    <h3 class="kk-schema-form__group kk-format-group__title">
+      <span :class="formatLogoClass(group.format)" aria-hidden="true"></span>
+      <span>{{ formatDisplayName(group.format) }}</span>
+    </h3>
     <p class="kk-hint kk-format-group__hint">
       {{ t("Copy a repository URL from the list below, or open a repository to browse it.") }}
     </p>
@@ -74,7 +95,7 @@ async function copyUrl(repo: Repository) {
             </span>
             <span class="micl-chips kk-chip-host">
               <span
-                class="micl-chip-assist micl-chip--elevated kk-badge kk-pill-badge"
+                class="micl-chip-assist kk-badge kk-pill-badge"
                 :class="repo.type === 'group' ? 'kk-badge--warn' : repo.type === 'proxy' ? 'kk-badge--checking' : 'kk-badge--ok'"
               >
                 {{ repo.type }}

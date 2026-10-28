@@ -136,7 +136,7 @@ onMounted(load);
     :aria-label="t('Docker connectors')"
   >
     <template #cell-state="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.state === 'running' ? 'kk-badge--ok' : 'kk-badge--warn'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge" :class="row.state === 'running' ? 'kk-badge--ok' : 'kk-badge--warn'">
         {{ t(String(row.state || '—')) }}
       </span></span>
     </template>

@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
+import { writeClipboard } from "../../shared/clipboard";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
@@ -161,7 +162,7 @@ async function confirmDelete() {
 
 async function copyToken() {
   try {
-    await navigator.clipboard.writeText(createdToken.value);
+    await writeClipboard(createdToken.value);
     showToast(t("Copied to clipboard."), "ok");
   } catch {
     showToast(t("Could not copy to clipboard."), "error");
@@ -206,7 +207,7 @@ onMounted(load);
     <template #cell-domain="{ row }">{{ row.domain || "—" }}</template>
     <template #cell-tokenPrefix="{ row }"><code class="kk-mono">{{ row.tokenPrefix }}…</code></template>
     <template #cell-status="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.status === 'active' ? 'kk-badge--ok' : 'kk-badge--warn'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge" :class="row.status === 'active' ? 'kk-badge--ok' : 'kk-badge--warn'">
         {{ t(row.status || 'active') }}
       </span></span>
     </template>

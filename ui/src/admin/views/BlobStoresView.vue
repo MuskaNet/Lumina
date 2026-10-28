@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
+import { writeClipboard } from "../../shared/clipboard";
 import { formatInventoryBytes, inventoryValue, type InventorySnapshot } from "../../shared/inventory";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn, type DataTableSort } from "../../shared/components/M3DataTable.vue";
@@ -248,7 +249,7 @@ async function runCheck(store: BlobStore, notify = true) {
 async function copyLocation(value?: string) {
   if (!value) return;
   try {
-    await navigator.clipboard.writeText(value);
+    await writeClipboard(value);
     showToast(t("Copied to clipboard."), "ok");
   } catch {
     showToast(t("Could not copy to clipboard."), "error");
@@ -493,10 +494,12 @@ onMounted(() => {
     </template>
 
     <template #cell-health="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="`kk-badge--${storeHealth(row).tone}`">{{ t(storeHealth(row).status) }}</span></span>
-      <small v-if="storeHealth(row).message" class="kk-secondary" :title="t(storeHealth(row).message)">
-        {{ t(storeHealth(row).message) }}
-      </small>
+      <span class="kk-health-status">
+        <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge" :class="`kk-badge--${storeHealth(row).tone}`">{{ t(storeHealth(row).status) }}</span></span>
+        <small v-if="storeHealth(row).message" class="kk-secondary kk-health-message" :title="t(storeHealth(row).message)">
+          {{ t(storeHealth(row).message) }}
+        </small>
+      </span>
     </template>
 
     <template #cell-blobCount="{ row }">{{ storeMetric(row, "blobCount") }}</template>

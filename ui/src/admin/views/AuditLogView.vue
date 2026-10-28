@@ -162,7 +162,7 @@ onMounted(() => load(0));
     <template #cell-permission="{ row }"><code class="kk-mono" :title="row.permission ?? undefined">{{ row.permission || "—" }}</code></template>
     <template #cell-status="{ row }">{{ row.status ?? "—" }}</template>
     <template #cell-outcome="{ row }">
-      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-badge" :class="row.outcome === 'allow' ? 'kk-badge--ok' : 'kk-badge--bad'">
+      <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-badge" :class="row.outcome === 'allow' ? 'kk-badge--ok' : 'kk-badge--bad'">
         {{ t(String(row.outcome || '—')) }}
       </span></span>
     </template>

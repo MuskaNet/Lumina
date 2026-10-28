@@ -219,7 +219,7 @@ onBeforeUnmount(unbindListeners);
         {{ options.length ? t("Select a recipe") : t("No recipes available") }}
       </span>
       <span v-if="selected" class="micl-chips kk-chip-host kk-recipe-selected-type">
-        <span class="micl-chip-assist micl-chip--elevated kk-recipe-type">{{ selected.typeLabel }}</span>
+        <span class="micl-chip-assist kk-recipe-type">{{ selected.typeLabel }}</span>
       </span>
       <span class="material-symbols-outlined kk-recipe-caret" aria-hidden="true">arrow_drop_down</span>
     </button>
@@ -267,7 +267,7 @@ onBeforeUnmount(unbindListeners);
           </template>
           <template #headline>{{ option.displayName }}</template>
           <template #trailing>
-            <span class="micl-chips kk-chip-host"><span class="micl-chip-assist micl-chip--elevated kk-recipe-type">{{ option.typeLabel }}</span></span>
+            <span class="micl-chips kk-chip-host"><span class="micl-chip-assist kk-recipe-type">{{ option.typeLabel }}</span></span>
           </template>
         </M3ListItem>
         <li v-if="!filtered.length" class="kk-recipe-empty">{{ t("No matching recipes") }}</li>
