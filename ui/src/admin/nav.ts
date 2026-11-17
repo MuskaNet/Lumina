@@ -1,3 +1,5 @@
+import { canAccessAdminView, isAdmin } from "../shared/permissions";
+
 export interface AdminNavItem {
   id: string;
   label: string;
@@ -6,6 +8,19 @@ export interface AdminNavItem {
   href: string;
   group?: string;
 }
+
+/** Visible entries of one sidebar group, in catalog order. */
+export interface AdminNavGroup {
+  /** Group heading, or `undefined` for entries the catalog leaves ungrouped. */
+  group?: string;
+  items: AdminNavItem[];
+}
+
+/**
+ * Views a scoped account may still open without the global wildcard, best
+ * first. Mirrors the upstream bootstrap fallback order.
+ */
+export const ADMIN_FALLBACK_VIEWS = ["security-scanning", "content-selectors"] as const;
 
 export const ADMIN_NAV: AdminNavItem[] = [
   { id: "repositories", label: "Repositories", icon: "inventory_2", href: "#admin/repository/repositories", group: "Repository" },
@@ -36,3 +51,47 @@ export const ADMIN_NAV: AdminNavItem[] = [
 ];
 
 export const ADMIN_NAV_BY_ID = new Map(ADMIN_NAV.map((item) => [item.id, item]));
+
+/**
+ * Entries the account can actually open. `ADMIN_NAV` stays the full catalog so
+ * legacy hrefs and deep links keep resolving; only the rendered navigation is
+ * narrowed.
+ */
+export function visibleAdminNav(granted: readonly string[] | undefined): AdminNavItem[] {
+  return ADMIN_NAV.filter((item) => canAccessAdminView(granted, item.id));
+}
+
+/**
+ * Groups the visible entries, dropping any group whose items are all hidden.
+ * Ungrouped entries are collected under a single `undefined` group so the shell
+ * can render them without a heading.
+ */
+export function visibleAdminNavGroups(granted: readonly string[] | undefined): AdminNavGroup[] {
+  const groups: AdminNavGroup[] = [];
+  for (const item of visibleAdminNav(granted)) {
+    const last = groups.at(-1);
+    if (last && last.group === item.group) last.items.push(item);
+    else groups.push({ group: item.group, items: [item] });
+  }
+  return groups;
+}
+
+/**
+ * First view a scoped account may open, best first. Returns `undefined` when
+ * the account has no administration view at all, which the shell reports as an
+ * explicit empty state instead of rendering a broken console.
+ */
+export function adminFallbackView(granted: readonly string[] | undefined): string | undefined {
+  return ADMIN_FALLBACK_VIEWS.find((view) => canAccessAdminView(granted, view));
+}
+
+/**
+ * View the console opens when the URL names no particular view (`/` or
+ * `/admin`). Global administrators keep the historical `repositories` landing
+ * page; scoped readers are sent to the first view they can open, and accounts
+ * with no administration grant get `undefined` so the shell can say so.
+ */
+export function adminLandingView(granted: readonly string[] | undefined): string | undefined {
+  if (isAdmin(granted)) return "repositories";
+  return adminFallbackView(granted);
+}

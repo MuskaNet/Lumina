@@ -12,5 +12,10 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     setupFiles: ["./vitest.setup.ts"],
     globals: false,
+    // `happy-dom` is rebuilt for every test file, so the default `forks` pool
+    // dominates the runtime (~3x here) and can push the Maven bridge test past
+    // its timeout. `vmThreads` keeps the same per-file isolation while reusing
+    // one environment per worker.
+    pool: "vmThreads",
   },
 });

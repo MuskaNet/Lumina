@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from "vue";
 import { api } from "../shared/api/client";
 import { t } from "../shared/i18n";
 import { showToast } from "../shared/snackbar";
-import { session, loadSecurityContext, signOut, qualifiedUser } from "../shared/session";
+import { session, permissions, loadSecurityContext, signOut, qualifiedUser } from "../shared/session";
+import { adminEntryUrl, hasAdminEntryPermission } from "../shared/permissions";
 import { appVersion, PRODUCT_URL } from "../shared/version";
 import { beginTask } from "../shared/progress";
 import M3TopProgressBar from "../shared/components/M3TopProgressBar.vue";
@@ -34,6 +35,12 @@ const NAV = [
 ];
 
 const activeId = computed(() => route.value.view);
+
+// The Admin entry mirrors the Admin app's own entry authorization: only accounts
+// that can actually open an Admin view see it, and scoped readers land on the
+// view their grant covers instead of the global repository default.
+const adminEntryVisible = computed(() => hasAdminEntryPermission(permissions.value));
+const adminHref = computed(() => adminEntryUrl(permissions.value));
 
 async function loadRepositories() {
   try {
@@ -78,7 +85,7 @@ async function onSignedIn() {
     </a>
     <template #actions>
       <template v-if="session?.userId">
-        <a href="/admin/#admin/repository/repositories" @click="beginTask()"><span class="material-symbols-outlined" aria-hidden="true">settings</span>{{ t('Admin') }}</a>
+        <a v-if="adminEntryVisible" :href="adminHref" @click="beginTask()"><span class="material-symbols-outlined" aria-hidden="true">settings</span>{{ t('Admin') }}</a>
         <div class="kk-mobile-drawer__account"><span class="material-symbols-outlined" aria-hidden="true">account_circle</span>{{ qualifiedUser() }}</div>
         <a :href="`${BROWSE_PREFIX}my-token`"><span class="material-symbols-outlined" aria-hidden="true">key</span>{{ t('My Token') }}</a>
         <button type="button" @click="signOut()"><span class="material-symbols-outlined" aria-hidden="true">logout</span>{{ t('Sign out') }}</button>
@@ -176,9 +183,9 @@ async function onSignedIn() {
         </template>
         <template #actions>
           <a
-            v-if="session?.userId"
+            v-if="session?.userId && adminEntryVisible"
             class="micl-iconbutton-standard-s kk-bottom-toolbar__admin-btn"
-            href="/admin/#admin/repository/repositories"
+            :href="adminHref"
             :aria-label="t('Admin')"
             :title="t('Admin')"
             @click="beginTask()"

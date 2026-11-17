@@ -17,8 +17,14 @@ import org.junit.jupiter.api.Test;
  * <p>Skipped when Node.js or the {@code ui/node_modules} install is missing. Run
  * {@code npm install} in {@code ui/} to enable it. The class name must end with {@code Test}
  * so Surefire's default includes pick it up.
+ *
+ * <p>The suite writes its report to a temporary file instead of a pipe. A pipe would have to be
+ * drained while the child runs: once the suite grew past the OS pipe buffer the child blocked
+ * writing its summary, and the run only ever finished by hitting the timeout.
  */
 class UiUnitTestBridgeTest {
+
+  private static final long TIMEOUT_SECONDS = 300;
 
   @Test
   void uiUnitTestsPass() throws Exception {
@@ -26,22 +32,31 @@ class UiUnitTestBridgeTest {
     Path ui = Path.of("..", "ui");
     assumeTrue(Files.isDirectory(ui.resolve("node_modules")), "run npm install in ui/ first");
 
-    Process process = new ProcessBuilder(
-        isWindows() ? "npm.cmd" : "npm",
-        "test",
-        "--silent")
-        .directory(ui.toFile())
-        .redirectErrorStream(true)
-        .start();
+    Path report = Files.createTempFile("kkrepo-ui-unit-", ".log");
+    String output;
+    try {
+      Process process = new ProcessBuilder(
+          isWindows() ? "npm.cmd" : "npm",
+          "test",
+          "--silent")
+          .directory(ui.toFile())
+          .redirectErrorStream(true)
+          .redirectOutput(report.toFile())
+          .start();
 
-    if (!process.waitFor(180, TimeUnit.SECONDS)) {
-      process.destroyForcibly();
-      process.waitFor(5, TimeUnit.SECONDS);
-      String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      fail("Timed out running the UI unit tests:\n" + output);
+      boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      if (!finished) {
+        process.destroyForcibly();
+        process.waitFor(5, TimeUnit.SECONDS);
+      }
+      output = Files.readString(report, StandardCharsets.UTF_8);
+      if (!finished) {
+        fail("Timed out running the UI unit tests:\n" + output);
+      }
+      assertEquals(0, process.exitValue(), () -> output);
+    } finally {
+      Files.deleteIfExists(report);
     }
-    String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-    assertEquals(0, process.exitValue(), () -> output);
   }
 
   private static boolean isWindows() {

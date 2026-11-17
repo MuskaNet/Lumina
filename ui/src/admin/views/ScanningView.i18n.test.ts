@@ -1,18 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { setLanguage } from "../../shared/i18n";
+import { permissions } from "../../shared/session";
 
 const api = vi.hoisted(() => ({ get: vi.fn(), send: vi.fn(), delete: vi.fn() }));
 vi.mock("../../shared/api/client", () => ({ api }));
 import ScanningView from "./ScanningView.vue";
 
 const wrappers: VueWrapper[] = [];
+/** Grants this file needs: it exercises the create/save flows, not authorization. */
+let originalPermissions: string[] = [];
 afterEach(() => {
   wrappers.splice(0).forEach((wrapper) => wrapper.unmount());
   setLanguage("en");
+  permissions.value = originalPermissions;
 });
 beforeEach(() => {
   setLanguage("zh-CN");
+  // Mutation controls are authorization-gated, so a translation test that opens
+  // the create/save flows must hold the grants those flows require.
+  originalPermissions = [...permissions.value];
+  permissions.value = [
+    "nexus:security-scanning:update",
+    "nexus:security-scanning-waivers:create",
+  ];
   vi.clearAllMocks();
   api.get.mockImplementation(async (path: string) => {
     if (path.endsWith("/summary")) return { deploymentEnabled: true, scanner: { ready: true }, summary: {} };

@@ -28,12 +28,22 @@ export const session = ref<SessionInfo | null>(null);
 export const permissions = ref<string[]>([]);
 export const bootstrap = ref<AdminBootstrapStatus | null>(null);
 
+/**
+ * Whether `permissions` reflects a successfully loaded security context.
+ *
+ * Client-side view gating is a user-experience concern only: every endpoint
+ * re-checks authorization, so an unknown context stays permissive instead of
+ * locking an administrator out of the console after a transient failure.
+ */
+export const securityContextLoaded = ref(false);
+
 export async function loadSecurityContext(): Promise<SecurityContext | null> {
   const context = await api.getOrNull<SecurityContext>("/internal/security/context");
   if (!context) return null;
   bootstrap.value = context.bootstrap;
   session.value = context.session ?? null;
   permissions.value = Array.isArray(context.permissions) ? context.permissions : [];
+  securityContextLoaded.value = true;
   return context;
 }
 

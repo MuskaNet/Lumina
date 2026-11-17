@@ -3,11 +3,13 @@ import {
   ALPINE_METADATA_MODES,
   ALPINE_SIGNATURE_TYPES,
   APT_METADATA_MODES,
+  MINIMUM_RELEASE_AGE_FORMATS,
   applyRecipeDefaults,
   buildRepositoryPayload,
   createRepositoryDraft,
   firstAlpineNamespace,
   repositoryDraftFromView,
+  supportsMinimumReleaseAge,
   type RepositoryDraft,
 } from "./repositoryForm";
 
@@ -244,12 +246,12 @@ describe("Alpine payload", () => {
     });
   });
 
-  it("only sends npm release-age protection and PyPI index paths where they apply", () => {
+  it("only sends release-age protection and PyPI index paths where they apply", () => {
     const npm = payloadFor(draftFor("npm", "PROXY"), "npm", "PROXY") as unknown as ProxyPayload;
     expect(npm.proxy.minimumReleaseAgeMinutes).toBe(0);
 
     const maven = payloadFor(draftFor("maven2", "PROXY"), "maven2", "PROXY") as unknown as ProxyPayload;
-    expect(maven.proxy.minimumReleaseAgeMinutes).toBeNull();
+    expect(maven.proxy.minimumReleaseAgeMinutes).toBe(0);
 
     const pypiPayload = payloadFor(draftFor("pypi", "PROXY"), "pypi", "PROXY");
     expect(pypiPayload.pypi).toEqual({ indexPath: "/simple" });
@@ -269,6 +271,65 @@ describe("Alpine payload", () => {
       versionPolicy: null,
       layoutPolicy: null,
     });
+  });
+});
+
+describe("minimum release age scoping", () => {
+  const supported = ["npm", "go", "maven2", "pypi"] as const;
+  const unsupported = ["raw", "helm", "nuget", "rubygems", "terraform"] as const;
+
+  it("supports exactly the four documented proxy formats", () => {
+    expect([...MINIMUM_RELEASE_AGE_FORMATS].sort()).toEqual(["go", "maven2", "npm", "pypi"]);
+    for (const format of supported) {
+      expect(supportsMinimumReleaseAge(format, "PROXY"), `${format} PROXY`).toBe(true);
+      expect(supportsMinimumReleaseAge(format, "HOSTED"), `${format} HOSTED`).toBe(false);
+      expect(supportsMinimumReleaseAge(format, "GROUP"), `${format} GROUP`).toBe(false);
+    }
+    for (const format of unsupported) {
+      expect(supportsMinimumReleaseAge(format, "PROXY"), `${format} PROXY`).toBe(false);
+    }
+  });
+
+  it.each(supported)("sends the configured quarantine window for %s proxies", (format) => {
+    const draft = draftFor(format, "PROXY");
+    draft.minimumReleaseAgeMinutes = 2880;
+    expect((payloadFor(draft, format, "PROXY") as unknown as ProxyPayload).proxy.minimumReleaseAgeMinutes)
+      .toBe(2880);
+  });
+
+  it.each(supported)("sends 0 for a blank %s proxy window", (format) => {
+    const draft = draftFor(format, "PROXY");
+    draft.minimumReleaseAgeMinutes = "";
+    expect((payloadFor(draft, format, "PROXY") as unknown as ProxyPayload).proxy.minimumReleaseAgeMinutes)
+      .toBe(0);
+  });
+
+  it("defaults the npm proxy window to 0", () => {
+    const draft = draftFor("npm", "PROXY");
+    expect(draft.minimumReleaseAgeMinutes).toBe(0);
+    expect((payloadFor(draft, "npm", "PROXY") as unknown as ProxyPayload).proxy.minimumReleaseAgeMinutes)
+      .toBe(0);
+  });
+
+  it.each(unsupported)("keeps sending null for %s proxies", (format) => {
+    const draft = draftFor(format, "PROXY");
+    draft.minimumReleaseAgeMinutes = 2880;
+    expect((payloadFor(draft, format, "PROXY") as unknown as ProxyPayload).proxy.minimumReleaseAgeMinutes)
+      .toBeNull();
+  });
+
+  it.each(supported)("omits the quarantine window for %s hosted and group repositories", (format) => {
+    for (const type of ["HOSTED", "GROUP"] as const) {
+      const draft = draftFor(format, type);
+      draft.minimumReleaseAgeMinutes = 2880;
+      const payload = payloadFor(draft, format, type);
+      // Hosted/group payloads carry no proxy block at all, so the option is absent.
+      expect(payload.proxy, `${format} ${type} proxy block`).toBeUndefined();
+      expect(
+        (payload.proxy as ProxyPayload["proxy"] | undefined)?.minimumReleaseAgeMinutes ?? null,
+        `${format} ${type}`,
+      ).toBeNull();
+    }
   });
 });
 

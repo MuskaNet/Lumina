@@ -1,6 +1,9 @@
 import { createRouter, type RouteRecordRaw } from "vue-router";
-import type { Component } from "vue";
-import { ADMIN_NAV, ADMIN_NAV_BY_ID } from "./nav";
+import { h, type Component } from "vue";
+import { ADMIN_NAV, ADMIN_NAV_BY_ID, adminLandingView } from "./nav";
+import { canAccessAdminView } from "../shared/permissions";
+import { permissions, securityContextLoaded } from "../shared/session";
+import SharedNotFoundView from "../shared/components/NotFoundView.vue";
 import { createLegacyHashHistory } from "../shared/router/legacy-hash-history";
 import { beginTask, endTask, fail } from "../shared/progress";
 
@@ -71,6 +74,24 @@ export function canonicalPath(viewId: string): string {
   return `/${item.href.replace(/^#/, "")}`;
 }
 
+/**
+ * Route shown when the account can enter the workspace but holds no grant that
+ * opens a single view. Rendering it beats showing the global default and having
+ * every request fail.
+ */
+export const NO_ADMIN_VIEW_ROUTE = "no-admin-views";
+
+const NoAdminViewsView: Component = {
+  name: "NoAdminViewsView",
+  render: () =>
+    h(SharedNotFoundView, {
+      icon: "lock",
+      title: "No administration views are available.",
+      description:
+        "This account can sign in but holds no administration permission. Ask an administrator to grant access.",
+    }),
+};
+
 const routes: RouteRecordRaw[] = [
   { path: "/", redirect: canonicalPath("repositories") },
   { path: "/admin", redirect: canonicalPath("repositories") },
@@ -79,6 +100,7 @@ const routes: RouteRecordRaw[] = [
     name: item.id,
     component: VIEWS[item.id] ?? NotFoundView,
   })),
+  { path: "/admin/no-access", name: NO_ADMIN_VIEW_ROUTE, component: NoAdminViewsView },
   { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundView },
 ];
 
@@ -87,13 +109,40 @@ export const router = createRouter({
   routes,
 });
 
+/**
+ * Route a scoped account may actually open, or `undefined` when it holds no
+ * administration grant at all.
+ */
+export function adminLandingPath(): string | undefined {
+  const landing = adminLandingView(permissions.value);
+  return landing ? canonicalPath(landing) : undefined;
+}
+
 router.beforeEach((to, from) => {
   if (to.path !== from.path) {
     beginTask();
   }
   const alias = LEGACY_HASH_ROUTES[`#${to.path.replace(/^\//, "")}`.toLowerCase()];
   if (alias && alias !== to.name) return canonicalPath(alias);
-  return true;
+
+  // Authorization is enforced again by every endpoint. This guard only keeps an
+  // account from landing on a view it cannot use, and it stays permissive until
+  // the security context has actually loaded so a transient failure cannot lock
+  // an administrator out of the console.
+  if (!securityContextLoaded.value) return true;
+
+  if (to.name === NO_ADMIN_VIEW_ROUTE) {
+    // Leave the empty state as soon as an accessible view exists.
+    return adminLandingPath() ?? true;
+  }
+
+  const name = typeof to.name === "string" ? to.name : undefined;
+  if (!name || !ADMIN_NAV_BY_ID.has(name)) return true;
+  if (canAccessAdminView(permissions.value, name)) return true;
+
+  // `state` is set on the redirect target so the console can show the empty
+  // state without the guard bouncing the navigation again.
+  return adminLandingPath() ?? { name: NO_ADMIN_VIEW_ROUTE };
 });
 
 router.afterEach(() => {
@@ -105,4 +154,10 @@ router.afterEach(() => {
 router.onError(() => {
   fail();
 });
+
+/** Re-runs the guard after the security context changes, e.g. right after sign-in. */
+export async function revalidateAdminRoute(): Promise<void> {
+  const current = router.currentRoute.value;
+  await router.replace(current.fullPath);
+}
 

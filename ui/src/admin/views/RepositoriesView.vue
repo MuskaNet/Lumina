@@ -19,6 +19,7 @@ import {
   createRepositoryDraft,
   firstAlpineNamespace,
   repositoryDraftFromView,
+  supportsMinimumReleaseAge,
   type RepositoryDraft,
   type RepositoryViewLike,
 } from "../repositoryForm";
@@ -254,7 +255,7 @@ const alpineResignProxy = computed(
 );
 const pypiIndexVisible = computed(() => draftFormat.value === "pypi" && isProxy.value);
 const minimumReleaseAgeVisible = computed(
-  () => draftFormat.value === "npm" && isProxy.value,
+  () => supportsMinimumReleaseAge(draftFormat.value, draftType.value),
 );
 const swiftProxyNote = computed(() => draftFormat.value === "swift" && isProxy.value);
 const savedPasswordPlaceholder = computed(() =>
@@ -847,7 +848,7 @@ onMounted(load);
           <input id="repo-min-release-age" v-model.number="draft.minimumReleaseAgeMinutes" type="number" min="0">
         </div>
         <p v-if="minimumReleaseAgeVisible" class="kk-hint kk-field--wide">
-          {{ t("npm proxy only. A version is hidden from package metadata and its tarball is blocked until this many minutes have passed since publication. Use 0 to disable this policy and preserve existing behavior. This is independent of content and metadata cache max age. Versions with a missing or invalid publish time are blocked while enabled.") }}
+          {{ t("npm, Go, Maven and PyPI proxies only. Versions newer than this are withheld from package metadata and their artifacts are rejected until the age elapses (403 for Go, Maven and PyPI; 404 for npm), for example 2880 for 48 hours. Use 0 to disable this policy and preserve existing behavior. This is independent of content and metadata cache max age. While enabled, versions with a missing or unreadable publish time are rejected. Go compares the version's commit time rather than its publish time, so it guards less strictly; Maven SNAPSHOT versions are exempt; PyPI upstreams must report PEP 700 upload times, as pypi.org does.") }}
         </p>
         <h3 class="kk-schema-form__group kk-field--wide">{{ t("Connection") }}</h3>
         <div class="micl-textfield-outlined kk-field--wide">

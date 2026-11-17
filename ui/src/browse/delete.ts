@@ -9,6 +9,7 @@
  */
 import { api } from "../shared/api/client";
 import { permissions, session } from "../shared/session";
+import { hasPermission as hasAnyPermission } from "../shared/permissions";
 import type { BrowseEntry, BrowseRepository, DirectoryDeletionPreview } from "./browseModel";
 
 const VERSION_DIR_RE = /^\d/;
@@ -26,28 +27,9 @@ function pathSegments(path: string): string[] {
   return (path || "").split("/").filter(Boolean);
 }
 
-/** One `:`-separated permission part; `*` and comma-separated lists are wildcards. */
-function permissionPartMatches(grantedPart: string | undefined, requestedPart: string | undefined): boolean {
-  const requested = (requestedPart || "*").toLowerCase();
-  return (grantedPart || "*").split(",").some((part) => {
-    const normalized = part.trim().toLowerCase();
-    return normalized === "*" || normalized === requested;
-  });
-}
-
-/** Matches a granted permission against a requested one, part by part. */
-function permissionMatches(granted: string | undefined, requested: string | undefined): boolean {
-  const grantedParts = (granted || "").toLowerCase().split(":");
-  const requestedParts = (requested || "").toLowerCase().split(":");
-  const length = Math.max(grantedParts.length, requestedParts.length);
-  for (let index = 0; index < length; index += 1) {
-    if (!permissionPartMatches(grantedParts[index], requestedParts[index])) return false;
-  }
-  return true;
-}
-
+/** Delegates to the shared Nexus-compatible matcher so the Browse apps cannot drift. */
 function hasPermission(permission: string): boolean {
-  return permissions.value.some((granted) => permissionMatches(granted, permission));
+  return hasAnyPermission(permissions.value, permission);
 }
 
 /**
