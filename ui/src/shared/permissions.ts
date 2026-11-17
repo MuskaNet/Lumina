@@ -73,12 +73,14 @@ const SELECTOR_ACTIONS = ["read", "create", "update", "delete"] as const;
 
 /**
  * View ids reachable with a narrow grant instead of global administration.
- * Every other Admin view requires the `nexus:*` wildcard.
+ * Every other Admin view requires the `nexus:*` wildcard. A `Map` keeps the
+ * lookup immune to inherited keys (`constructor`, `toString`, ...) that would
+ * otherwise be reachable through a plain object.
  */
-const SCOPED_VIEWS: Record<string, string[]> = {
-  "security-scanning": ["nexus:security-scanning:read"],
-  "content-selectors": SELECTOR_ACTIONS.map((action) => `nexus:selectors:${action}`),
-};
+const SCOPED_VIEWS = new Map<string, readonly string[]>([
+  ["security-scanning", ["nexus:security-scanning:read"]],
+  ["content-selectors", SELECTOR_ACTIONS.map((action) => `nexus:selectors:${action}`)],
+]);
 
 /** True when the account holds the global administration wildcard. */
 export function isAdmin(granted: readonly string[] | undefined): boolean {
@@ -88,8 +90,8 @@ export function isAdmin(granted: readonly string[] | undefined): boolean {
 /** True when the account may open one Admin view. */
 export function canAccessAdminView(granted: readonly string[] | undefined, viewId: string): boolean {
   if (isAdmin(granted)) return true;
-  const alternatives = SCOPED_VIEWS[viewId];
-  return Boolean(alternatives) && alternatives.some((permission) => hasPermission(granted, permission));
+  const alternatives = SCOPED_VIEWS.get(viewId);
+  return alternatives !== undefined && alternatives.some((permission) => hasPermission(granted, permission));
 }
 
 /**

@@ -89,6 +89,13 @@ describe("admin entry authorization", () => {
     expect(canAccessAdminView(["nexus:security-scanning:read"], "security-users")).toBe(false);
     expect(canAccessAdminView(["nexus:*"], "repositories")).toBe(true);
   });
+
+  it("never resolves a view through an inherited object key", () => {
+    // A plain-object lookup would expose `constructor`/`toString` and friends.
+    for (const viewId of ["constructor", "toString", "__proto__", "hasOwnProperty", "valueOf"]) {
+      expect(canAccessAdminView(["nexus:security-scanning:read"], viewId), viewId).toBe(false);
+    }
+  });
 });
 
 describe("hasPermission and isAdmin", () => {

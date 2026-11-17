@@ -73,11 +73,14 @@ describe("scoped admin navigation", () => {
 
 describe("admin router guard", () => {
   let router: typeof import("./router").router;
+  /** Monotonic suffix that keeps each baseline navigation distinct. */
+  let baseline = 0;
 
   beforeEach(async () => {
     const sessions = await import("../shared/session");
     const loaded = await import("./router");
     router = loaded.router;
+    baseline = 0;
     sessions.securityContextLoaded.value = false;
     sessions.permissions.value = [];
   });
@@ -94,8 +97,10 @@ describe("admin router guard", () => {
     sessions.permissions.value = granted;
     sessions.securityContextLoaded.value = loaded;
     // vue-router skips guards on duplicate navigation, so always start from an
-    // unmatched baseline path before pushing the case under test.
-    await router.push(`/__baseline__${Math.random().toString(36).slice(2)}`);
+    // unmatched baseline path before pushing the case under test. A counter
+    // keeps the baseline distinct without depending on a random value.
+    baseline += 1;
+    await router.push(`/__baseline__${baseline}`);
     await router.push(path);
     const name = router.currentRoute.value.name;
     return typeof name === "string" ? name : undefined;

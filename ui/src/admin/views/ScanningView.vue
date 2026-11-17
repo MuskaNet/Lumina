@@ -309,12 +309,28 @@ function securityScanCanMutate(permission: string = SCAN_UPDATE_PERMISSION): boo
 }
 
 /**
+ * Server-reported mutation capabilities a row may carry. Keeping the set closed
+ * means a capability can never be used to index arbitrary row properties.
+ */
+type RowCapability =
+  | "canManage"
+  | "canRescan"
+  | "canConfigure"
+  | "canCreateWaiver"
+  | "canDelete";
+
+/**
  * Reads a server-provided per-row capability. Endpoints that do not report one
  * (for example the policy list) return `null`, and an absent flag is never
  * treated as authorization on its own.
  */
-function rowCapability(row: Row, key: string): boolean | null {
-  const value = row[key];
+function rowCapability(row: Row, capability: RowCapability): boolean | null {
+  const value =
+    capability === "canManage" ? row.canManage
+      : capability === "canRescan" ? row.canRescan
+        : capability === "canConfigure" ? row.canConfigure
+          : capability === "canCreateWaiver" ? row.canCreateWaiver
+            : row.canDelete;
   return typeof value === "boolean" ? value : null;
 }
 
@@ -327,7 +343,7 @@ function rowCapability(row: Row, key: string): boolean | null {
 function canMutateRow(
   row: Row,
   permission: string = SCAN_UPDATE_PERMISSION,
-  capability?: string,
+  capability?: RowCapability,
 ): boolean {
   if (!securityScanCanMutate(permission)) return false;
   const value = capability ? rowCapability(row, capability) : null;
