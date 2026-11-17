@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BrowseAssetDetail, BrowseEntry, BrowseRepository, UsageContext, UsageDetail } from "./browseModel";
+import type {
+  AptRepositorySettings,
+  BrowseAssetDetail,
+  BrowseEntry,
+  BrowseRepository,
+  UsageContext,
+  UsageDetail,
+} from "./browseModel";
 import { usageDetailForEntry } from "./usage";
 
 const HOST = "repo.example.com";
@@ -58,6 +65,18 @@ async function loadUsage(
 
 function trimmedBaseUrl(ctx: UsageContext): string {
   return ctx.baseUrl.replace(/\/+$/, "");
+}
+
+/** Reads one Usage summary row by label; menus and directives are label/value pairs. */
+function summaryValue(usage: UsageDetail, label: string): string | undefined {
+  return usage.summaryRows?.find((candidate) => candidate.label === label)?.value;
+}
+
+/** The `deb [...]` directive an operator pastes into `/etc/apt/sources.list.d`. */
+function sourcesListSnippet(usage: UsageDetail): string {
+  const snippet = usage.snippets.find((candidate) => candidate.displayName === "sources.list.d");
+  if (!snippet) throw new Error("expected a sources.list.d snippet");
+  return snippet.snippetText;
 }
 
 describe("maven2 usage", () => {
@@ -441,6 +460,86 @@ describe("apt usage", () => {
     expect(usage.snippets[4].snippetText).toBe(
       `curl --fail --user '<username>:<token>' -F 'apt.asset=@package.deb' '${ORIGIN}/service/rest/v1/components?repository=apt-hosted'`,
     );
+  });
+
+  // Regression coverage for upstream PR #488 ("preserve APT settings in Browse
+  // directory details"): the legacy console dropped `apt` while normalizing the
+  // `/internal/repositories` payload, so directory selections fell back to
+  // stable/main. The Vue console assigns the payload verbatim, and these tests
+  // pin the resulting behavior at every browse depth.
+  describe("repository settings retention (#488)", () => {
+    const UBUNTU_APT: AptRepositorySettings = { distribution: "focal", component: "universe" };
+    const DEPTHS = [
+      "focal",
+      "focal/universe",
+      "focal/universe/figlet",
+      "focal/universe/figlet/2.2.5-3",
+      "focal/universe/figlet/2.2.5-3/amd64",
+    ];
+
+    function ubuntuContext(): UsageContext {
+      return makeContext(makeRepository("apt", {
+        name: "ubuntu-focal-amd64",
+        apt: { ...UBUNTU_APT },
+      }));
+    }
+
+    it.each(DEPTHS)(
+      "keeps the repository distribution/component when browsing %s",
+      async (path) => {
+        const ctx = ubuntuContext();
+        const usage = await loadUsage(ctx, makeEntry(path, false));
+        expect(summaryValue(usage, "Distribution")).toBe("focal");
+        expect(summaryValue(usage, "Component")).toBe("universe");
+        expect(sourcesListSnippet(usage)).toBe(
+          `deb [signed-by=/etc/apt/keyrings/ubuntu-focal-amd64.gpg] ${trimmedBaseUrl(ctx)} focal universe`,
+        );
+        expect(sourcesListSnippet(usage).endsWith(" focal universe")).toBe(true);
+      },
+    );
+
+    it("prefers asset apt metadata over the repository defaults", async () => {
+      const ctx = ubuntuContext();
+      const detail: BrowseAssetDetail = {
+        apt: {
+          distribution: "testing",
+          component: "contrib",
+          package: "demo",
+          version: "1.0",
+          architecture: "arm64",
+        },
+      };
+      const usage = await loadUsage(
+        ctx,
+        makeEntry("testing/contrib/demo/1.0/arm64/demo_1.0_arm64.deb", true),
+        detail,
+      );
+      expect(summaryValue(usage, "Distribution")).toBe("testing");
+      expect(summaryValue(usage, "Component")).toBe("contrib");
+      expect(summaryValue(usage, "Package")).toBe("demo");
+      expect(summaryValue(usage, "Version")).toBe("1.0");
+      expect(summaryValue(usage, "Architecture")).toBe("arm64");
+      expect(sourcesListSnippet(usage).endsWith(" testing contrib")).toBe(true);
+    });
+
+    it("uses the retained repository settings when asset metadata is absent", async () => {
+      const ctx = ubuntuContext();
+      const usage = await loadUsage(ctx, makeEntry("pool/f/figlet/figlet.deb", true), {});
+      expect(summaryValue(usage, "Distribution")).toBe("focal");
+      expect(summaryValue(usage, "Component")).toBe("universe");
+      expect(sourcesListSnippet(usage).endsWith(" focal universe")).toBe(true);
+    });
+
+    it("keeps the stable/main fallback when the repository has no apt settings", async () => {
+      const ctx = makeContext(makeRepository("apt", {
+        name: "ubuntu-focal-amd64",
+        apt: null,
+      }));
+      const usage = await loadUsage(ctx, makeEntry("stable/main/demo", false));
+      expect(summaryValue(usage, "Distribution")).toBe("stable");
+      expect(summaryValue(usage, "Component")).toBe("main");
+      expect(sourcesListSnippet(usage).endsWith(" stable main")).toBe(true);
+    });
   });
 });
 

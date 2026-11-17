@@ -1,8 +1,9 @@
-import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, mount, type DOMWrapper, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App.vue";
 import { browseHash, replaceBrowseRoute, route, searchHash, type BrowseRoute } from "./route";
+import { progressBarState, reset } from "../shared/progress";
 
 const REPOSITORIES = [{ name: "maven-hosted", format: "maven2", type: "hosted", online: true }];
 
@@ -16,7 +17,7 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 /** Mocks the Spring endpoints; returns the requested URLs so tests can assert the API surface. */
-function stubApi(session: unknown): string[] {
+function stubApi(session: unknown, permissions: string[] = []): string[] {
   const urls: string[] = [];
   vi.stubGlobal(
     "fetch",
@@ -30,7 +31,7 @@ function stubApi(session: unknown): string[] {
         return jsonResponse({
           bootstrap: { required: false, minPasswordLength: 8, anonymousAccessEnabled: true },
           session,
-          permissions: [],
+          permissions,
         });
       }
       if (url.startsWith("/internal/security/login/options")) return jsonResponse({ oidcEnabled: false });
@@ -47,13 +48,44 @@ function stubApi(session: unknown): string[] {
 
 let wrapper: VueWrapper | null = null;
 
-async function renderApp(options: { search?: string; session?: unknown } = {}): Promise<string[]> {
+async function renderApp(
+  options: { search?: string; session?: unknown; permissions?: string[] } = {},
+): Promise<string[]> {
   const query = options.search ? `?${options.search}` : "";
   window.history.replaceState({}, "", `/browse/${query}#browse/welcome`);
-  const urls = stubApi(options.session === undefined ? { userId: "admin", source: "local" } : options.session);
+  // A test may render more than once (e.g. to compare two grants); drop the
+  // previous app so its window listeners and progress timers do not accumulate.
+  wrapper?.unmount();
+  const urls = stubApi(
+    options.session === undefined ? { userId: "admin", source: "local" } : options.session,
+    options.permissions ?? ["nexus:*"],
+  );
   wrapper = mount(App);
   await flushPromises();
   return urls;
+}
+
+/** The Admin entry rendered inside the desktop/M3 bottom toolbar. */
+function toolbarAdminLink(): DOMWrapper<Element> {
+  return wrapper!.find('[role="toolbar"]').find(".kk-bottom-toolbar__admin-btn");
+}
+
+/** The Admin entry rendered inside the mobile navigation drawer. */
+function drawerAdminLink(): DOMWrapper<Element> {
+  return wrapper!.find(".kk-mobile-drawer__actions").find('a[href^="/admin/"]');
+}
+
+/** Both entry points must agree, so assert the href for each of them. */
+function expectAdminEntryHref(href: string | null): void {
+  const toolbar = toolbarAdminLink();
+  const drawer = drawerAdminLink();
+  if (href === null) {
+    expect(toolbar.exists()).toBe(false);
+    expect(drawer.exists()).toBe(false);
+    return;
+  }
+  expect(toolbar.attributes("href")).toBe(href);
+  expect(drawer.attributes("href")).toBe(href);
 }
 
 function setView(patch: Partial<BrowseRoute>): void {
@@ -76,6 +108,9 @@ function loginDialogOpen(): boolean {
 afterEach(() => {
   wrapper?.unmount();
   wrapper = null;
+  // Clicking an Admin entry starts the top progress task; clear its timers so the
+  // shared state never leaks into the next test.
+  reset();
   vi.unstubAllGlobals();
 });
 
@@ -149,7 +184,7 @@ describe("browse application", () => {
     expect(toolbar.classes()).toContain("kk-bottom-toolbar--browse");
     expect(toolbar.find('[popovertarget="kk-browse-user-menu"]').exists()).toBe(true);
 
-    const adminLink = toolbar.find('a[href="/admin/#admin/repository/repositories"]');
+    const adminLink = toolbar.find('a[href="/admin/"]');
     expect(adminLink.attributes("aria-label")).toBe("Admin");
     expect(adminLink.element.nextElementSibling).toBe(
       toolbar.find('[popovertarget="kk-browse-user-menu"]').element,
@@ -173,6 +208,49 @@ describe("browse application", () => {
     await flushPromises();
 
     expect(loginDialogOpen()).toBe(true);
+  });
+
+  it("sends the global administrator to the Admin root", async () => {
+    await renderApp({ permissions: ["nexus:*"] });
+
+    expectAdminEntryHref("/admin/");
+  });
+
+  it("sends a scanning reader to the artifact scanning view", async () => {
+    await renderApp({ permissions: ["nexus:security-scanning:read"] });
+
+    expectAdminEntryHref("/admin/#admin/security/artifact-scanning");
+  });
+
+  it("sends a selector reader to the content selectors view", async () => {
+    await renderApp({ permissions: ["nexus:selectors:read"] });
+
+    expectAdminEntryHref("/admin/#admin/repository/content-selectors");
+  });
+
+  it("hides the Admin entry from accounts without an admin grant", async () => {
+    await renderApp({ permissions: [] });
+    expectAdminEntryHref(null);
+
+    await renderApp({ permissions: ["nexus:repository-view:read"] });
+    expectAdminEntryHref(null);
+  });
+
+  it("keeps the progress task hook on both Admin entry points", async () => {
+    await renderApp({ permissions: ["nexus:*"] });
+
+    // Anything on the page may have started a task, so clear the bar first and
+    // assert that the entry itself is what starts a new one.
+    reset();
+    expect(progressBarState.visible).toBe(false);
+
+    await drawerAdminLink().trigger("click");
+    expect(progressBarState.visible).toBe(true);
+
+    reset();
+    await toolbarAdminLink().trigger("click");
+    expect(progressBarState.visible).toBe(true);
+    reset();
   });
 
   it("renders the tree and detail layout for the legacy repository route", async () => {

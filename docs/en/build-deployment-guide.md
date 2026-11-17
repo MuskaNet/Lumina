@@ -40,7 +40,7 @@ curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quicks
   | KKREPO_RUNTIME=native KKREPO_DATABASE_TYPE=postgresql bash
 ```
 
-`KKREPO_RUNTIME=jvm` selects `ghcr.io/muskanet/lumina:1.3.4`, while `KKREPO_RUNTIME=native` selects `ghcr.io/muskanet/lumina:1.3.4-native`. Both are published for Linux `amd64` and `arm64`. An explicit `KKREPO_IMAGE_TAG` overrides the runtime's default tag.
+`KKREPO_RUNTIME=jvm` selects `ghcr.io/muskanet/lumina:1.4.0`, while `KKREPO_RUNTIME=native` selects `ghcr.io/muskanet/lumina:1.4.0-native`. Both are published for Linux `amd64` and `arm64`. An explicit `KKREPO_IMAGE_TAG` overrides the runtime's default tag.
 
 The script prints each step and:
 
@@ -61,7 +61,7 @@ bash quickstart.sh
 
 By default, it starts:
 
-- The JVM runtime from `ghcr.io/muskanet/lumina:1.3.4`
+- The JVM runtime from `ghcr.io/muskanet/lumina:1.4.0`
 - MySQL 8.0
 - A `kkrepo-health` sidecar that continuously probes application readiness
 - Persistent MySQL and File blob storage volumes for local trials
@@ -164,7 +164,7 @@ Note: a normal `server` module jar does not contain a Spring Boot executable ent
 Pull the latest public release image:
 
 ```bash
-docker pull ghcr.io/muskanet/lumina:1.3.4
+docker pull ghcr.io/muskanet/lumina:1.4.0
 ```
 
 You can also use `latest` to follow the latest public release:
@@ -176,7 +176,7 @@ docker pull ghcr.io/muskanet/lumina:latest
 The Native image is published separately:
 
 ```bash
-docker pull ghcr.io/muskanet/lumina:1.3.4-native
+docker pull ghcr.io/muskanet/lumina:1.4.0-native
 docker pull ghcr.io/muskanet/lumina:native-latest
 ```
 
@@ -276,7 +276,7 @@ server/target/kkrepo-<release-version>-native-linux-<architecture>.zip
 
 When manually dispatched, the GitHub `Release Packages` workflow accepts only a version already merged into `main` and builds the public release matrix: one platform-independent JVM archive pair, Native Linux `amd64` and `arm64` archive pairs, and a combined SHA-256 manifest. The same architecture-native builds first push `<version>-native-amd64` and `<version>-native-arm64`, then combine them into the public versioned `<version>-native` and rolling `native-latest` multi-architecture manifests. Creating the GitHub Release and uploading the archive assets remain a separate, explicit release step.
 
-The Lumina fork maintains its own release version in `LUMINA_VERSION`, independently of the kkRepo Maven version. A Lumina GitHub Release uses a `vX.Y.Z` tag; publishing that release automatically uploads the distribution assets. Docker images retain the original kkRepo-only tags and also receive an explicit `<kkRepo-version>-lumina-<Lumina-version>` tag, such as `1.3.4-lumina-0.1.0`.
+The Lumina fork maintains its own release version in `LUMINA_VERSION`, independently of the kkRepo Maven version. A Lumina GitHub Release uses a `vX.Y.Z` tag; publishing that release automatically uploads the distribution assets. Docker images retain the original kkRepo-only tags and also receive an explicit `<kkRepo-version>-lumina-<Lumina-version>` tag, such as `1.4.0-lumina-1.3.0`.
 The Lumina fork's CI and `Release Packages` workflow use Node.js 24 to run `npm ci`, `npm run build:admin`, and `npm run build:browse` before Maven builds. Both frontends write production resources into their respective UI modules, and a frontend build failure prevents subsequent packaging. JVM and both architecture-specific Native release builds execute these steps, so distribution archives and main service images contain pages rebuilt from that commit.
 
 The Lumina fork publishes images to `ghcr.io/muskanet/lumina`: JVM keeps the kkRepo-only `<version>` and `latest` tags and also publishes `<kkRepo-version>-lumina-<Lumina-version>`, while Native uses the analogous Native tags above. The scanner is published to `ghcr.io/muskanet/lumina-scanner:<version>` and its combined tag. The standalone frontend proxy contains only Lumina frontend assets, so it uses the independent Lumina version tag `ghcr.io/muskanet/lumina-fp:<Lumina-version>` and `latest`, without a kkRepo-derived tag. All release images support Linux `amd64` and `arm64`. The `lumina-fp` image contains only the admin and browse static assets plus Nginx; set `API_UPSTREAM` to the backend base URL when running it, for example `docker run -d -p 8080:80 -e API_UPSTREAM=http://192.168.1.100:8080 ghcr.io/muskanet/lumina-fp:latest`. Publishing requires the workflow `packages: write` permission and uses the built-in `${{ secrets.GITHUB_TOKEN }}`; no personal token is stored in the repository. The repository's package permissions must allow this workflow to publish to the `MuskaNet` namespace. Never commit a token. This workflow does not run the full test suite; check CI results for the same commit before release.

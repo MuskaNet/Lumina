@@ -10,6 +10,8 @@
  *   mode is forced and disabled for those types.
  * - Proxy settings (upstream authentication, bearer token, outbound network
  *   proxy, cache ages, redirect hosts, ...) belong to the proxy payload only.
+ * - Minimum release age (quarantine) is configurable for npm, Go, Maven and
+ *   PyPI proxies only; every other format keeps sending null.
  *
  * Keeping this logic out of the component makes the protocol-facing defaults and
  * request shapes unit testable without a DOM.
@@ -55,6 +57,24 @@ export const LAYOUT_POLICIES: Choice[] = [
 
 /** Swift proxies are pinned to the Nexus-compatible GitHub source mode. */
 export const SWIFT_REMOTE_URL = "https://github.com/";
+
+/**
+ * Proxy formats whose upstream publish times can gate artifact visibility
+ * (server-side `RepositoryRuntime.supportsMinimumReleaseAge`). Everything else
+ * must keep sending null so the server never rejects the payload.
+ */
+export const MINIMUM_RELEASE_AGE_FORMATS: ReadonlySet<string> = new Set([
+  "npm",
+  "go",
+  "maven2",
+  "pypi",
+]);
+
+/** True when this format supports minimum release age on a proxy repository. */
+export function supportsMinimumReleaseAge(format: unknown, type: unknown): boolean {
+  return String(type ?? "").toUpperCase() === "PROXY"
+    && MINIMUM_RELEASE_AGE_FORMATS.has(String(format ?? "").toLowerCase());
+}
 
 /** Upstream defaults the console prefills for proxy repositories. */
 export const PROXY_REMOTE_URLS: Record<string, string> = {
@@ -470,7 +490,9 @@ export function buildRepositoryPayload(
       outboundProxyUsername: trimmedOrNull(draft.outboundProxyUsername),
       outboundProxyPassword: trimmedOrNull(draft.outboundProxyPassword),
       outboundProxyPasswordConfigured: draft.outboundProxyPasswordClear ? false : null,
-      minimumReleaseAgeMinutes: format === "npm" ? numberOrNull(draft.minimumReleaseAgeMinutes) ?? 0 : null,
+      minimumReleaseAgeMinutes: MINIMUM_RELEASE_AGE_FORMATS.has(format)
+        ? numberOrNull(draft.minimumReleaseAgeMinutes) ?? 0
+        : null,
       allowedRedirectHosts: splitList(draft.allowedRedirectHosts),
     };
   } else if (type === "GROUP") {

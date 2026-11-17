@@ -104,6 +104,39 @@ const repositoriesFixture = [
     proxy: { remoteUrl: "https://deb.debian.org/debian/" },
     apt: { distribution: "stable", component: "main", architectures: ["amd64"], metadataMode: "PASSTHROUGH" },
   },
+  {
+    name: "npm-proxy",
+    format: "npm",
+    type: "PROXY",
+    recipe: "npm-proxy",
+    online: true,
+    proxy: { remoteUrl: "https://registry.npmjs.org/", minimumReleaseAgeMinutes: 1440 },
+  },
+  {
+    name: "go-proxy",
+    format: "go",
+    type: "PROXY",
+    recipe: "go-proxy",
+    online: true,
+    proxy: { remoteUrl: "https://proxy.golang.org/", minimumReleaseAgeMinutes: 2880 },
+  },
+  {
+    name: "pypi-proxy",
+    format: "pypi",
+    type: "PROXY",
+    recipe: "pypi-proxy",
+    online: true,
+    proxy: { remoteUrl: "https://pypi.org/", minimumReleaseAgeMinutes: 720 },
+  },
+  {
+    // Unsupported proxy: the stored value is ignored and must not reach the payload.
+    name: "raw-proxy",
+    format: "raw",
+    type: "PROXY",
+    recipe: "raw-proxy",
+    online: true,
+    proxy: { remoteUrl: "https://example.com/", minimumReleaseAgeMinutes: 2880 },
+  },
 ];
 
 const recipesFixture = [
@@ -113,6 +146,10 @@ const recipesFixture = [
   { name: "conan-proxy", format: "conan", type: "PROXY" },
   { name: "alpine-proxy", format: "alpine", type: "PROXY" },
   { name: "apt-proxy", format: "apt", type: "PROXY" },
+  { name: "npm-proxy", format: "npm", type: "PROXY" },
+  { name: "go-proxy", format: "go", type: "PROXY" },
+  { name: "pypi-proxy", format: "pypi", type: "PROXY" },
+  { name: "raw-proxy", format: "raw", type: "PROXY" },
 ];
 
 function installApi() {
@@ -346,6 +383,96 @@ describe("repository dialog: shared section layout", () => {
       expect(wrapper.find("[data-repository-section='signing']").exists()).toBe(true);
       expect(mocks.get).toHaveBeenCalledWith(expect.stringContaining("/status"));
     }
+    wrapper.unmount();
+  });
+});
+
+describe("repository dialog: minimum release age", () => {
+  beforeEach(installApi);
+
+  const supportedRecipes = ["npm-proxy", "go-proxy", "maven2-proxy", "pypi-proxy"] as const;
+
+  // Go has no prefilled remote URL in this fork, so proxy saves need one set.
+  async function createProxy(wrapper: VueWrapper, recipe: string): Promise<void> {
+    await clickButton(wrapper, "Create repository");
+    await wrapper.find("#repo-name").setValue("quarantine-repo");
+    await chooseRecipe(wrapper, recipe);
+    await wrapper.find("#repo-remote-url").setValue("https://upstream.example.com/");
+  }
+
+  it.each(supportedRecipes)("shows the field and sends the configured minutes for %s", async (recipe) => {
+    const wrapper = await mountView();
+    await createProxy(wrapper, recipe);
+
+    expect(wrapper.find("#repo-min-release-age").exists(), recipe).toBe(true);
+    await wrapper.find("#repo-min-release-age").setValue("2880");
+    await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+    await flushPromises();
+
+    expect(sentPayload().proxy).toMatchObject({ minimumReleaseAgeMinutes: 2880 });
+    wrapper.unmount();
+  });
+
+  it.each(supportedRecipes)("sends 0 when the %s window is left blank", async (recipe) => {
+    const wrapper = await mountView();
+    await createProxy(wrapper, recipe);
+    await wrapper.find("#repo-min-release-age").setValue("");
+    await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+    await flushPromises();
+
+    expect(sentPayload().proxy).toMatchObject({ minimumReleaseAgeMinutes: 0 });
+    wrapper.unmount();
+  });
+
+  it("hides the field for proxy formats without quarantine support", async () => {
+    const wrapper = await mountView();
+    await createProxy(wrapper, "raw-proxy");
+
+    expect(wrapper.find("#repo-min-release-age").exists()).toBe(false);
+    await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+    await flushPromises();
+
+    // The stored draft value is discarded for unsupported formats.
+    expect(sentPayload().proxy).toMatchObject({ minimumReleaseAgeMinutes: null });
+    wrapper.unmount();
+  });
+
+  it("keeps the option out of hosted and group payloads", async () => {
+    for (const [recipe, name] of [["maven2-hosted", "maven-hosted"], ["maven2-group", "maven-group"]] as const) {
+      const wrapper = await mountView();
+      await openEdit(wrapper, name);
+      expect(wrapper.find("#repo-min-release-age").exists(), recipe).toBe(false);
+      await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+      await flushPromises();
+      expect(sentPayload().proxy, recipe).toBeUndefined();
+      wrapper.unmount();
+    }
+  });
+
+  it("prefills and preserves the stored window when editing a supported proxy", async () => {
+    const wrapper = await mountView();
+    await openEdit(wrapper, "pypi-proxy");
+
+    const field = wrapper.find("#repo-min-release-age");
+    expect(field.exists()).toBe(true);
+    expect((field.element as HTMLInputElement).value).toBe("720");
+    expect(wrapper.text()).toContain("Go, Maven and PyPI");
+    await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+    await flushPromises();
+
+    expect(sentPayload().proxy).toMatchObject({ minimumReleaseAgeMinutes: 720 });
+    wrapper.unmount();
+  });
+
+  it("defaults a new npm proxy to 0", async () => {
+    const wrapper = await mountView();
+    await clickButton(wrapper, "Create repository");
+    await wrapper.find("#repo-name").setValue("npm-proxy-repo");
+    await chooseRecipe(wrapper, "npm-proxy");
+    await wrapper.find("[data-testid='dialog-confirm']").trigger("click");
+    await flushPromises();
+
+    expect(sentPayload().proxy).toMatchObject({ minimumReleaseAgeMinutes: 0 });
     wrapper.unmount();
   });
 });

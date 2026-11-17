@@ -2,6 +2,8 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { api } from "../../shared/api/client";
 import { t } from "../../shared/i18n";
+import { hasPermission } from "../../shared/permissions";
+import { permissions } from "../../shared/session";
 import { showToast } from "../../shared/snackbar";
 import M3DataTable, { type DataTableColumn } from "../../shared/components/M3DataTable.vue";
 import M3Dialog from "../../shared/components/M3Dialog.vue";
@@ -288,9 +290,97 @@ const filtered = computed(() => {
   );
 });
 
+/* ---- Mutation authorization -------------------------------------------- */
+
+/** Grant that owns repository configuration, tasks and policies. */
+const SCAN_UPDATE_PERMISSION = "nexus:security-scanning:update";
+/** Grants that own the waiver lifecycle. */
+const WAIVER_CREATE_PERMISSION = "nexus:security-scanning-waivers:create";
+const WAIVER_DELETE_PERMISSION = "nexus:security-scanning-waivers:delete";
+
+/**
+ * Mutation controls need a ready deployment *and* the matching grant.
+ * `summary.deploymentEnabled` only gates availability, so authorization is
+ * checked independently: a refresh that turns scanning on must never reveal a
+ * write control to a reader.
+ */
+function securityScanCanMutate(permission: string = SCAN_UPDATE_PERMISSION): boolean {
+  return overview.value?.deploymentEnabled === true && hasPermission(permissions.value, permission);
+}
+
+/**
+ * Server-reported mutation capabilities a row may carry. Keeping the set closed
+ * means a capability can never be used to index arbitrary row properties.
+ */
+type RowCapability =
+  | "canManage"
+  | "canRescan"
+  | "canConfigure"
+  | "canCreateWaiver"
+  | "canDelete";
+
+/**
+ * Reads a server-provided per-row capability. Endpoints that do not report one
+ * (for example the policy list) return `null`, and an absent flag is never
+ * treated as authorization on its own.
+ */
+function rowCapability(row: Row, capability: RowCapability): boolean | null {
+  const value =
+    capability === "canManage" ? row.canManage
+      : capability === "canRescan" ? row.canRescan
+        : capability === "canConfigure" ? row.canConfigure
+          : capability === "canCreateWaiver" ? row.canCreateWaiver
+            : row.canDelete;
+  return typeof value === "boolean" ? value : null;
+}
+
+/**
+ * Gate for row-level mutation controls: the deployment state, the owning grant,
+ * and the server's per-row decision when that endpoint reports one. The server
+ * still rechecks every request, so this only keeps readers from seeing or
+ * triggering an action that would be rejected.
+ */
+function canMutateRow(
+  row: Row,
+  permission: string = SCAN_UPDATE_PERMISSION,
+  capability?: RowCapability,
+): boolean {
+  if (!securityScanCanMutate(permission)) return false;
+  const value = capability ? rowCapability(row, capability) : null;
+  return value !== false;
+}
+
+/**
+ * Task mutations are two independent server decisions reported on the task
+ * row: `canManage` covers retry/cancel and `canRescan` covers the asset
+ * rescan. Both still require the scan update grant.
+ */
+const canManageTask = (row: Row): boolean =>
+  canMutateRow(row, SCAN_UPDATE_PERMISSION, "canManage");
+
+const canRescanTask = (row: Row): boolean =>
+  canMutateRow(row, SCAN_UPDATE_PERMISSION, "canRescan") && row.assetId != null;
+
+/** Repository configuration is the server's `canConfigure` decision. */
+const canConfigureRepository = (row: Row): boolean =>
+  canMutateRow(row, SCAN_UPDATE_PERMISSION, "canConfigure");
+
+/**
+ * A finding can only be waived when the deployment is ready, the account holds
+ * the waiver-create grant, and the server marked this finding as waivable for
+ * a repository the account administers.
+ */
+const canCreateWaiverFor = (row: Row): boolean =>
+  canMutateRow(row, WAIVER_CREATE_PERMISSION, "canCreateWaiver");
+
+/**
+ * Rescans are always addressed by asset id, so the action is offered on the
+ * task that owns one and carried over to the finding of the same asset.
+ */
 async function rescanAsset(row: Row) {
-  const assetId = row.assetId ?? row.id;
+  const assetId = rescanAssetId(row);
   if (assetId == null) return;
+  if (!rescanTaskForAsset(assetId)) return;
   busy.value = true;
   try {
     await api.send(`/internal/security/scanning/assets/${encodeURIComponent(String(assetId))}/rescan`, "POST");
@@ -303,7 +393,23 @@ async function rescanAsset(row: Row) {
   }
 }
 
+/** Asset id a row can be rescanned by, or `null` when it has none. */
+function rescanAssetId(row: Row): number | string | null {
+  const value = row.assetId ?? row.id;
+  return value == null ? null : (value as number | string);
+}
+
+/** The loaded task that carries the server's rescan decision for an asset. */
+function rescanTaskForAsset(assetId: number | string): Row | null {
+  return (
+    items.value.find(
+      (task) => String(task.assetId ?? "") === String(assetId) && canRescanTask(task),
+    ) ?? null
+  );
+}
+
 async function taskAction(row: Row, action: "retry" | "cancel") {
+  if (!canManageTask(row)) return;
   const task = row as unknown as ScanTask;
   busy.value = true;
   try {
@@ -333,6 +439,10 @@ const policyDraft = reactive<Record<string, unknown>>({
 });
 
 function openPolicy(row?: Row) {
+  // Creating and revising policies needs the update grant; readers never open
+  // the editor, not even when deployment scanning is temporarily disabled.
+  if (row && !canMutateRow(row)) return;
+  if (!row && !securityScanCanMutate()) return;
   const policy = row ? (row as unknown as ScanPolicy) : null;
   editingPolicy.value = policy;
   Object.assign(policyDraft, {
@@ -350,6 +460,7 @@ function openPolicy(row?: Row) {
 }
 
 async function savePolicy() {
+  if (!securityScanCanMutate()) return;
   if (!String(policyDraft.name ?? "").trim()) {
     error.value = t("Policy name is required.");
     return;
@@ -402,6 +513,9 @@ const configDraft = reactive<Record<string, unknown>>({
 });
 
 async function openConfig(row: Row) {
+  // The server reports `canConfigure` per repository; readers never open the
+  // form or issue its configuration request.
+  if (!canMutateRow(row, SCAN_UPDATE_PERMISSION, "canConfigure")) return;
   const repo = row as unknown as ScanRepository;
   configRepo.value = repo;
   error.value = "";
@@ -419,6 +533,7 @@ async function openConfig(row: Row) {
 
 async function saveConfig() {
   if (!configRepo.value) return;
+  if (!canMutateRow(configRepo.value as unknown as Row, SCAN_UPDATE_PERMISSION, "canConfigure")) return;
   busy.value = true;
   error.value = "";
   try {
@@ -449,12 +564,19 @@ const waiverDraft = reactive<Record<string, unknown>>({
   expiresAt: "",
 });
 
-function openWaiver() {
+/**
+ * Opens the waiver form. The toolbar action creates a free-form waiver, while
+ * the finding action seeds the selectors from the finding it was invoked on.
+ * Both need the waiver-create grant; readers never open the form.
+ */
+function openWaiver(finding?: Row) {
+  if (!securityScanCanMutate(WAIVER_CREATE_PERMISSION)) return;
+  if (finding && !canCreateWaiverFor(finding)) return;
   Object.assign(waiverDraft, {
     scopeType: "repository",
     repositoryId: null,
-    advisorySelector: "",
-    packageSelector: "",
+    advisorySelector: finding ? String(finding.advisoryId ?? "") : "",
+    packageSelector: finding ? String(finding.packageName ?? "") : "",
     reason: "",
     expiresAt: "",
   });
@@ -463,6 +585,7 @@ function openWaiver() {
 }
 
 async function saveWaiver() {
+  if (!securityScanCanMutate(WAIVER_CREATE_PERMISSION)) return;
   const advisory = String(waiverDraft.advisorySelector ?? "").trim();
   const pkg = String(waiverDraft.packageSelector ?? "").trim();
   if (!String(waiverDraft.reason ?? "").trim()) {
@@ -504,7 +627,19 @@ async function saveWaiver() {
 const deleteDialog = ref<InstanceType<typeof M3Dialog> | null>(null);
 const deleteTarget = ref<Row | null>(null);
 
+/**
+ * Deletion is owned by a different grant per tab: policies follow the scan
+ * update grant, while waivers carry the server's own `canDelete` decision on
+ * top of the waiver-delete grant.
+ */
+function canDeleteRow(row: Row): boolean {
+  if (tab.value === "policies") return canMutateRow(row, SCAN_UPDATE_PERMISSION);
+  if (tab.value === "waivers") return canMutateRow(row, WAIVER_DELETE_PERMISSION, "canDelete");
+  return false;
+}
+
 function askDelete(row: Row) {
+  if (!canDeleteRow(row)) return;
   deleteTarget.value = row;
   deleteDialog.value?.open();
 }
@@ -512,6 +647,7 @@ function askDelete(row: Row) {
 async function confirmDelete() {
   const target = deleteTarget.value;
   if (!target || target.id == null) return;
+  if (!canDeleteRow(target)) return;
   const collection = tab.value === "policies" ? "policies" : tab.value === "waivers" ? "waivers" : null;
   if (!collection) return;
   busy.value = true;
@@ -538,11 +674,21 @@ onMounted(() => load(true));
 <template>
 <div class="kk-settings-page">
 <div class="kk-toolbar kk-action-bar">
-    <button v-if="tab === 'policies'" type="button" class="micl-button-filled-m kk-primary-action" @click="openPolicy()">
+    <button
+      v-if="tab === 'policies' && securityScanCanMutate()"
+      type="button"
+      class="micl-button-filled-m kk-primary-action"
+      @click="openPolicy()"
+    >
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create policy") }}
     </button>
-    <button v-if="tab === 'waivers'" type="button" class="micl-button-filled-m kk-primary-action" @click="openWaiver">
+    <button
+      v-if="tab === 'waivers' && securityScanCanMutate(WAIVER_CREATE_PERMISSION)"
+      type="button"
+      class="micl-button-filled-m kk-primary-action"
+      @click="openWaiver()"
+    >
       <span class="micl-button__icon material-symbols-outlined" aria-hidden="true">add</span>
       {{ t("Create waiver") }}
     </button>
@@ -644,29 +790,71 @@ onMounted(() => load(true));
       <template #cell-actions="{ row }">
         <div class="kk-row-actions">
           <template v-if="tab === 'tasks'">
-            <button type="button" class="micl-button-text-s" :disabled="busy" @click="taskAction(row, 'retry')">
+            <button
+              v-if="canManageTask(row)"
+              type="button"
+              class="micl-button-text-s"
+              :disabled="busy"
+              @click="taskAction(row, 'retry')"
+            >
               {{ t("Retry") }}
             </button>
-            <button type="button" class="micl-button-text-s" :disabled="busy" @click="taskAction(row, 'cancel')">
+            <button
+              v-if="canManageTask(row)"
+              type="button"
+              class="micl-button-text-s"
+              :disabled="busy"
+              @click="taskAction(row, 'cancel')"
+            >
               {{ t("Cancel") }}
             </button>
-          </template>
-          <template v-else-if="tab === 'findings'">
-            <button type="button" class="micl-button-text-s" :disabled="busy" @click="rescanAsset(row)">
+            <button
+              v-if="canRescanTask(row)"
+              type="button"
+              class="micl-button-text-s"
+              :disabled="busy"
+              @click="rescanAsset(row)"
+            >
               {{ t("Rescan") }}
             </button>
           </template>
+          <template v-else-if="tab === 'findings'">
+            <button
+              v-if="canCreateWaiverFor(row)"
+              type="button"
+              class="micl-button-text-s"
+              @click="openWaiver(row)"
+            >
+              {{ t("Waive") }}
+            </button>
+          </template>
           <template v-else-if="tab === 'repositories'">
-            <button type="button" class="micl-button-text-s" @click="openConfig(row)">
+            <button
+              v-if="canConfigureRepository(row)"
+              type="button"
+              class="micl-button-text-s"
+              @click="openConfig(row)"
+            >
               {{ t("Configure") }}
             </button>
           </template>
           <template v-else-if="tab === 'policies'">
-            <button type="button" class="micl-button-text-s" @click="openPolicy(row)">{{ t("Edit") }}</button>
-            <button type="button" class="micl-button-text-s" @click="askDelete(row)">{{ t("Delete") }}</button>
+            <button v-if="canMutateRow(row)" type="button" class="micl-button-text-s" @click="openPolicy(row)">
+              {{ t("Edit") }}
+            </button>
+            <button v-if="canMutateRow(row)" type="button" class="micl-button-text-s" @click="askDelete(row)">
+              {{ t("Delete") }}
+            </button>
           </template>
           <template v-else-if="tab === 'waivers'">
-            <button type="button" class="micl-button-text-s" @click="askDelete(row)">{{ t("Delete") }}</button>
+            <button
+              v-if="canMutateRow(row, WAIVER_DELETE_PERMISSION, 'canDelete')"
+              type="button"
+              class="micl-button-text-s"
+              @click="askDelete(row)"
+            >
+              {{ t("Delete") }}
+            </button>
           </template>
         </div>
       </template>

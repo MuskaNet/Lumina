@@ -40,7 +40,7 @@ curl -fsSL https://raw.githubusercontent.com/MuskaNet/Lumina/main/scripts/quicks
   | KKREPO_RUNTIME=native KKREPO_DATABASE_TYPE=postgresql bash
 ```
 
-`KKREPO_RUNTIME=jvm` 选择 `ghcr.io/muskanet/lumina:1.3.4`，`KKREPO_RUNTIME=native` 选择 `ghcr.io/muskanet/lumina:1.3.4-native`。两种镜像均发布 Linux `amd64` 和 `arm64` 架构。显式设置 `KKREPO_IMAGE_TAG` 时，会覆盖对应运行时的默认 tag。
+`KKREPO_RUNTIME=jvm` 选择 `ghcr.io/muskanet/lumina:1.4.0`，`KKREPO_RUNTIME=native` 选择 `ghcr.io/muskanet/lumina:1.4.0-native`。两种镜像均发布 Linux `amd64` 和 `arm64` 架构。显式设置 `KKREPO_IMAGE_TAG` 时，会覆盖对应运行时的默认 tag。
 
 该脚本会逐步打印日志并执行：
 
@@ -61,7 +61,7 @@ bash quickstart.sh
 
 默认会启动：
 
-- `ghcr.io/muskanet/lumina:1.3.4` 中的 JVM 运行时
+- `ghcr.io/muskanet/lumina:1.4.0` 中的 JVM 运行时
 - MySQL 8.0
 - 持续探测应用就绪状态的 `kkrepo-health` sidecar
 - 用于本地试用的持久化 MySQL volume 和 File blob storage volume
@@ -164,7 +164,7 @@ server/target/kkrepo-server-<version>.jar
 拉取最新公开发行镜像：
 
 ```bash
-docker pull ghcr.io/muskanet/lumina:1.3.4
+docker pull ghcr.io/muskanet/lumina:1.4.0
 ```
 
 也可以使用 `latest` 跟随最新公开发行版本：
@@ -176,7 +176,7 @@ docker pull ghcr.io/muskanet/lumina:latest
 Native 镜像使用独立 tag：
 
 ```bash
-docker pull ghcr.io/muskanet/lumina:1.3.4-native
+docker pull ghcr.io/muskanet/lumina:1.4.0-native
 docker pull ghcr.io/muskanet/lumina:native-latest
 ```
 
@@ -276,7 +276,7 @@ server/target/kkrepo-<release-version>-native-linux-<architecture>.zip
 
 手动触发 GitHub 的 `Release Packages` 工作流后，它只接受已经合并到 `main` 的版本，并构建公开发行矩阵：一组平台无关的 JVM 压缩包、Native Linux `amd64` 和 `arm64` 压缩包，以及一份合并的 SHA-256 清单。同一批对应架构的 Native 构建会先推送 `<version>-native-amd64` 和 `<version>-native-arm64` 镜像，再合成为公开使用的版本化 `<version>-native` 和滚动更新的 `native-latest` 多架构 manifest。创建 GitHub Release 和上传压缩包资产仍是后续独立、显式的发行步骤。
 
-Lumina fork 使用 `LUMINA_VERSION` 独立维护自己的发行版本，不再与 kkRepo 的 Maven 版本绑定。Lumina GitHub Release 使用 `vX.Y.Z` tag；发布该 Release 后会自动上传发行资产。Docker 镜像会保留原有的 kkRepo 单独版本标签，并额外发布 `<kkRepo版本>-lumina-<Lumina版本>` 组合标签，例如 `1.3.4-lumina-0.1.0`。
+Lumina fork 使用 `LUMINA_VERSION` 独立维护自己的发行版本，不再与 kkRepo 的 Maven 版本绑定。Lumina GitHub Release 使用 `vX.Y.Z` tag；发布该 Release 后会自动上传发行资产。Docker 镜像会保留原有的 kkRepo 单独版本标签，并额外发布 `<kkRepo版本>-lumina-<Lumina版本>` 组合标签，例如 `1.4.0-lumina-1.3.0`。
 
 Lumina fork 的 CI 和 `Release Packages` 工作流会在 Maven 构建前使用 Node.js 24 执行 `npm ci`、`npm run build:admin` 和 `npm run build:browse`，将两个前端的生产资源写入对应 UI 模块；前端构建失败会阻止后续打包。JVM 和两种架构的 Native 发行构建均执行此步骤，因此发行包和主服务镜像包含该提交重新构建的页面。
 
